@@ -1,0 +1,10 @@
+TABLERO LOCAL SVIH - PAQUETE ESTÁTICO
+Copiar toda esta carpeta al servidor, conservando las rutas relativas.
+Abrir index.html; no requiere R, Shiny, Google ni servicios externos en el servidor.
+recursos/: CSS y JavaScript usados por index.html.
+datos/datos-tablero.json: copia de los agregados exactos usados por el dashboard.
+Los datos y la cartografía también se incrustan en el HTML para poder abrirlo localmente sin fetch.
+Cartografia/: límites políticos y documentación de origen/licencia.
+Los JSON son una copia para consulta: editarlos solos no actualiza los datos incrustados del HTML.
+Regenerar desde el proyecto con generar_tablero_local(), o al construir el tablero nacional.
+No contiene bases nominales ni el caché RData completo; incluye todas las jurisdicciones exportadas.
