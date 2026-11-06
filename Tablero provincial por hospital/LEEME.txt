@@ -1,0 +1,7 @@
+Tablero provincial por hospital
+Copiar toda esta carpeta al servidor conservando recursos/, datos/ y Cartografia/.
+El paquete es estático: no requiere R, Shiny ni Google en el servidor.
+datos/datos-tablero.json contiene solo los agregados usados; nunca el caché completo ni base nominal.
+Los datos se incrustan también en index.html para apertura local. Editar el JSON aislado no actualiza la página; regenerar con R.
+Los totales se leen de sus filas originales, sin sumar hospitales, regiones y totales.
+El filtrado en pantalla no elimina los demás agregados del paquete.
