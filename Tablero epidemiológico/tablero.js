@@ -60,10 +60,10 @@ function detalle(host,filas){
 }
 function vacio(host){host.append(nodo('p','Sin datos para esta selección.','vacio'));}
 function leyenda(host,series){const l=nodo('div',null,'leyenda');series.forEach((s,i)=>{const t=nodo('span'),m=nodo('i',null,'muestra');m.style.background=colores[i%colores.length];t.append(m,document.createTextNode(s));l.append(t);});host.append(l);}
-function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null}={}){
+function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720}={}){
  if(!filas.some(r=>r.valor!=null)){vacio(host);detalle(host,filas);return;}
  const xs=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
- const w=720,h=390,L=55,R=22,U=35,B=42,iw=w-L-R,ih=h-U-B;
+ const w=innerWidth<=700?720:ancho,h=390,L=55,R=22,U=35,B=42,iw=w-L-R,ih=h-U-B;
  const s=svg('svg',{viewBox:`0 0 ${w} ${h}`,class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
  const max=porcentaje?100:Math.max(1,...filas.map(r=>r.valor??0))*1.13;
  const x=i=>L+(i+.5)*iw/xs.length, y=v=>U+ih*(1-v/max);
@@ -137,7 +137,7 @@ function seccionEdad(host){const c=controles(host),g=filtro(c,T.edad,'geografia'
  grafico(panel(grid,'Distribución por grupo de edad'),T.edad.filter(r=>r.geografia===g&&r.genero===s).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
  grafico(panel(grid,'Mediana de edad al diagnóstico'),T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({anio:r.anio,serie:'Mediana de edad',valor:r.valor})),{unidad:'años',decimales:0});}
 function seccionVias(host){const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad','e','Todas las edades',false,edades);const disponibles=T.vias.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(disponibles.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5);
- grafico(panel(host,'Distribución según vía de transmisión · últimos cinco años disponibles'),disponibles.filter(r=>ultimos.includes(r.anio)).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'barras',porcentaje:true});}
+ grafico(panel(host,'Distribución según vía de transmisión · últimos cinco años disponibles'),disponibles.filter(r=>ultimos.includes(r.anio)).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'barras',porcentaje:true,ancho:1280});}
 function seccionDiagnostico(host){
  const c=controles(host),g=filtro(c,T.diagnostico,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.diagnostico,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.diagnostico,'edad','Grupo de edad','e','Todas las edades',false,edades);
  const hist=T.diagnostico.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(hist.map(r=>r.anio)).sort((a,b)=>a-b).slice(-4),p=panel(host,'Diagnóstico tardío y enfermedad avanzada · evolución');
@@ -156,6 +156,6 @@ function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find
  $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${anios.at(-1)}`;$('fecha-exportacion').textContent=`Fecha de exportación de la base: ${D.meta.fecha_exportacion||'no informada'}`;$('demo').hidden=!D.meta.demostracion;
  $('restablecer').onclick=()=>{estados[pagina]={};render();};window.addEventListener('hashchange',()=>{if(paginas.some(p=>p[0]===location.hash.slice(1))){pagina=location.hash.slice(1);render();}});
  document.addEventListener('click',e=>document.querySelectorAll('.control details[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.control details[open]').forEach(d=>{d.open=false;d.querySelector('summary').focus();});});
- $('abrir-metodologia').onclick=()=>abrirDialogo('Acerca de los datos',$('metodologia').content.cloneNode(true));$('cerrar-dialogo').onclick=()=>$('dialogo').close();window.addEventListener('resize',ajustarPantalla);
+ $('abrir-metodologia').onclick=()=>abrirDialogo('Acerca de los datos',$('metodologia').content.cloneNode(true));$('cerrar-dialogo').onclick=()=>$('dialogo').close();let vistaMovil=innerWidth<=700;window.addEventListener('resize',()=>{const nueva=innerWidth<=700;if(nueva!==vistaMovil){vistaMovil=nueva;render();}else ajustarPantalla();});
  render();
 })();
