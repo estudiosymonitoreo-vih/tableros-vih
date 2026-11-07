@@ -71,15 +71,15 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  xs.forEach((a,i)=>s.append(svg('text',{x:x(i),y:h-17,'text-anchor':'middle'},a)));
  const matriz=new Map(filas.map(r=>[`${r.anio}|${r.serie||'Valor'}`,r.valor]));
  series.forEach((nombre,j)=>{let segmentos=[],tramo=[];xs.forEach((a,i)=>{const v=matriz.get(`${a}|${nombre}`);if(v==null){if(tramo.length)segmentos.push(tramo);tramo=[];return;}
- const color=colores[j%colores.length],etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
- if(tipo==='linea'){tramo.push([x(i),y(v)]);s.append(tituloSVG(svg('circle',{cx:x(i),cy:y(v),r:4,fill:color,tabindex:0,'aria-label':tooltip}),tooltip));s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
+ const color=tipo==='linea'&&series.length===1?'#73d4ef':colores[j%colores.length],etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
+ if(tipo==='linea'){const final=i===xs.length-1;tramo.push([x(i),y(v)]);s.append(tituloSVG(svg('circle',{cx:x(i),cy:y(v),r:4,fill:final?'#ffdc8d':color,tabindex:0,'aria-label':tooltip}),tooltip));s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
  else {const ancho=iw/xs.length*.74;let base=0,xx=x(i)-ancho/2,bw=ancho;
  if(tipo==='apilado'){for(let k=0;k<j;k++)base+=matriz.get(`${a}|${series[k]}`)??0;}else{bw=ancho/series.length;xx+=j*bw;}
  s.append(tituloSVG(svg('rect',{x:xx,y:y(v+base),width:Math.max(1,bw-1),height:ih*v/max,fill:color,tabindex:0,'aria-label':tooltip}),tooltip));
  if(tipo==='barras'){const xxLabel=xx+bw/2,yyLabel=y(v+base)-8;s.append(svg('text',{x:xxLabel,y:yyLabel,'text-anchor':series.length>3?'start':'middle',class:'valor-barra',...(series.length>3?{transform:`rotate(-55 ${xxLabel} ${yyLabel})`}:{})},etiqueta));}
  if(v>8&&tipo==='apilado')s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff'},fmt(v)));
- }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>s.prepend(svg('polyline',{points:tr.map(p=>p.join(',')).join(' '),fill:'none',stroke:colores[j%colores.length],'stroke-width':2.8})));});
- host.append(s);leyenda(host,series);detalle(host,datosDetalle||filas);
+ }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>s.prepend(svg('polyline',{points:tr.map(p=>p.join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8})));});
+ host.append(s);leyenda(host,series);if(tipo==='linea'&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
 }
 const nombreMapa=n=>n==='Ciudad de Buenos Aires'?'CABA':n;
 const posicionesProvincia={
@@ -116,7 +116,7 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1'){
  const botones=nodo('div',null,'zoom');[['+','Acercar',()=>z=Math.min(6,z*1.4)],['−','Alejar',()=>z=Math.max(1,z/1.4)],['↺','Restablecer mapa',()=>{z=1;dx=0;dy=0;}]].forEach(([txt,label,fn])=>{const b=nodo('button',txt);b.setAttribute('aria-label',label);b.onclick=()=>{fn();transforma();};botones.append(b);});
  let inicio=null;s.onpointerdown=e=>{inicio=[e.clientX,e.clientY,dx,dy];s.setPointerCapture(e.pointerId);};s.onpointermove=e=>{if(inicio){const rect=s.getBoundingClientRect();dx=inicio[2]+(e.clientX-inicio[0])*330/rect.width;dy=inicio[3]+(e.clientY-inicio[1])*420/rect.height;transforma();}};s.onpointerup=s.onpointercancel=()=>{inicio=null;};
  wrap.append(s,botones);columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,#bedbf6,${color})`;escala.append(nodo('span','0'),grad,nodo('span',fmt(max)+unidad),nodo('span','Gris: sin datos'));columna.append(escala);
- const ranking=nodo('div',null,'ranking');[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;bar.append(i);row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
+ const ranking=nodo('div',null,'ranking');ranking.dataset.maximo=String(max);[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;if(v==null||!Number.isFinite(v))row.classList.add('sin-dato');bar.append(i);row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
 }
 function seccionCasos(host){
  const grid=layout(host),p=panel(grid,'Evolución de casos y tasas'),c=controles(p);
@@ -124,7 +124,7 @@ function seccionCasos(host){
  const filas=T.casos.filter(r=>ind===r.indicador&&geo.includes(r.geografia)&&sexo.includes(r.genero)&&edad.includes(r.edad));
  grafico(p,filas.map(r=>({anio:r.anio,serie:`${r.geografia} · ${r.genero} · ${r.edad}`,valor:r.valor})),{unidad:ind==='Casos'?'casos':'por 100.000 habitantes',decimales:ind==='Casos'?0:1});
  const m=panel(grid,'Distribución provincial'),cm=controles(m),prov=T.casos.filter(r=>r.nivel==='Provincial');
- const im=filtro(cm,prov,'indicador','Indicador del mapa','im','Casos'),am=filtro(cm,prov,'anio','Año','am',anios.at(-1)),sm=filtro(cm,prov,'genero','Sexo','sm','Ambos sexos'),em=filtro(cm,prov,'edad','Grupo de edad','em','Todas las edades',false,edades);
+ const im=filtro(cm,prov,'indicador','Indicador del mapa','im','Tasa por 100.000 habitantes'),am=filtro(cm,prov,'anio','Año','am',anios.at(-1)),sm=filtro(cm,prov,'genero','Sexo','sm','Ambos sexos'),em=filtro(cm,prov,'edad','Grupo de edad','em','Todas las edades',false,edades);
  mapa(m,prov.filter(r=>r.indicador===im&&r.anio===am&&r.genero===sm&&r.edad===em),'valor',im==='Casos'?'':' por 100 mil');
 }
 function seccionGeografia(host){const c=controles(host),s=filtro(c,T.regiones,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.regiones,'edad','Grupo de edad','e','Todas las edades',false,edades),a=filtro(c,T.provincias,'anio','Año del mapa y ranking','a',anios.at(-1));
@@ -137,7 +137,7 @@ function seccionEdad(host){const c=controles(host),g=filtro(c,T.edad,'geografia'
  grafico(panel(grid,'Distribución por grupo de edad'),T.edad.filter(r=>r.geografia===g&&r.genero===s).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
  grafico(panel(grid,'Mediana de edad al diagnóstico'),T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({anio:r.anio,serie:'Mediana de edad',valor:r.valor})),{unidad:'años',decimales:0});}
 function seccionVias(host){const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad','e','Todas las edades',false,edades);const disponibles=T.vias.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(disponibles.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5);
- grafico(panel(host,'Distribución según vía de transmisión · últimos cinco años disponibles'),disponibles.filter(r=>ultimos.includes(r.anio)).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'barras',porcentaje:true,ancho:1280});}
+ grafico(panel(host,'Distribución según vía de transmisión · últimos cinco años disponibles'),disponibles.filter(r=>ultimos.includes(r.anio)).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'barras',porcentaje:true,ancho:1600});}
 function seccionDiagnostico(host){
  const c=controles(host),g=filtro(c,T.diagnostico,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.diagnostico,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.diagnostico,'edad','Grupo de edad','e','Todas las edades',false,edades);
  const hist=T.diagnostico.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(hist.map(r=>r.anio)).sort((a,b)=>a-b).slice(-4),p=panel(host,'Diagnóstico tardío y enfermedad avanzada · evolución');
@@ -149,9 +149,105 @@ function seccionMapasDiagnostico(host){
  const grid=layout(host),prov=T.diagnostico.filter(r=>r.genero===s&&r.edad===e&&r.anio===a&&D.mapa.provincias.features.some(f=>nombreMapa(f.id)===r.geografia));
  mapa(panel(grid,'Diagnóstico tardío por jurisdicción'),prov,'tardio','%');mapa(panel(grid,'Enfermedad avanzada por jurisdicción'),prov,'avanzada','%','#d67555');
 }
+// Resúmenes de los agregados existentes. No se calculan variaciones interanuales.
+function tarjetaResumen(host,etiqueta,numero,contexto){
+ const box=nodo('div',null,'tarjeta-resumen'),texto=nodo('div');
+ texto.append(nodo('p',etiqueta,'resumen-etiqueta'),nodo('p',numero,'resumen-numero'),nodo('p',contexto,'resumen-contexto'));
+ const icono=svg('svg',{viewBox:'0 0 24 24',class:'resumen-icono',fill:'none',stroke:'currentColor','stroke-width':1.6,'aria-hidden':true});
+ icono.append(svg('path',{d:etiqueta==='Período de diagnóstico'?'M4 5h16v16H4zM4 10h16M8 2v6M16 2v6':'M3 19V5m0 14h18M6 15l5-6 4 3 6-8'}));
+ box.append(texto,icono);host.append(box);
+}
+function crearBandaFiltros(control,titulo,alcance){
+ const banda=nodo('section',null,'banda-filtros'),h=nodo('h3');banda.setAttribute('aria-label',titulo);
+ const icono=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.6,'aria-hidden':true});
+ icono.append(svg('path',{d:'M3 6h18M6 12h12M9 18h6'}));
+ h.append(icono,document.createTextNode(titulo),nodo('span',alcance,'filtro-alcance'));banda.append(h,control);return banda;
+}
+function presentarResumen(){
+ const host=$('contenido'),e=estados[pagina],ultimo=anios.at(-1),tarjetas=[];
+ const esNumero=v=>typeof v==='number'&&Number.isFinite(v);
+ const porcentaje=v=>esNumero(v)?exacto(v,1)+'%':'Sin datos';
+ const suma=filas=>filas.length&&filas.every(r=>esNumero(r.valor))?filas.reduce((total,r)=>total+r.valor,0):null;
+ const mayor=filas=>filas.filter(r=>esNumero(r.valor)).sort((a,b)=>b.valor-a.valor)[0];
+ let filtros;
+ if(pagina==='casos'){
+  const controles=[...host.querySelectorAll('.panel > .controles')];
+  filtros=nodo('div',null,'banda-doble');
+  filtros.append(crearBandaFiltros(controles[0],'Filtrar la evolución','Geografía, sexo y edad: múltiples'),
+    crearBandaFiltros(controles[1],'Filtrar el mapa y el ranking','Todos de opción única'));host.prepend(filtros);
+  const geografias=e.geo,sexos=e.sexo,edadesElegidas=e.edad;
+  if(geografias.length===1&&sexos.length===1&&edadesElegidas.length===1){
+   const filas=T.casos.filter(r=>r.geografia===geografias[0]&&r.genero===sexos[0]&&r.edad===edadesElegidas[0]&&r.anio===ultimo);
+   const valor=indicador=>filas.find(r=>r.indicador===indicador)?.valor;
+   const contexto=`${geografias[0]} · ${sexos[0]} · ${edadesElegidas[0]}`;
+   tarjetas.push([`Diagnósticos · ${ultimo}`,exacto(valor('Casos'),0),contexto],
+    ['Tasa por 100.000 habitantes',exacto(valor('Tasa por 100.000 habitantes'),1),`Serie histórica · último año: ${ultimo}`],
+    ['Período de diagnóstico',`${anios[0]}–${ultimo}`,'Datos sujetos a actualización por notificación']);
+  }else{
+   // No sumar país, regiones, sexos y edades: pueden superponerse entre sí.
+   tarjetas.push(['Combinaciones elegidas',String(geografias.length*sexos.length*edadesElegidas.length),'Se comparan por separado; puede haber cruces sin datos'],
+    ['Indicador de evolución',e.indicador==='Casos'?'Casos':'Tasas','El mapa conserva sus propios filtros'],
+    ['Período de diagnóstico',`${anios[0]}–${ultimo}`,'Datos sujetos a actualización por notificación']);
+  }
+ }else{
+  filtros=crearBandaFiltros(host.querySelector(':scope > .controles'),'Filtros de esta página','Todos de opción única');host.prepend(filtros);
+  if(pagina==='geografia'){
+   const provincias=T.provincias.filter(r=>r.genero===e.s&&r.edad===e.e&&r.anio===e.a&&r.indicador==='Casos');
+   const region=mayor(T.regiones.filter(r=>r.genero===e.s&&r.edad===e.e&&r.anio===e.a));
+   tarjetas.push([`Diagnósticos con provincia conocida · ${e.a}`,exacto(suma(provincias),0),`${e.s} · ${e.e}`],
+    ['Región con mayor participación',porcentaje(region?.valor),region?.serie||'Sin datos'],
+    ['Comparación territorial','24 provincias',`Mapa y ranking corresponden a ${e.a}`]);
+  }else if(pagina==='genero'){
+   const filas=T.genero.filter(r=>r.geografia===e.g&&r.edad===e.e&&r.anio===ultimo);
+   const razon=T.razon.find(r=>r.geografia===e.g&&r.edad===e.e&&r.anio===ultimo);
+   const valor=genero=>filas.find(r=>r.serie===genero)?.valor;
+   tarjetas.push([`Proporción de varones · ${ultimo}`,porcentaje(valor('Varón')),`${e.g} · ${e.e}`],
+    [`Proporción de mujeres · ${ultimo}`,porcentaje(valor('Mujer')),'Otras categorías permanecen en el gráfico'],
+    [`Razón varones / mujeres · ${ultimo}`,exacto(razon?.valor,1),'Cociente de diagnósticos, no una tasa poblacional']);
+  }else if(pagina==='edad'){
+   const filas=T.edad.filter(r=>r.geografia===e.g&&r.genero===e.s&&r.anio===ultimo),grupo=mayor(filas);
+   const mediana=T.mediana.find(r=>r.geografia===e.g&&r.genero===e.s&&r.anio===ultimo);
+   const mayores=suma(filas.filter(r=>['55-64','65 o más'].includes(r.serie)));
+   tarjetas.push([`Mediana de edad · ${ultimo}`,esNumero(mediana?.valor)?exacto(mediana.valor,0)+' años':'Sin datos',`${e.g} · ${e.s}`],
+    ['Grupo de edad más frecuente',grupo?.serie||'Sin datos',grupo?porcentaje(grupo.valor)+' de los diagnósticos':'Sin datos'],
+    ['Proporción de 55 años o más',porcentaje(mayores),`Distribución por edad · ${ultimo}`]);
+  }else if(pagina==='vias'){
+   const filas=T.vias.filter(r=>r.geografia===e.g&&r.genero===e.s&&r.edad===e.e);
+   const periodos=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5),anio=periodos.at(-1);
+   const actuales=filas.filter(r=>r.anio===anio),via=mayor(actuales),desconocida=actuales.find(r=>/desconoc/i.test(r.serie));
+   tarjetas.push([`Vía de mayor proporción${anio?' · '+anio:''}`,porcentaje(via?.valor),via?.serie||'Sin datos'],
+    ['Vía desconocida',porcentaje(desconocida?.valor),`${e.g} · ${e.s} · ${e.e}`],
+    ['Período mostrado',periodos.length?`${periodos[0]}–${anio}`:'Sin datos','Últimos cinco años disponibles para esta selección']);
+  }else if(pagina==='diagnostico'||pagina==='mapas-diagnostico'){
+   const anio=pagina==='diagnostico'?ultimo:e.a,geografia=pagina==='diagnostico'?e.g:'Argentina';
+   const fila=T.diagnostico.find(r=>r.geografia===geografia&&r.genero===e.s&&r.edad===e.e&&r.anio===anio);
+   const cobertura=esNumero(fila?.validos)&&fila?.total>0?fila.validos/fila.total*100:null;
+   tarjetas.push([`Diagnóstico tardío · ${anio}`,porcentaje(fila?.tardio),`${geografia} · ${e.s} · ${e.e}`],
+    [`Enfermedad avanzada · ${anio}`,porcentaje(fila?.avanzada),'Es un subconjunto del diagnóstico tardío'],
+    ['Casos con dato de oportunidad diagnóstica',porcentaje(cobertura),`Denominador válido · ${geografia} · ${anio}`]);
+  }
+ }
+ const resumen=nodo('section',null,'resumen-indicadores');resumen.setAttribute('aria-label','Resumen de indicadores');
+ for(const tarjeta of tarjetas)tarjetaResumen(resumen,...tarjeta);filtros.after(resumen);
+ $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${ultimo} · Datos actualizables por retraso de notificación`;
+ // La referencia nacional se compara con la misma métrica, sexo/género, edad y año.
+ let referencias=[];
+ if(pagina==='casos'&&e.im!=='Casos')referencias=[T.casos.find(r=>r.geografia==='Argentina'&&r.indicador===e.im&&r.genero===e.sm&&r.edad===e.em&&r.anio===e.am)?.valor];
+ if(pagina==='mapas-diagnostico'){
+  const nacional=T.diagnostico.find(r=>r.geografia==='Argentina'&&r.genero===e.s&&r.edad===e.e&&r.anio===e.a);
+  referencias=[nacional?.tardio,nacional?.avanzada];
+ }
+ host.querySelectorAll('.ranking').forEach((ranking,index)=>{
+  const referencia=referencias[index],maximo=Number(ranking.dataset.maximo);
+  if(!esNumero(referencia)||!Number.isFinite(maximo)||maximo<=0)return;
+  if(referencia>=0&&referencia<=maximo){ranking.classList.add('con-referencia');ranking.style.setProperty('--referencia',referencia/maximo*100+'%');}
+  ranking.previousElementSibling.append(nodo('p',`Referencia nacional: ${exacto(referencia,1)}${pagina==='mapas-diagnostico'?'%':' por 100.000'}`,'nota-referencia'));
+ });
+}
+
 function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find(p=>p[0]===pagina);$('titulo').textContent=page[1];
  $('contenido').replaceChildren();document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.pagina===pagina?'page':'false'));
- ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,edad:seccionEdad,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico})[pagina]($('contenido'));ajustarPantalla();}
+ ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,edad:seccionEdad,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
  paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4']}[id];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
  $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${anios.at(-1)}`;$('fecha-exportacion').textContent=`Fecha de exportación de la base: ${D.meta.fecha_exportacion||'no informada'}`;$('demo').hidden=!D.meta.demostracion;
  $('restablecer').onclick=()=>{estados[pagina]={};render();};window.addEventListener('hashchange',()=>{if(paginas.some(p=>p[0]===location.hash.slice(1))){pagina=location.hash.slice(1);render();}});
