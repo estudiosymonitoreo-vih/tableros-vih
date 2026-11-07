@@ -4,7 +4,8 @@
   <title>Tablero local SVIH</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23242c50%22%2F%3E%3Cpath%20d%3D%22M27%2010h10v13h13v10H37v13H27V33H14V23h13Z%22%20fill%3D%22%2335c4be%22%2F%3E%3Cpath%20d%3D%22M12%2053h40%22%20stroke%3D%22%23ffcf28%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E"/>
   <link rel="stylesheet" href="recursos/tablero.css"/>
-  <link rel="stylesheet" href="recursos/marca-institucional.css"/></head><body>
+  <link rel="stylesheet" href="recursos/marca-institucional.css"/>
+  <link rel="stylesheet" href="recursos/editorial.css"/></head><body>
   <aside>
     <div class="marca">SVIH</div>
     <nav>
@@ -17,11 +18,10 @@
   </aside>
   <main id="principal">
     <header>
-      <p class="eyebrow">ARGENTINA · SISTEMA PÚBLICO DE SALUD</p>
+      <p class="eyebrow">Subsector público de salud · Argentina</p>
       <h1>
-        Tablero de prevención combinada de VIH
-        <br/>
-        en el subsector público de salud de la Argentina
+        <span class="marca-svih">SVIH</span>
+        <span>Prevención combinada de VIH</span>
       </h1>
       <p class="aviso-origen">Este tablero se genera a partir de información aportada por los equipos de salud y laboratorios de las 24 jurisdicciones del país en el SISA</p>
       <p id="fecha"></p>
@@ -30,14 +30,14 @@
       </div>
     </header>
     <div class="barra">
-      <label for="provincia">Territorio</label>
+      <label for="provincia">Jurisdicción:</label>
       <select id="provincia"></select>
       <button id="restablecer" type="button">Restablecer</button>
     </div>
     <p id="demo" class="aviso" hidden="hidden">DEMOSTRACIÓN · Datos sintéticos, sin validez epidemiológica.</p>
     <p id="faltantes" class="aviso" hidden="hidden"></p>
     <section aria-labelledby="titulo-epi">
-      <h2 id="titulo-epi">Indicadores epidemiológicos</h2>
+      <h2 id="titulo-epi">Contexto epidemiológico · todos los subsectores</h2>
       <div id="epidemiologia" class="grilla epi"></div>
     </section>
     <section aria-labelledby="titulo-tarv">
@@ -57,6 +57,7 @@
       </div>
     </section>
     <footer>
+      <span class="version-tablero">Versión 3.0 AA</span>
       <p>Fuente: SVIH - SISA</p>
       <p>Filtro según Provincia_atencion de cada fuente. La tarjeta de residencia muestra la proporción nacional por residencia de esa provincia. No se suman ni recalculan porcentajes.</p>
       <p>Las series conservan sus años originales. Sin información se muestra —; un cero válido se muestra como 0.</p>
@@ -643,6 +644,6 @@
   <script src="recursos/mapas.js"></script>
   <script src="recursos/indicadores.js"></script>
   <script src="recursos/comparativo.js"></script>
-  <script src="recursos/tablero.js"></script>
-  <script src="recursos/paginas.js"></script>
+  <script src="recursos/tablero.js?v=3.0-AA"></script>
+  <script src="recursos/paginas.js?v=3.0-AA"></script>
 </body></html>

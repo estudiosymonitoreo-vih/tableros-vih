@@ -1,0 +1,174 @@
+/* Diseño editorial 3.0 aprobado: fondo institucional, navegación horizontal y
+   reglas finas. Solo presentación; las fuentes, escalas y filtros no cambian. */
+:root{--fondo-tablero:#242c50;--tinta:#f5f7fc;--acento:#9ed9fa;--regla:#829dbb;--superficie:#303f62;color-scheme:dark;background:#171f38;color:var(--tinta);font-family:Arial,Helvetica,sans-serif}
+body{display:block;background:#171f38}
+.reporte-viewport{margin:12px auto;max-width:calc(100% - 24px)}
+main{background:var(--fondo-tablero);box-shadow:0 2px 12px #0004}
+header,.territorial header{top:20px;left:28px;right:28px;height:72px;border-bottom:1px solid var(--regla)}
+header h1,.territorial header h1{display:flex;align-items:center;gap:22px;width:calc(100% - 430px);max-width:calc(100% - 430px);font-size:27px;font-weight:700;line-height:1.12}
+.marca-svih{font-size:42px;letter-spacing:1px;padding-right:22px;border-right:1px solid var(--regla)}
+header .eyebrow{display:block;position:absolute;top:44px;left:158px;font-size:15px;line-height:1.2;margin:0;color:#dce7f4}
+header .aviso-origen,main[data-vista=general] header .aviso-origen{display:none}
+.logo-institucional{top:-12px;right:0;width:410px;height:86px}
+.logo-institucional::after{display:none}
+main>aside{position:absolute;top:96px;left:28px;right:28px;width:auto;height:36px;padding:0;background:transparent;color:var(--tinta);display:flex;flex-direction:row;border-bottom:1px solid var(--regla);overflow:visible;z-index:20}
+aside>.marca{display:none}aside>nav{display:flex;flex:1;min-width:0;height:100%;align-items:stretch}
+nav a{flex:1;justify-content:center;gap:0;padding:6px 8px;margin:0;border-radius:0;font-size:12px;line-height:1.15;color:var(--tinta);border-bottom:3px solid transparent;text-align:center}
+nav a span{white-space:normal;line-height:1.15;overflow:visible;max-width:none}
+nav a.activo{background:#40577a;color:#fff;border-color:var(--acento);font-weight:700}
+nav a:hover{background:#344969}.nav-icon{display:none}
+.volver-tableros{flex:none;align-self:center;margin:0 0 0 8px;padding:5px 7px;background:transparent;border:1px solid #6f88a6;border-radius:3px;color:#e0eaf7;font-size:10px;white-space:nowrap}
+.volver-tableros span{font-size:14px}.volver-tableros:hover{background:#40577a}
+#fecha,.territorial #fecha,main[data-vista=general] #fecha{position:absolute;top:122px;right:0;margin:0;font-size:13px;font-weight:400;color:#e2ebf6;max-width:500px}
+.barra{top:137px;left:28px;right:540px;display:flex;align-items:center;gap:12px;margin:0;z-index:12;height:34px}
+.barra>label{display:block;font-size:13px}.barra>button{display:block;background:transparent;border:1px solid #6f88a6;color:#e2ebf6;border-radius:3px;font-size:11px;padding:5px 8px}
+.barra select,.filtros-territoriales select,.controles-comparador select,.controles-historicos select,summary{background:#242c50;color:#f5f7fc;border:1px solid #829dbb;border-radius:3px;box-shadow:none;padding:6px 10px;font-size:12px;min-height:30px}
+.barra select{width:255px}
+.pagina{top:224px;left:28px;right:28px;height:478px}
+.titulo-pagina,#titulo-vista{position:absolute;top:-43px;left:0;right:0;text-align:left;justify-content:flex-start;white-space:normal;font-size:25px;line-height:1.2;margin:0;font-weight:700;height:34px}
+.titulo-pagina:before,.titulo-pagina:after,#titulo-vista:before,#titulo-vista:after{display:none}
+footer{left:28px;right:28px;bottom:12px;display:flex;align-items:center;border-top:1px solid var(--regla);padding-top:8px;font-size:11px;min-height:24px}
+footer>p:first-of-type{display:block}
+.version-tablero{margin-left:auto;order:2;flex:none;font-size:10px;font-weight:400;color:#d3dfed;white-space:nowrap}
+.aviso#demo,.aviso-demo{top:auto;bottom:42px;right:28px;left:auto;max-width:900px;font-size:9px;line-height:1.2;background:var(--fondo-tablero);color:#fce5ac}
+.aviso#faltantes{top:174px;right:28px;max-width:600px;font-size:10px;z-index:30}
+.rotulo,.etiqueta,.tabla-definiciones th{background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--tinta);text-align:left;justify-content:flex-start;font-weight:600;font-size:12px;line-height:1.3;padding:5px 0;min-height:32px}
+.grafico-panel>.rotulo,.panel-mapa h3{border-top:1px solid var(--regla);font-family:Arial,Helvetica,sans-serif;text-align:left;background:transparent;font-size:14px;min-height:34px;font-weight:700;padding:7px 0;margin:0;flex:none}
+.grafico-panel{min-height:0}.interior{padding:5px 0;min-height:0}
+.numero-indicador,.valor,.cifras-genero strong{font-variant-numeric:tabular-nums;font-weight:600}
+.acento,.destacado>.valor,.epi .destacado>.valor,.tarjetas .destacado>.valor,.tratamiento-superior .numero-indicador,.perfil-resumen .numero-indicador,.instituciones>.total-instituciones,.tc-resumen strong,.resumen-historico strong{color:var(--acento)}
+.referencia-nacional{color:#b3d7f2;font-size:11px;white-space:normal;display:block;margin:3px 0 0}
+.leyenda{font-size:10px;line-height:1.3;gap:5px 9px}.nota,.sin-datos{color:#dce6f4;font-size:11px;line-height:1.35}
+table{color:#f3f6fc;font-size:11px;line-height:1.3}th,.tabla-definiciones th{background:#425777;color:#fff;font-family:Arial,Helvetica,sans-serif}th button{white-space:normal;padding:6px 5px;text-align:left}
+td,tr:nth-child(odd) td,.tabla-definiciones tr:nth-child(odd) td{background:transparent;color:#f3f6fc;border-bottom:1px solid #6a7d9b77;padding:5px;line-height:1.3}
+tr:nth-child(even) td{background:#ffffff09}.tabla-definiciones td{vertical-align:top}
+.tabla-scroll thead th{background:#425777}.paginacion{color:#bcd9f1}
+.mapa-interactivo,.mapa-interactivo>svg,.mapa-coropletico{background:#344768;border-color:#829dbb}
+.mapa-interactivo>svg rect:first-child{fill:#344768}
+.valor-pais-mapa{color:#dceaf8}
+.medidor-lineal{transform:none!important;flex:1;min-height:0}
+/* Portada nacional: contexto separado, cifra principal y resultado clínico asociado
+   a disponibilidad de información, sin interpretar el color como un umbral. */
+.pagina-principal{inset:0;height:768px}
+.pagina-principal #titulo-tarv{top:181px;left:28px;width:auto;font-size:28px;text-align:left}
+.pagina-principal>section:first-of-type{left:28px;right:340px;top:225px;height:113px;border-top:1px solid var(--regla);border-bottom:1px solid var(--regla)}
+.pagina-principal #titulo-epi{display:block;position:static;font-size:14px;line-height:1.2;margin:8px 0 3px}
+.epi{gap:14px}.tarjeta{text-align:left;display:flex;flex-direction:column;min-width:0}
+.epi .etiqueta{font-size:11px;height:34px;min-height:34px;order:1;font-weight:400;padding:2px 0}
+.epi .valor,.epi .destacado>.valor{font-size:25px;padding:0;order:0}
+.epi .spark{height:18px;width:85px;margin:0;order:2}.epi .referencia-nacional{position:absolute;right:0;top:23px;font-size:9px}
+.contenido{left:28px;right:28px;top:350px;height:334px;grid-template-columns:minmax(0,1fr) 284px;gap:28px}
+.tarjetas{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:88px 88px;gap:16px}
+.tarjetas .tarjeta{border-right:1px solid #829dbb77;padding-right:10px}
+.tarjetas .etiqueta{height:36px;min-height:36px;font-size:12px!important;order:1;font-weight:400;padding:3px 0}
+.tarjetas .valor,.tarjetas .destacado>.valor{font-size:29px;padding:3px 0;order:0}
+.tarjetas [data-campo=N_TARV]>.valor{font-size:43px;line-height:1}
+.detalles{grid-template-columns:1.4fr 1.35fr .8fr .8fr;margin-top:16px;gap:16px;align-items:start;border-top:1px solid var(--regla);padding-top:8px}
+.detalles .etiqueta{font-size:11px!important;height:auto;min-height:36px;font-weight:400}
+.detalles .valor{font-size:25px;padding:4px 0}.detalles>.perdida-seguimiento{margin-top:0}
+.perdida-seguimiento .etiqueta{font-size:10px!important;line-height:1.25}
+.supresion{min-height:0}.supresion>.valor{font-size:29px;padding:0;color:var(--acento)}
+.supresion>.intervalo{font-size:10px;line-height:1.35;white-space:normal}
+.supresion .cobertura{position:static;display:flex;font-size:10px;line-height:1.25;gap:6px;margin-top:6px}
+.cobertura strong,.cobertura strong.cobertura-parcial{background:transparent;color:var(--acento);padding:0;font-size:15px}
+.desglose{font-size:10px;gap:5px;padding:4px 0}.desglose strong{font-size:23px;color:var(--acento);font-weight:600}
+.panel-mapa{top:-125px;display:flex;flex-direction:column;height:459px;border-left:1px solid #829dbb77;padding-left:18px}
+.panel-mapa #mapa,.panel-mapa .mapa-interactivo{height:auto;flex:1;min-height:0}
+.panel-mapa #mapa{display:flex;flex-direction:column}.panel-mapa .mapa-interactivo{height:100%}
+.panel-mapa>p{display:block;font-size:9px;line-height:1.25;margin:3px 0}
+#mini-mapa{display:none}.notas-principal{left:28px;right:340px;bottom:43px;font-size:8px;font-weight:400;line-height:1.35}
+/* Perfil: resumen común a las seis categorías y tres columnas legibles. */
+.diseno-perfil{height:478px;grid-template-columns:1fr 1fr 1.1fr;grid-template-rows:70px 182px 194px;gap:16px;grid-template-areas:'resumen resumen resumen' 'genero localidades residencia' 'mediana edad residencia'}
+.perfil-resumen>.rotulo{display:none}.perfil-resumen .interior{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:center;padding:0;border-top:1px solid var(--regla);border-bottom:1px solid var(--regla)}
+.perfil-resumen .numero-indicador{position:static;font-size:39px;text-align:left;padding:0}
+.perfil-resumen .cifras-genero{position:static;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto;gap:14px;text-align:left}
+.cifras-genero small{font-size:11px;color:#dce6f4;font-weight:400}.cifras-genero strong{font-size:22px}
+.perfil-localidades .rotulo,.perfil-residencia .rotulo,.perfil-genero .rotulo,.perfil-mediana .rotulo,.perfil-edad .rotulo{font-family:Arial,Helvetica,sans-serif;font-size:13px;height:34px;min-height:34px}
+.perfil-localidades td{white-space:normal;font-size:11px}.perfil-localidades td:first-child{max-width:none}
+.perfil-mediana .interior{padding:0}.perfil-mediana svg rect{fill:#9ed9fa}
+.perfil-residencia .interior{overflow-y:auto;scrollbar-width:thin}
+/* Tratamiento: medidores rectos para comparar proporciones sin semicírculos. */
+.diseno-tratamiento{height:478px;grid-template-columns:repeat(3,minmax(0,1fr)) 225px 270px;grid-template-rows:60px 158px 232px;gap:14px}
+.tratamiento-superior .mini{grid-template-columns:minmax(0,1fr) 100px;gap:12px;align-items:center}
+.tratamiento-superior .rotulo{font-size:12px;line-height:1.3}.tratamiento-superior .numero-indicador{font-size:29px}
+.diseno-tratamiento>.dtg,.diseno-tratamiento>.biterapia,.diseno-tratamiento>.recomendado{margin:0}
+.dtg .rotulo,.biterapia .rotulo,.recomendado .rotulo{height:42px;min-height:42px;font-size:13px}
+.dtg .numero-indicador,.biterapia .numero-indicador,.recomendado .numero-indicador{font-size:31px;text-align:left;padding:0}
+.instituciones>.total-instituciones{font-size:16px;text-align:left;line-height:1.3;margin:0 0 8px}
+.notas-tratamiento{bottom:-24px;font-size:9px;width:auto;left:0;right:300px}
+.diseno-evolucion{height:478px;grid-template-rows:60px 205px 193px;gap:10px 20px}
+.evolucion-anual{margin-top:0}.evolucion-anual .interior,.evolucion-mensual .interior,.es-prep .profilaxis-anual .interior,.es-prep .profilaxis-mensual .interior{border:0}
+.diseno-laboratorio{height:478px;grid-template-rows:112px 338px;gap:20px 44px}
+.laboratorio-viral>.rotulo{left:0;width:250px;font-size:14px;top:0}.viral-cobertura{left:0;font-size:12px}.viral-valor{color:var(--acento)}
+.viral-cobertura strong,.cd4-cobertura strong{background:#40577a;color:#fff}
+.laboratorio-cd4 .rotulo{font-size:14px}.notas-laboratorio{left:0;bottom:-24px;font-size:9px}.notas-laboratorio p:first-child{color:#c8def3}
+.laboratorio-cd4 .leyenda{margin-top:8px;font-size:10px;justify-content:flex-start}.cd4-barra{margin-top:12px}
+.diseno-profilaxis{height:478px;grid-template-rows:230px 232px;gap:16px}
+.es-pep .profilaxis-edad{height:auto}.es-prep .profilaxis-anual{margin-top:0}
+.comparativo-grid{inset:0;grid-template-columns:310px 1fr;gap:24px}.selector-comparativo{margin:0}
+.comparativo-cuerpo{grid-template-columns:300px 1fr}.encabezado-selector,.titulo-comparativo{background:#40577a;color:#fff}
+.lista-indicadores label{padding:10px 4px}.titulo-comparativo{font-size:16px}
+.controles-historicos{left:0;right:0;top:0;grid-template-columns:280px minmax(0,1fr) 220px;gap:20px}
+.historico-grafico{left:0;top:58px;right:160px;height:415px}.resumen-historico{top:60px;bottom:0}
+.tabla-definiciones{height:414px;margin:0}.tabla-definiciones~.nota{margin:8px 0;font-size:11px}
+/* Hospitales y regiones usan el mismo sistema editorial y mantienen sus vistas. */
+#titulo-vista{top:181px;left:28px;right:28px}.filtros-territoriales{top:137px;left:28px;right:400px;grid-template-columns:340px 1fr;gap:20px;height:34px}
+.filtros-territoriales label{font-size:12px;gap:10px}.filtros-territoriales select{height:32px}
+main[data-ambito=provincial] #filtro-institucion select{width:100%}
+#vista-territorial,.territorial[data-vista=definiciones] #vista-territorial,.territorial[data-vista=regiones] #vista-territorial{top:224px;height:478px;left:28px;right:28px}
+.territorial-general{height:456px;grid-template-rows:86px 88px minmax(90px,1fr) 105px;gap:12px 18px}
+.territorial-tarjeta .numero-indicador{font-size:29px;text-align:left}.territorial-tarjeta .rotulo{font-size:12px!important;height:auto;min-height:36px}
+.territorial-tarjeta.acento .numero-indicador{color:var(--acento)}
+.tg-kpis>.territorial-tarjeta{border-right:1px solid #829dbb77;padding-right:10px}
+.tg-perdida{height:auto}.tg-notificados{height:90px}.tg-notificados .rotulo,.tg-confirmados .rotulo{height:auto;min-height:36px}
+.territorial-supresion .rotulo{max-width:none}.supresion-linea{gap:8px;flex-wrap:wrap}.supresion-linea strong{color:var(--acento);font-size:28px}
+.supresion-linea b,.supresion-linea b.completa{background:transparent;padding:0;color:var(--acento);font-size:19px}.supresion-linea small{font-size:10px}.ic-viral{font-size:11px}
+.perdida-linea strong{color:var(--acento)}
+.territorial-tratamiento{height:456px;grid-template-columns:230px 300px 300px minmax(0,1fr);grid-template-rows:58px 170px 200px;gap:14px 20px}
+.tt-resumen .rotulo{font-size:12px!important}.tt-dtg .numero-indicador,.tt-biterapia .numero-indicador{text-align:left;font-size:31px}
+.tt-instituciones .total-instituciones{color:var(--acento);font-size:17px;text-align:left}
+.territorial .tt-meses>.rotulo,.territorial .tt-drogas>.rotulo,.territorial .tt-flujo>.rotulo{height:40px;min-height:40px;font-size:13px}
+.tt-flujo{width:100%}.territorial-laboratorio{height:456px;grid-template-rows:76px minmax(0,1fr);gap:18px 40px}
+.tl-viral .ic-viral{font-size:13px;max-width:none}.tl-viral .supresion-linea strong{color:var(--acento)}
+.territorial-prevencion{height:456px;grid-template-rows:184px 26px 218px;gap:14px 20px}
+.tp-separador{font-size:23px;justify-content:flex-start}.tp-separador:before,.tp-separador:after{display:none}
+.tc-grafico,.territorial[data-vista=regiones] .tc-grafico{height:410px;left:0;top:62px;right:160px}
+.tc-resumen{top:90px;max-height:360px}.controles-comparador{margin:0;gap:20px}
+.territorial .tabla-definiciones{height:430px}
+/* En pantallas chicas no se reduce un lienzo entero: navegación desplazable y
+   bloques apilados mantienen filtros, avisos, tablas y versión accesibles. */
+@media(max-width:699px){
+  .reporte-viewport{margin:0;max-width:none}main{padding:16px 12px}
+  header,.territorial header{position:relative;inset:auto;height:auto;padding-bottom:12px}
+  header h1,.territorial header h1{width:100%;max-width:none;font-size:21px;gap:12px}
+  .marca-svih{font-size:30px;padding-right:12px}.logo-institucional{position:relative;inset:auto;width:min(100%,410px);height:auto;aspect-ratio:410/90;margin-bottom:10px;order:-1}
+  header .eyebrow{position:static;margin:6px 0 0;font-size:13px}#fecha,.territorial #fecha,main[data-vista=general] #fecha{position:static;font-size:12px;margin-top:10px}
+  main>aside{position:relative;inset:auto;height:auto;display:block;margin:8px 0 12px;padding:0;z-index:20}
+  aside>nav{height:auto;overflow-x:auto;scrollbar-width:thin}nav a{flex:none;font-size:12px;padding:10px 12px;min-width:80px;max-width:170px}nav a span{max-width:none;white-space:normal}
+  .volver-tableros{display:inline-flex;margin:8px 0;font-size:11px}
+  .barra{position:relative;inset:auto;height:auto;margin:10px 0;flex-wrap:wrap}.barra select{max-width:100%;flex:1}
+  .pagina,.pagina-principal{position:relative;inset:auto;height:auto}.titulo-pagina,#titulo-vista{position:static;height:auto;font-size:23px;margin:16px 0}
+  .pagina-principal #titulo-tarv{position:static;font-size:26px;margin:18px 0;width:auto}
+  .pagina-principal>section:first-of-type,.pagina-principal>section:nth-of-type(2){position:relative;inset:auto;height:auto}
+  .pagina-principal #titulo-epi{margin:10px 0}.epi{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:8px 0}
+  .contenido{position:static;display:block;height:auto}.tarjetas{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;gap:16px}
+  .tarjetas .tarjeta{min-height:95px}.tarjetas .etiqueta{height:auto;min-height:36px}.tarjetas .valor{white-space:normal}
+  .detalles{grid-template-columns:1fr;gap:18px;margin:18px 0}.detalles .etiqueta{min-height:0;font-size:13px!important}
+  .panel-mapa{top:0;height:400px;border:0;padding:0;margin-top:20px}.notas-principal{position:static;margin:16px 0;font-size:10px}
+  .diseno-perfil,.diseno-tratamiento,.diseno-evolucion,.diseno-laboratorio,.diseno-profilaxis,.territorial-general,.territorial-tratamiento,.territorial-laboratorio,.territorial-prevencion{display:flex;flex-direction:column;height:auto;gap:20px}
+  .perfil-resumen .interior{display:block;padding:12px 0}.perfil-resumen .cifras-genero{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+  .perfil-resumen .numero-indicador{font-size:36px}.perfil-resumen{min-height:260px}.perfil-genero,.perfil-mediana,.perfil-edad{height:310px}.perfil-localidades{height:280px}.perfil-residencia{height:540px}
+  .dtg,.biterapia,.recomendado{height:175px}.esquemas,.instituciones{height:350px}.meses,.drogas,.lineas{height:290px}.tratamiento-superior{display:block}.tratamiento-superior .mini{min-height:90px}
+  .notas-tratamiento,.notas-laboratorio{position:static;font-size:11px;margin:14px 0}
+  .laboratorio-viral{height:145px}.laboratorio-cd4{height:210px}.laboratorio-cd4 .interior{padding-left:0;padding-top:60px}.laboratorio-viral>.rotulo{width:55%;font-size:12px}.viral-ic{font-size:12px}.viral-cobertura{gap:8px}.viral-cobertura strong{font-size:15px}
+  .comparativo-grid{position:static;display:flex;flex-direction:column;height:auto}.selector-comparativo{height:340px}.comparativo-cuerpo{display:flex;flex-direction:column}.comparativo-mapa{height:460px;flex:none}.comparativo-barras{height:600px;flex:none}
+  .controles-historicos{position:static;display:flex;height:auto;gap:10px}.historico-grafico{position:static;height:420px}.resumen-historico{position:static;width:auto;display:flex;flex-wrap:wrap}
+  .tabla-definiciones,.territorial .tabla-definiciones{height:450px}.tabla-definiciones table{min-width:700px}
+  .filtros-territoriales{position:static;display:flex;height:auto;gap:10px}.filtros-territoriales label{font-size:13px;min-height:38px;flex-wrap:wrap}.filtros-territoriales select{width:100%}
+  #vista-territorial,.territorial[data-vista=definiciones] #vista-territorial,.territorial[data-vista=regiones] #vista-territorial{position:relative;inset:auto;height:auto}
+  .tg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.tg-perdida,.tg-notificados{height:auto;min-height:120px}.territorial-tarjeta .rotulo{font-size:13px!important}
+  .territorial .tt-flujo{height:320px}.tl-viral{height:auto;min-height:160px}.tl-viral>.rotulo{max-width:none;width:auto}.tl-viral>.interior{display:block}.tl-viral .ic-viral{font-size:12px}
+  .tp-separador{margin:10px 0}.tc-grafico,.territorial[data-vista=regiones] .tc-grafico{position:static;height:430px}.tc-resumen{position:static;max-height:none}
+  .aviso#demo,.aviso-demo,.aviso#faltantes{position:static;max-width:none;font-size:10px;margin:14px 0}
+  footer{position:static;margin-top:18px;padding-top:10px;gap:12px;font-size:10px}.version-tablero{font-size:10px}
+}

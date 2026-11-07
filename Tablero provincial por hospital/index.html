@@ -4,7 +4,8 @@
   <link rel="icon" href="recursos/icono.svg" type="image/svg+xml"/>
   <link rel="stylesheet" href="recursos/tablero.css"/>
   <link rel="stylesheet" href="recursos/territorial.css"/>
-  <link rel="stylesheet" href="recursos/marca-institucional.css"/></head><body>
+  <link rel="stylesheet" href="recursos/marca-institucional.css"/>
+  <link rel="stylesheet" href="recursos/editorial.css"/></head><body>
   <aside>
     <div class="marca">SVIH</div>
     <nav></nav>
@@ -15,7 +16,11 @@
   </aside>
   <main class="territorial">
     <header>
-      <h1>Tablero de prevención combinada de VIH provincial por hospital</h1>
+      <h1>
+        <span class="marca-svih">SVIH</span>
+        <span>Prevención combinada de VIH</span>
+      </h1>
+      <p class="eyebrow">Provincial por hospital · Argentina</p>
       <p class="aviso-origen">Este tablero se genera a partir de información aportada por los equipos de salud y laboratorios de las 24 jurisdicciones del país en el SISA</p>
       <p id="fecha">Fecha: 31/10/2026</p>
       <div class="logo-institucional">
@@ -36,6 +41,7 @@
     <div id="vista-territorial"></div>
     <p class="aviso-demo"></p>
     <footer>
+      <span class="version-tablero">Versión 3.0 AA</span>
       <p>Fuente: SVIH - SISA</p>
     </footer>
   </main>
@@ -618,6 +624,6 @@
 ]}}</script>
   <script src="recursos/mapas.js"></script>
   <script src="recursos/indicadores.js"></script>
-  <script src="recursos/paginas.js"></script>
-  <script src="recursos/territorial.js"></script>
+  <script src="recursos/paginas.js?v=3.0-AA"></script>
+  <script src="recursos/territorial.js?v=3.0-AA"></script>
 </body></html>

@@ -20,21 +20,21 @@
     ["Sifilis_2024", "Tasa de sífilis por 100 mil · 2024", 1, 1, false, "sifilis"]
   ];
   const tarjetas = [
-    ["N_TARV", "N° de personas en TARV"], ["N_TARV_hace_1_anio", "N° de personas en TARV hace 12 meses"],
-    ["Variación_TARV", "Variación interanual de las personas en TARV", 1, 1, true],
-    ["N_TARV_criterio_OMS", "N° de personas en TARV según guías ONUSIDA"],
+    ["N_TARV", "Personas en TARV"], ["N_TARV_hace_1_anio", "Hace 12 meses"],
+    ["Variación_TARV", "Variación interanual", 1, 1, true],
+    ["N_TARV_criterio_OMS", "TARV · criterio ONUSIDA"],
     ["N_instituciones_disp_TARV", "Instituciones que dispensan TARV"],
-    ["dispensa_TARV_2026", "N° de personas con al menos una dispensa este año"],
-    ["Anio_1er_TARV_2026", "N° de personas con dispensa este año sin dispensas en años previos"],
-    ["N_VIH_seguimiento_2026", "N° de personas con VIH con alguna prestación en 2026"],
-    ["Porc_en_TARV", "% de personas en TARV por provincia de atención", 1, 1, true],
-    ["Prop_residentes", "% de personas en TARV por provincia de residencia", 1, 1, true]
+    ["dispensa_TARV_2026", "Al menos una dispensa este año"],
+    ["Anio_1er_TARV_2026", "Primera dispensa registrada este año"],
+    ["N_VIH_seguimiento_2026", "Alguna prestación en 2026"],
+    ["Porc_en_TARV", "Por provincia de atención", 1, 1, true],
+    ["Prop_residentes", "Por provincia de residencia", 1, 1, true]
   ];
   const detalles = [
-    ["Prop_indetectables", "% de personas con carga viral indetectable", 1, 1, true],
+    ["Prop_indetectables", "Carga viral indetectable", 1, 1, true],
     ["revincular", "Personas que retiraron TARV los últimos 12 meses, ya no lo hacen, están vivas y no tienen otra cobertura social"],
-    ["Prop_notificados", "% de personas en TARV notificadas en el SNVS", 1, 1, true],
-    ["Prop_caso_confirmado", "% de personas en TARV confirmadas en el SNVS", 1, 1, true]
+    ["Prop_notificados", "Notificadas en SNVS", 1, 1, true],
+    ["Prop_caso_confirmado", "Confirmadas en SNVS", 1, 1, true]
   ];
   function tarjeta(config, fila, provincia) {
     const [campo, titulo, dec = 0, escala = 1, porcentaje = false, serie] = config;
@@ -87,7 +87,7 @@
       const intervalo = document.createElement("div"); intervalo.className = "intervalo";
       intervalo.textContent = `IC 95%: ${formato(fila.Prop_indetect_IC95_inf,1,1,true)} – ${formato(fila.Prop_indetect_IC95_sup,1,1,true)}`;
       const cobertura = document.createElement("div"); cobertura.className = "subtitulo cobertura";
-      const disponibilidad = document.createElement("span"); disponibilidad.textContent = "(disponibilidad de información)";
+      const disponibilidad = document.createElement("span"); disponibilidad.textContent = "Información de carga viral";
       const badge = document.createElement("strong"); badge.textContent = formato(fila.Prop_con_info_cv,1,1,true);
       if(fila.Prop_con_info_cv<75) badge.classList.add("cobertura-parcial");
       cobertura.append(disponibilidad,badge);
