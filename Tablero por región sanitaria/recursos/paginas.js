@@ -1,7 +1,7 @@
 "use strict";
 (() => {
   const d = JSON.parse(document.getElementById("datos-tablero").textContent), t = d.tablas;
-  const $ = id => document.getElementById(id), colores = ["#4285f4","#f6a04d","#ae7ce5","#b5c956","#28b4c8","#edcd38","#e27bb4"];
+  const $ = id => document.getElementById(id), colores = ["#9ed9fa","#f1ac60","#b2a0dd","#86bbc0","#65b8cb","#d5cc8e","#d6a3ca"];
   const f = (v,n=0) => Number.isFinite(v) ? new Intl.NumberFormat("es-AR",{maximumFractionDigits:n,minimumFractionDigits:n}).format(v) : "—";
   const el = (tag,cl,text) => { const e=document.createElement(tag); if(cl)e.className=cl; if(text!==undefined)e.textContent=text; return e; };
   const ns="http://www.w3.org/2000/svg", sv=(tag,attrs={},text)=>{const e=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;return e;};
@@ -14,8 +14,8 @@
   const provincia=()=>$("provincia").value;
   const filas=id=>(t[id]||[]).filter(r=>r.Provincia_atencion===provincia());
   // Editorial 3.0: navegación dentro del lienzo para escalar junto al contenido, sin restar una barra lateral.
-  const main=document.querySelector("main"),viewport=el("div","reporte-viewport");main.querySelector("header").after(document.querySelector("aside"));main.before(viewport);viewport.append(main);
-  function dimensionar(){const movil=innerWidth<700,ancho=innerWidth-32,escala=movil?1:Math.min(1,ancho/1366);main.style.transform=movil?"none":`scale(${escala})`;viewport.style.width=movil?"100%":`${1366*escala}px`;viewport.style.height=movil?"auto":`${768*escala}px`;}
+  const main=document.querySelector("main"),viewport=el("div","reporte-viewport");main.querySelector("header").after(document.querySelector("aside"));main.querySelector("footer").append(document.querySelector(".volver-tableros"));main.before(viewport);viewport.append(main);
+  function dimensionar(){const movil=innerWidth<700,ancho=innerWidth-32,escala=movil?1:Math.min(ancho/1366,Math.max(1,innerHeight-24)/768);main.style.transform=movil?"none":`scale(${escala})`;viewport.style.width=movil?"100%":`${1366*escala}px`;viewport.style.height=movil?"auto":`${768*escala}px`;}
   dimensionar();
   const general=()=>d.general.find(r=>r.Provincia_atencion===provincia())||{};
   const vacio=host=>host.append(el("p","sin-datos","Sin datos disponibles para esta selección."));
@@ -49,7 +49,7 @@
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?110:anualPrep?56:anualPep?20:serie?32:12;
     const perfilMediana=!!host.closest('.perfil-mediana');
-    const W=Math.max(200,host.clientWidth),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*18+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=22,bottom=horizontal?26:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
+    const W=Math.max(200,host.clientWidth),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=22,bottom=horizontal?26:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
     const bruto=Math.max(0,...a.map(r=>r[y])),pot=10**Math.floor(Math.log10(bruto/4||1)),salto=[1,2,2.5,5,10].find(z=>z*pot>=bruto/4)*pot;
     const max=pct?100:Math.ceil(bruto/(salto||1))*(salto||1),min=Math.min(0,...a.map(r=>r[y]));
     const minDato=Math.min(...a.map(r=>r[y])),estricta=log&&minDato>0&&bruto/minDato>=10,simetrica=log&&minDato<=0;
@@ -69,7 +69,7 @@
         const color=cs[(serie?j:!horizontal&&xs.length<=8?i:0)%cs.length];
         const unica=!horizontal&&a.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
         const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
-        if(xs.length<=8||horizontal){const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+4):unica?left+iw/2:left+i*step+step*.1+(j+.45)*band,ty=horizontal?top+i*step+step*.1+(j+.65)*band:pos-5;if(horizontal&&host.closest('.perfil-residencia,.comparativo-barras'))s.append(sv('rect',{x:tx-2,y:ty-10,width:texto.length*5.7+4,height:14,rx:2,fill:'#fc5927',class:'etiqueta-barra'}));s.append(sv("text",{x:tx,y:ty,fill:"white","font-size":horizontal?10:11,"text-anchor":horizontal?"start":"middle"},texto));}
+        if((xs.length<=8||horizontal)&&!(horizontal&&band<11)){const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+4):unica?left+iw/2:left+i*step+step*.1+(j+.45)*band,ty=horizontal?top+i*step+step*.1+(j+.65)*band:pos-5;if(horizontal&&host.closest('.perfil-residencia,.comparativo-barras'))s.append(sv('rect',{x:tx-2,y:ty-10,width:texto.length*5.7+4,height:14,rx:2,fill:'#fc5927',class:'etiqueta-barra'}));s.append(sv("text",{x:tx,y:ty,fill:"white","font-size":horizontal?10:11,"text-anchor":horizontal?"start":"middle"},texto));}
       });if(path.length)s.append(sv("polyline",{points:path.join(" "),fill:"none",stroke:colores[j%7],"stroke-width":2}));
     });host.append(s);if(serie)leyenda(host,ss,cs);if(anualTarv)nota(host,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado.");if(log)host.dataset.escala=estricta?"logaritmica":simetrica?"simetrica":"lineal";
   }
@@ -115,7 +115,7 @@
     const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"grafico-svg",role:"img","aria-label":"Flujos de situación de tratamiento"}),sy={},ty={},paleta=['#bd79aa','#b09a37','#989354','#8c8d3c','#6dbac4'];let y=10;sources.forEach(v=>{sy[v]=y;s.append(sv("rect",{x:L,y,width:12,height:sums('source',v)*scale,fill:v==='Alta'?'#7873ba':'#c1a340'}));s.append(sv("text",{x:L+16,y:y+12,fill:"white","font-size":10},v==='En_TARV'?'En TARV hace un año':v));s.append(sv("text",{x:L-5,y:y+Math.max(9,sums('source',v)*scale/2),"text-anchor":"end",fill:"white","font-size":11,class:"valor-nodo"},f(sums('source',v))));y+=sums('source',v)*scale+13});y=10;targets.forEach((v,i)=>{ty[v]=y;s.append(sv("rect",{x:R,y,width:12,height:sums('target',v)*scale,fill:paleta[i%5]}));s.append(sv("text",{x:R-5,y:y+10,"text-anchor":"end",fill:"white","font-size":9},v==='En TARV'?'En TARV ahora':v));s.append(sv("text",{x:R+16,y:y+Math.max(9,sums('target',v)*scale/2),fill:"white","font-size":11,class:"valor-nodo"},f(sums('target',v))));y+=sums('target',v)*scale+13});rows.forEach(r=>{const h=r.value*scale,path=sv("path",{d:`M${L+12} ${sy[r.source]} C${W*.4} ${sy[r.source]},${W*.6} ${ty[r.target]},${R} ${ty[r.target]} L${R} ${ty[r.target]+h} C${W*.6} ${ty[r.target]+h},${W*.4} ${sy[r.source]+h},${L+12} ${sy[r.source]+h} Z`,fill:paleta[targets.indexOf(r.target)%5],'fill-opacity':.55,class:'cinta-sankey','data-source':r.source,'data-target':r.target,'data-inicio':sy[r.source],'data-fin':ty[r.target],'data-alto':h});path.append(sv('title',{},`${r.source} → ${r.target}: ${f(r.value)}`));s.prepend(path);if(r.source==='En_TARV'&&r.target==='En TARV')s.append(sv('text',{x:(L+12+R)/2,y:(sy[r.source]+ty[r.target]+h)/2,'text-anchor':'middle','dominant-baseline':'middle',fill:'white','font-size':12,'font-weight':700,class:'valor-cinta-principal'},f(r.value)));sy[r.source]+=h;ty[r.target]+=h});host.append(s);
   }
   // Motor visual compartido; las vistas territoriales tienen filtros y contratos propios.
-  window.SVIH_UI={el,sv,panel,tabla,barras,medidor,flujo,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion};
+  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion};
   if(d.ambito&&d.ambito!=="nacional"){window.addEventListener("resize",dimensionar);return;}
   const home=el("div","pagina pagina-principal");home.id="vista-general";
   document.querySelectorAll("main>section").forEach(s=>home.append(s));document.querySelector("main").insertBefore(home,document.querySelector("footer"));
@@ -140,28 +140,78 @@
   };
   const nav=document.querySelector("nav");nav.replaceChildren();paginas.forEach(([id,nombre])=>{const a=el("a"),[color,dibujo]=iconos[id],icono=sv("svg",{viewBox:"0 0 24 24",class:"nav-icon","aria-hidden":"true",fill:"none",stroke:color,"stroke-width":1.8,"stroke-linejoin":"round","stroke-linecap":"round"});icono.style.background=color+'18';icono.append(sv("path",{d:dibujo}));a.append(icono,el("span",null,nombre));a.href="#"+id;a.dataset.pagina=id;nav.append(a);});
   const tarjetasTotal=(host,items)=>items.forEach(([nombre,v,pct])=>{const p=panel(host,nombre,"mini");p.append(el("div","numero-indicador",f(v,pct?1:0)+(pct?"%":"")));});
+  // Composición de las maquetas aprobadas, con datos del contrato original.
+  function tablaEditorial(host, datos, cols, limite = 5) {
+    if(host.classList.contains("tabla-definiciones"))return tabla(host,datos,cols,limite);
+    if (!datos.length) return vacio(host);
+    const clave = cols[1]?.[0] || cols[0][0];
+    const orden = datos.slice().sort((a,b) => numeric(a[clave]) && numeric(b[clave]) ? b[clave]-a[clave] : String(b[clave]??'').localeCompare(String(a[clave]??''),'es'));
+    const vista = el('div','tabla-editorial-previa');
+    host.append(vista);
+    tabla(vista, orden.slice(0,limite), cols);
+    vista.querySelector('.paginacion')?.remove();
+    vista.querySelector('.abrir-busqueda')?.remove();
+    vista.querySelectorAll('td:first-child').forEach(td => td.title=td.textContent);
+    const abrir = el('button','ver-completo',`${f(datos.length)} registros · ver tabla completa`);
+    abrir.type='button';host.append(abrir);
+    abrir.onclick=()=>{
+      const modal=el('dialog','editorial-dialog'),cabecera=el('div','dialog-cabecera');
+      const titulo=el('h2',null,host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa');
+      titulo.id='titulo-tabla-completa';modal.setAttribute('aria-labelledby',titulo.id);
+      const cerrar=el('button',null,'Cerrar');cerrar.type='button';cerrar.onclick=()=>modal.close();
+      cabecera.append(titulo,cerrar);const cuerpo=el('div','dialog-tabla');modal.append(cabecera,cuerpo);document.body.append(modal);
+      tabla(cuerpo,datos,cols);modal.addEventListener('close',()=>modal.remove());modal.showModal();
+    };
+  }
+  function medianaEditorial(host, datos) {
+    const a=datos.filter(r=>numeric(r.Mediana_edad));if(!a.length)return vacio(host);
+    const W=Math.max(320,host.clientWidth),H=Math.max(120,host.clientHeight),L=106,R=72,T=9,B=30,max=Math.max(60,Math.ceil(Math.max(...a.map(r=>r.Mediana_edad))/10)*10),iw=W-L-R,ih=H-T-B;
+    const s=sv('svg',{viewBox:`0 0 ${W} ${H}`,class:'grafico-svg',role:'img','aria-label':'Mediana de edad según género, en años'});
+    for(let v=0;v<=max;v+=10){const x=L+v/max*iw;s.append(sv('line',{x1:x,y1:T,x2:x,y2:H-B,stroke:'#ffffff20'}),sv('text',{x,y:H-16,fill:'white','font-size':12,'text-anchor':'middle'},String(v)));}
+    a.forEach((r,i)=>{const y=T+(i+.5)*ih/a.length,x=L+r.Mediana_edad/max*iw;
+      s.append(sv('text',{x:L-12,y:y+4,fill:'white','font-size':13,'text-anchor':'end'},r.Genero),sv('line',{x1:L,y1:y,x2:x,y2:y,stroke:'#9ed9fa','stroke-width':2}));
+      const punto=sv('circle',{cx:x,cy:y,r:5,fill:'#9ed9fa','data-valor':r.Mediana_edad});punto.append(sv('title',{},`${r.Genero}: ${f(r.Mediana_edad)} años`));s.append(punto,sv('text',{x:x+14,y:y+4,fill:'white','font-size':13,'font-weight':600},`${f(r.Mediana_edad)} años`));
+    });host.append(s);
+  }
+  function edadEditorial(host, datos) {
+    const a=datos.filter(r=>numeric(r.Porcentaje)&&r.Porcentaje>=0);if(!a.length)return vacio(host);
+    const grupos=['Mujer','Mujer trans','Varón','Varón trans'],edades=uniq(a.map(r=>r.Grupo_edad)),paleta=['#d9eaf6','#a9d4ef','#79bced','#4ba4e9','#75c3ca','#b4dcd7','#edf2f8'];
+    const W=Math.max(320,host.clientWidth),H=Math.max(100,host.clientHeight-30),L=100,T=8,B=26,iw=W-L-10,ih=H-T-B,s=sv('svg',{viewBox:`0 0 ${W} ${H}`,class:'grafico-svg',role:'img','aria-label':'Porcentajes por género y grupo de edad'});
+    grupos.forEach((g,i)=>{const y=T+i*ih/4;let acumulado=0;s.append(sv('text',{x:L-9,y:y+19,fill:'white','font-size':13,'text-anchor':'end'},g));
+      edades.forEach((edad,j)=>{const r=a.find(r=>r.Genero===g&&r.Grupo_edad===edad);if(!r)return;const rect=sv('rect',{x:L+acumulado/100*iw,y:y+3,width:r.Porcentaje/100*iw,height:20,fill:paleta[j%paleta.length],'data-valor':r.Porcentaje});rect.append(sv('title',{},`${g} · ${edad}: ${f(r.Porcentaje,1)}%`));s.append(rect);acumulado+=r.Porcentaje;});
+    });[0,20,40,60,80,100].forEach(v=>s.append(sv('text',{x:L+v/100*iw,y:H-4,fill:'white','font-size':11,'text-anchor':'middle'},v+'%')));host.append(s);leyenda(host,edades,paleta);
+  }
   function perfil(host){
-    const g=el("div","diseno-perfil");host.append(g);
-    const resumen=panel(g,"N° de personas en TARV","perfil-resumen");resumen.append(el("div","numero-indicador acento",f(general().N_TARV)));const cifras=el("div","cifras-genero");
-    const grupos=[["Varones",["Varón CIS","Varón cis","Varón"]],["Varones trans",["Varón trans"]],["Otros",["Otros","Otro"]],["Mujeres",["Mujer CIS","Mujer cis","Mujer"]],["Mujeres trans",["Mujer trans"]],["Desconocido",["Desconocido","SD"]]];
-    grupos.forEach(([nombre,aliases])=>{const r=filas("genero").find(r=>aliases.includes(r.Genero)),c=el("div");c.append(el("small",null,nombre),el("strong",null,f(r?.Casos)));cifras.append(c)});resumen.append(cifras);
-    tabla(panel(g,"Residencia de las personas en TARV","perfil-localidades"),participacion(filas("localidades"),"Cantidad"),[["Localidad_residencia","Localidad"],["Cantidad","Cantidad"],["participacion","%",1,true]],5);
-    const residencia=panel(g,"Personas en TARV por jurisdicción de residencia","perfil-residencia");residencia.dataset.excepcion="nacional";barras(residencia,(t.residencia||[]).filter(r=>!r.Prov_residencia.startsWith("País" )).sort((a,b)=>b.Porcentaje-a.Porcentaje).map(r=>({...r,Prov_residencia:r.Prov_residencia.replace(/, Argentina$/,"")})),"Prov_residencia","Porcentaje",null,{horizontal:true,formato:v=>f(v,1)+"%"});
-    dona(panel(g,"% de personas en TARV según género","perfil-genero"),filas("genero"),"Genero","Casos","Porcentaje");
-    const orden=["Mujer CIS","Varón CIS","Mujer trans","Varón trans"],adultos=r=>orden.includes(r.Genero);
-    barras(panel(g,"Mediana de edad de personas en TARV según género","perfil-mediana"),filas("mediana").filter(adultos).sort((a,b)=>orden.indexOf(a.Genero)-orden.indexOf(b.Genero)).map(r=>({...r,Genero:r.Genero.replace(" CIS","")})),"Genero","Mediana_edad");
-    apiladas(panel(g,"Distribución por género y edad","perfil-edad"),filas("edad").filter(adultos).map(r=>({...r,Genero:r.Genero.replace(" CIS","")})),"Genero","Grupo_edad","Porcentaje");
+    const g=el('div','diseno-perfil');host.append(g);
+    const resumen=panel(g,'Personas en TARV','perfil-resumen'),hero=el('div','perfil-total');hero.append(el('strong',null,f(general().N_TARV)),el('span',null,'personas en TARV'));resumen.append(hero);
+    const grupos=[['Varones',['Varón CIS','Varón cis','Varón']],['Mujeres',['Mujer CIS','Mujer cis','Mujer']],['Mujeres trans',['Mujer trans']],['Varones trans',['Varón trans']],['Otros',['Otros','Otro']],['Sin información',['Desconocido','SD']]];
+    const cifras=el('div','cifras-genero');grupos.forEach(([nombre,aliases])=>{const r=filas('genero').find(r=>aliases.includes(r.Genero)),c=el('div');c.append(el('small',null,nombre),el('strong',null,f(r?.Casos)));cifras.append(c)});resumen.append(cifras);
+    const composicion=panel(g,'Distribución por género','perfil-genero'),ring=el('div','genero-ring'),lista=el('div','genero-leyenda');composicion.append(ring,lista);dona(ring,filas('genero'),'Genero','Casos','Porcentaje');ring.querySelector('.leyenda')?.remove();
+    const dibujo=ring.querySelector('svg');if(dibujo){dibujo.querySelectorAll('text').forEach(e=>e.remove());dibujo.append(sv('text',{x:150,y:118,'text-anchor':'middle',fill:'white','font-size':27,'font-weight':700},f(general().N_TARV)),sv('text',{x:150,y:139,'text-anchor':'middle',fill:'white','font-size':12},'personas'));}
+    const paleta=['#9ed9fa','#f1ac60','#b2a0dd','#75c3ca','#bfdceb','#edf2f8'];
+    grupos.forEach(([nombre,aliases],i)=>{const r=filas('genero').find(r=>aliases.includes(r.Genero)),linea=el('div'),muestra=el('i');muestra.style.background=paleta[i];linea.append(muestra,el('span',null,nombre),el('strong',null,f(r?.Casos)),el('span',null,numeric(r?.Porcentaje)?f(r.Porcentaje,1)+'%':'—'));lista.append(linea)});
+    dibujo?.querySelectorAll('circle').forEach((c,i)=>c.setAttribute('stroke',paleta[i%paleta.length]));
+    tablaEditorial(panel(g,'Residencia de las personas en TARV','perfil-localidades'),participacion(filas('localidades'),'Cantidad'),[['Localidad_residencia','Localidad'],['Cantidad','Personas'],['participacion','%',1,true]],5);
+    const residencia=panel(g,'Jurisdicción de residencia','perfil-residencia');residencia.dataset.excepcion='nacional';
+    const residentes=(t.residencia||[]).filter(r=>!r.Prov_residencia.startsWith('País')).sort((a,b)=>b.Porcentaje-a.Porcentaje).map(r=>({...r,Prov_residencia:r.Prov_residencia.replace(/, Argentina$/,'')}));
+    barras(residencia,residentes,'Prov_residencia','Porcentaje',null,{horizontal:true,formato:v=>f(v,1)+'%'});
+    const ver=el('button','ver-completo','Ver todas las jurisdicciones');ver.type='button';ver.onclick=()=>{residencia.scrollTop=residencia.scrollHeight};residencia.parentElement.append(ver);
+    const orden=['Mujer CIS','Varón CIS','Mujer trans','Varón trans'],adultos=r=>orden.includes(r.Genero);
+    medianaEditorial(panel(g,'Mediana de edad según género','perfil-mediana'),filas('mediana').filter(adultos).sort((a,b)=>orden.indexOf(a.Genero)-orden.indexOf(b.Genero)).map(r=>({...r,Genero:r.Genero.replace(' CIS','')})));
+    edadEditorial(panel(g,'Distribución por género y edad','perfil-edad'),filas('edad').filter(adultos).map(r=>({...r,Genero:r.Genero.replace(' CIS','')})));
   }
   function tratamiento(host){
-    const a=filas("tratamiento")[0]||{},g=el("div","diseno-tratamiento");host.append(g);
-    const superior=el("div","tratamiento-superior");g.append(superior);tarjetasTotal(superior,[["N° de personas en TARV",general().N_TARV],["Personas en TARV que ya deberían haber vuelto a retirar medicación",a.Porc_caducados,true]]);
-    [["Esquemas basados en DTG","Prop_DTG_tto","N_DTG_tto","dtg"],["Biterapia (DTG/3TC o DTG/DRV800)","Prop_biterapia","Biterapia","biterapia"],["Primera línea con tratamientos de primera elección","Porc_recomendado","N_recomendado","recomendado"]].forEach(([n,p,v,cl])=>medidor(panel(g,n,cl),a[p],a[v]));
-    tabla(panel(g,"Principales esquemas","esquemas"),filas("esquemas"),[["drogas","Esquema"],["cantidad","N"],["cantidad_p","%",1,true]],6);
-    const inst=panel(g,"Personas en TARV por institución","instituciones");const totalInstituciones=el("p","nota total-instituciones",`Instituciones que dispensan TARV: ${f(general().N_instituciones_disp_TARV)}`);inst.parentElement.prepend(totalInstituciones);tabla(inst,participacion(d.mapa.filter(r=>r.Provincia_atencion===provincia()),"cantidad"),[["nombre_institucion","Institución"],["cantidad","N"],["participacion","%",1,true]],9);
-    barras(panel(g,"Meses de medicación · última entrega","meses"),["1","2","3_mas"].map((k,i)=>({mes:["1 mes","2 meses","3 meses o más"][i],valor:a["Prop_TARV_"+k.replace("3_mas","3_mas")+(k==="1"||k==="2"?"_mes":"")]})),"mes","valor",null,{pct:true});
-    barras(panel(g,"Personas en TARV por fármaco","drogas"),["XTC","DTG","DRV800","RAL","EFV","AZT","NVP"].map(k=>({droga:k,valor:a["Prop_"+k+"_tto"]})),"droga","valor",null,{pct:true});
-    barras(panel(g,"Líneas de tratamiento TARV en 15 años o más","lineas"),[1,2,3].map(k=>({linea:k+"ª línea",valor:a["Porc_tto_"+k]})),"linea","valor",null,{pct:true});
-    host.append(el('p','notas-tratamiento','(*) Indicador afectado por demora en carga de dispensas de TARV en las farmacias de los hospitales.'));
+    const a=filas('tratamiento')[0]||{},g=el('div','diseno-tratamiento');host.append(g);
+    const superior=el('div','tratamiento-superior');g.append(superior);
+    tarjetasTotal(superior,[['Personas en TARV',general().N_TARV],['Ya deberían haber retirado nuevamente medicación',a.Porc_caducados,true],['Instituciones que dispensan TARV',general().N_instituciones_disp_TARV]]);
+    superior.children[1].append(el('small','nota-carga','Puede estar afectado por demoras de carga'));
+    [['Esquemas basados en DTG','Prop_DTG_tto','N_DTG_tto','dtg'],['Biterapia','Prop_biterapia','Biterapia','biterapia'],['Primera línea de primera elección','Porc_recomendado','N_recomendado','recomendado']].forEach(([n,p,v,cl])=>medidor(panel(g,n,cl),a[p],a[v]));
+    g.querySelector('.biterapia>.rotulo').append(el('small','subtitulo-esquema','DTG/3TC o DTG/DRV800'));
+    tablaEditorial(panel(g,'Principales esquemas','esquemas'),filas('esquemas'),[['drogas','Esquema'],['cantidad','Personas'],['cantidad_p','%',1,true]],5);
+    tablaEditorial(panel(g,'Personas en TARV por institución','instituciones'),participacion(d.mapa.filter(r=>r.Provincia_atencion===provincia()),'cantidad'),[['nombre_institucion','Institución'],['cantidad','Personas'],['participacion','%',1,true]],5);
+    barras(panel(g,'Meses de medicación en última entrega','meses'),['1','2','3_mas'].map((k,i)=>({mes:['1 mes','2 meses','3 meses o más'][i],valor:a['Prop_TARV_'+k+(k==='1'||k==='2'?'_mes':'')]})),'mes','valor',null,{pct:true});
+    barras(panel(g,'Personas en TARV por fármaco','drogas'),['XTC','DTG','DRV800','RAL','EFV','AZT','NVP'].map(k=>({droga:k,valor:a['Prop_'+k+'_tto']})),'droga','valor',null,{pct:true});
+    barras(panel(g,'Líneas de tratamiento · 15 años o más','lineas'),[1,2,3].map(k=>({linea:k+'ª línea',valor:a['Porc_tto_'+k]})),'linea','valor',null,{pct:true});
   }
   function evolucion(host){
     const g=el("div","diseno-evolucion");host.append(g);
@@ -193,7 +243,7 @@
     const anual=prep?filas("anual_prep").filter(r=>r.etiqueta===(provincia()==="País"?"País":"TOTAL PROVINCIA")).sort((a,b)=>b.anio-a.anio||(a.indicador==="Inicios"?-1:1)).map(r=>({...r,indicador:r.indicador==="Inicios"?"Personas con primer retiro ese año":"Personas con al menos un retiro en el año"})):filas("anual_pep");
     barras(panel(g,prep?"Evolución personas en PrEP":"PeP por año","profilaxis-anual"),anual,prep?"anio":"Anio",prep?"valor":"Valor",prep?"indicador":"Indicador",{horizontal:prep});
     const inst=filas("mapa_"+tipo),nombre=prep?"nombre_institucion":"Institucion",cant=prep?"cantidad":"Cantidad";
-    tabla(panel(g,prep?"Personas en PrEP por institución":"Instituciones que dispensaron PeP los últimos 12 meses","profilaxis-instituciones"),participacion(inst,cant),[[nombre,"Institución"],[cant,"N"],["participacion","%",1,true]],6);
+    tablaEditorial(panel(g,prep?"Personas en PrEP por institución":"Instituciones que dispensaron PeP los últimos 12 meses","profilaxis-instituciones"),participacion(inst,cant),[[nombre,"Institución"],[cant,"N"],["participacion","%",1,true]],6);
     mapa(panel(g,prep?"Localización de instituciones que distribuyen PrEP":"Instituciones que dispensaron PeP los últimos 12 meses","profilaxis-mapa"),inst,nombre,cant);
     barras(panel(g,prep?"Evolución de personas en PrEP por mes y año":"Evolución de personas en PeP","profilaxis-mensual"),filas("mensual_"+tipo).sort((a,b)=>String(a.Fecha||a.periodo).localeCompare(String(b.Fecha||b.periodo))),prep?"Fecha":"periodo",prep?"Valor":"valor",null,{linea:prep,conBarras:prep});
     dona(panel(g,"Distribución por género","profilaxis-genero"),filas("genero_"+tipo),prep?"género":"Genero",prep?"casos":"Personas",prep?"porcentaje":"Porcentaje");

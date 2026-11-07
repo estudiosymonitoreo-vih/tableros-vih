@@ -95,8 +95,10 @@
     }
     if (campo === "revincular") {
       cont.classList.add("perdida-seguimiento");
+      label.title=titulo;textoLabel.textContent="Sin retiro de TARV";
+      const criterio=document.createElement("p");criterio.className="criterio-seguimiento";criterio.textContent="Personas vivas, con retiro en los últimos 12 meses y sin otra cobertura social";cont.append(criterio);
       valor.remove();
-      for (const [id, texto] of [["perdidos_90_179","3 a 6 meses sin retiro"],["perdidos_180_mas","180 días o más sin retiro"]]) {
+      for (const [id, texto] of [["perdidos_90_179","3 a 6 meses"],["perdidos_180_mas","180 días o más"]]) {
         const linea = document.createElement("div"); linea.className = "desglose";
         const etiqueta = document.createElement("span"); etiqueta.textContent = texto;
         const cantidad = document.createElement("strong"); cantidad.dataset.campo = id;
@@ -129,7 +131,7 @@
     dibujarMapa(provincia);
     document.dispatchEvent(new CustomEvent("territorio-tablero", {detail:provincia}));
   }
-  $("fecha").textContent = datos.fecha;
+  $("fecha").textContent = "Corte: " + datos.fecha;
   $("demo").hidden = !datos.demostracion;
   if (datos.faltantes.length) { $("faltantes").hidden=false; $("faltantes").textContent="Hay indicadores ausentes en la fuente; se muestran como —: " + datos.faltantes.join(", "); }
   const territorios=datos.general.filter(x=>String(x.Provincia_atencion).trim().toLocaleLowerCase()!=="desconocido");
