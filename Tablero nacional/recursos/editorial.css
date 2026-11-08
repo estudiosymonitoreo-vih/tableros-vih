@@ -388,3 +388,49 @@ button,select,input,.rotulo,.etiqueta,.tabla-definiciones th,.panel-mapa h3{font
   .filtros-territoriales label{min-width:0}.filtros-territoriales select{width:0}
   .tg-kpis .territorial-tarjeta>.interior{height:auto;min-height:0;padding:0;flex:none}
 }
+/* Ajustes de lectura: puntos, grupos compactos y área suficiente para flujos. */
+@media(min-width:700px){
+  .diseno-tratamiento{grid-template-rows:80px 148px 226px}
+  .tratamiento-superior{padding-bottom:4px}
+  .territorial-general{grid-template-columns:repeat(2,minmax(0,1fr)) 340px 340px;grid-template-rows:80px 72px 110px 175px}
+  .tg-actividad{grid-column:1/3;grid-row:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .tg-actividad>.territorial-tarjeta{grid-area:auto;min-width:0}
+  .tg-actividad .numero-indicador{font-size:30px}
+  .territorial .tg-actividad .rotulo{font-size:12px!important;line-height:1.25}
+  .tg-kpis{padding-bottom:3px}
+  .tg-kpis .interior{border:0}
+  .tg-supresion{grid-column:1/3;grid-row:3}
+  .tg-anual{grid-column:3;grid-row:2/5}
+  .tg-anual .leyenda{font-size:10px;gap:4px;min-height:64px}
+  .tg-perdida .interior{display:block}
+  .territorial .tg-perdida>.rotulo{min-height:0;font-size:12px;line-height:1.35;margin-bottom:7px}
+  .perdida-linea{display:grid;grid-template-columns:145px max-content;justify-content:start;gap:12px;margin:7px 0}
+  .perdida-linea strong{font-size:29px}
+  .territorial-tratamiento{grid-template-columns:245px 245px minmax(0,1fr) 334px;grid-template-rows:68px 150px 233px}
+  .tt-resumen{padding-bottom:3px}
+  .tt-dtg{grid-column:1}.tt-biterapia{grid-column:2;padding:0}
+  .tt-flujo{grid-column:3;grid-row:2/4;border-left:1px solid #829dbb;padding-left:18px}
+  .tt-meses{grid-column:1;grid-row:3}.tt-drogas{grid-column:2;grid-row:3}
+  .territorial .tt-dtg>.rotulo,.territorial .tt-biterapia>.rotulo{font-size:14px;min-height:41px}
+  .tt-dtg .numero-indicador,.tt-biterapia .numero-indicador{font-size:36px}
+  .tt-dtg .medidor-lineal,.tt-biterapia .medidor-lineal{width:100%;align-self:flex-start}
+  .territorial .tt-flujo>.rotulo{font-size:15px;height:auto;min-height:44px}
+  .territorial-laboratorio{grid-template-rows:88px minmax(0,1fr);gap:16px 36px}
+  .tl-viral{gap:20px;padding-bottom:4px}
+  .tl-viral>.interior{flex:none;justify-content:flex-start;gap:28px}
+  .tl-viral .supresion-linea{gap:18px}
+  .tl-viral .ic-viral{max-width:none;white-space:nowrap}
+  .laboratorio-viral .interior{grid-template-columns:230px minmax(0,1fr)}
+  .laboratorio-viral .viral-ic{justify-self:start}
+}
+@media(max-width:699px){
+  .tg-actividad{display:grid;grid-template-columns:1fr;gap:15px}
+  .tg-actividad .territorial-tarjeta{min-height:85px}
+  .tt-flujo{height:370px}.perfil-edad{height:310px}
+  .perdida-linea{justify-content:flex-start;gap:18px}
+}
+@media(min-width:700px){
+  .territorial-general{grid-template-rows:80px 72px 125px 160px}
+  .territorial-tratamiento{grid-template-rows:68px 166px 217px}
+  .tt-esquemas>.rotulo{font-size:14px!important}
+}
