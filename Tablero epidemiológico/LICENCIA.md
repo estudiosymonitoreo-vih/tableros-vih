@@ -1,4 +1,4 @@
-# Everything here is public domain.
+# Natural Earth layers: public domain.
 
 [Full terms of service »](http://www.naturalearthdata.com/about/terms-of-use/)
 
@@ -73,3 +73,12 @@ The author’s used road transportation data (for North America only) from XNR P
     for any claims arising out of Natural Earth’s use of the data.
 
 Happy mapping!
+
+# Límites de partidos de Buenos Aires
+
+Atribución: Instituto Geográfico Nacional (IGN), Servicio de Normalización de
+Datos Geográficos de Argentina (GeoRef). Datos abiertos del Estado argentino,
+[Creative Commons Atribución 4.0](https://creativecommons.org/licenses/by/4.0/deed.es).
+Fuente, copia utilizada y huella del archivo documentadas en `FUENTES.md`.
+La geometría de Buenos Aires (resto) une 111 partidos; los 24 partidos de GBA
+se conservan por separado. Las provincias restantes siguen siendo Natural Earth.

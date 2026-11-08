@@ -43,3 +43,23 @@ footer .acerca{margin:0;padding:3px 7px;font-size:10px;white-space:nowrap;backgr
 @media(max-width:700px){header{height:auto}.via-diagnostico{grid-template-columns:110px minmax(0,1fr)}.diagnostico-vias{min-height:290px;flex:auto}.via-nombre,.via-metrica{font-size:10px}}
 
 .leyenda span{min-width:0;max-width:100%;overflow-wrap:anywhere}.via-diagnostico{flex:1;min-height:0}.via-barras{gap:2px}.via-metrica{font-size:10px;line-height:1.1}.via-pista{height:7px}.diagnostico-vias{gap:3px}.via-nombre{font-size:10px}
+
+/* Muestra efectiva, con la misma tipografía de las leyendas. */
+.muestra-n{font-size:11px;line-height:1.4;margin:0;color:#e6eef9;flex:none}.sin-datos-suficientes{font-size:11px;fill:#d6dbe4}.fila-ranking.insuficiente{grid-template-columns:100px minmax(0,1fr)}.aviso-insuficiente{font-size:10px;color:#d6dbe4;line-height:1.15}.fila-ranking .aviso-insuficiente{white-space:nowrap}.mapa .valor-provincia{vector-effect:non-scaling-stroke}
+@media(max-width:700px){.muestra-n{font-size:11px}.fila-ranking.insuficiente{grid-template-columns:minmax(75px,1fr) minmax(0,1.4fr)}}
+/* Reservar espacio al n sin perder las 24 provincias (25 divisiones en GBA). */
+#contenido{row-gap:9px}.panel{gap:6px}.ranking{gap:1px}.fila-ranking{font-size:9px;line-height:1;min-height:8px}.fila-ranking .aviso-insuficiente{font-size:9px;line-height:1}.resumen-indicadores{height:74px}.tarjeta-resumen{min-height:74px}.resumen-numero{font-size:25px}
+.ranking .barra-ranking{height:8px}.ranking .barra-ranking i{top:3px}.ranking.con-referencia .barra-ranking:before{height:10px}
+
+/* Franja superior compacta: deja al menos tres cuartos del alto para los gráficos. */
+main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-width:1px}h1{font-size:20px}.logo-institucional{width:240px;height:46px}
+#navegacion{height:30px}#navegacion button{font-size:10px;padding:2px 4px;gap:4px;line-height:1.05}#navegacion .nav-icon{width:20px;height:20px;flex-basis:20px;padding:3px}#navegacion #restablecer{flex:0 0 104px;font-size:9px;font-weight:400;background:transparent}
+.titulo-vista{height:0;overflow:hidden;position:absolute;width:1px;clip-path:inset(50%)}
+.banda-filtros{padding:4px 7px;gap:0;border-radius:5px}.banda-filtros h3{display:none}.banda-filtros .control>span{font-size:9px;margin-bottom:2px;line-height:1.1}.banda-filtros .control select,.banda-filtros .control summary{height:25px;padding:4px 7px;font-size:11px}
+#contenido{row-gap:5px;padding-top:5px}.banda-doble{gap:16px}.resumen-indicadores{height:40px;gap:12px}.tarjeta-resumen{min-height:40px;padding:3px 8px;border-radius:5px;gap:5px}.tarjeta-resumen>div{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:9px;align-items:center;min-width:0;flex:1}.resumen-etiqueta{font-size:9px;margin:0;line-height:1.1}.resumen-numero{font-size:20px;grid-column:2;grid-row:1 / 3;line-height:1}.resumen-contexto{font-size:8px;line-height:1.1;margin:1px 0 0;grid-column:1;max-width:none}.resumen-icono{width:16px;height:16px}.panel{padding-top:8px}h3{font-size:15px}
+.una{display:flex;flex:1;min-height:0}.una>.panel{flex:1}
+.matriz-vias{display:grid;grid-template-columns:minmax(145px,1.7fr) repeat(var(--anios),minmax(35px,1fr));grid-auto-rows:minmax(25px,1fr);gap:5px;flex:1;min-height:0;align-items:stretch}.matriz-cabecera{font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center}.matriz-cabecera:first-child{justify-content:flex-start}.matriz-via{font-size:11px;line-height:1.2;display:flex;align-items:center}.matriz-valor{display:flex;align-items:center;justify-content:center;border:1px solid #587492;border-radius:4px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+@media(max-width:700px){main{padding:12px}header{height:auto}h1{font-size:21px}.logo-institucional{width:260px;height:64px}#navegacion{height:auto;min-height:38px}#navegacion button{flex:0 0 145px;font-size:11px;padding:5px}.resumen-indicadores{height:auto}.tarjeta-resumen{min-height:48px}.resumen-numero{font-size:21px}.banda-filtros .control>span{font-size:10px}.banda-filtros .control select,.banda-filtros .control summary{height:32px;font-size:12px}.banda-filtros{padding:7px}.matriz-vias{min-height:300px;grid-template-columns:minmax(90px,1.6fr) repeat(var(--anios),minmax(25px,1fr));gap:3px}.matriz-valor,.matriz-via,.matriz-cabecera{font-size:9px}.una{display:block}}
+#demo{position:absolute;top:0;left:0;right:0;height:13px;padding:1px 5px;font-size:9px;line-height:11px;z-index:3}
+
+.matriz-vias{grid-template-rows:24px repeat(var(--vias),minmax(25px,1fr))}
