@@ -63,3 +63,6 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 #demo{position:absolute;top:0;left:0;right:0;height:13px;padding:1px 5px;font-size:9px;line-height:11px;z-index:3}
 
 .matriz-vias{grid-template-rows:24px repeat(var(--vias),minmax(25px,1fr))}
+.evolucion-vias{display:flex;flex-direction:column;justify-content:space-evenly;flex:1;min-height:0;gap:7px}.grupo-via{display:grid;grid-template-columns:170px minmax(0,1fr);gap:12px;align-items:center}.nombre-via{font-size:11px;line-height:1.2}.barras-anuales{display:flex;flex-direction:column;gap:3px}.barra-anual{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:8px;align-items:center;font-size:11px;line-height:1}.pista-anual{height:8px;background:#1f2844}.pista-anual i{display:block;height:100%}.barra-anual strong{text-align:right;white-space:nowrap;font-weight:600}.diagnostico-vias .via-pista{height:12px}.diagnostico-vias .via-barras{gap:5px}
+@media(max-width:700px){.evolucion-vias{min-height:430px}.grupo-via{grid-template-columns:110px minmax(0,1fr);gap:7px}.nombre-via,.barra-anual{font-size:10px}}
+.evolucion-vias{gap:5px}.barras-anuales{gap:2px}.barra-anual{font-size:10px}.pista-anual{height:7px}
