@@ -440,3 +440,17 @@ button,select,input,.rotulo,.etiqueta,.tabla-definiciones th,.panel-mapa h3{font
   .comparativo-barras{margin-top:-22px}
 }
 .tt-flujo>.interior{flex:none;height:280px;max-height:100%}
+/* Agrupación cartográfica y situación de la cohorte territorial. */
+.mapa-agrupacion-nota{position:absolute;left:42px;top:4px;right:5px;font-size:9px;line-height:1.25;background:#242c50e8;color:#f5f7fc;padding:3px 5px;pointer-events:none}
+.tt-evolucion{grid-column:3;grid-row:2/4;display:grid;grid-template-rows:205px minmax(0,1fr);gap:10px;min-width:0;min-height:0;border-left:1px solid #829dbb;padding-left:18px}
+.tt-evolucion>.tt-flujo{grid-column:auto;grid-row:auto;border:0;padding:0;width:100%;height:auto}
+.tt-evolucion .tt-flujo>.interior{height:auto;flex:1}
+.tt-evolucion>.tt-cohorte{grid-area:auto}
+.territorial .tt-evolucion .rotulo{font-size:13px;min-height:34px;height:auto;line-height:1.25}
+.tt-cohorte .interior{grid-template-columns:48% 52%;padding:0}
+.tt-cohorte .leyenda{font-size:10px;line-height:1.2;gap:5px;margin:0}
+@media(max-width:699px){
+  .tt-evolucion{display:flex;flex-direction:column;gap:20px;border:0;padding:0}
+  .tt-evolucion>.tt-flujo{height:270px}.tt-evolucion>.tt-cohorte{height:250px;min-height:250px}
+  .tt-evolucion .tt-cohorte .interior{min-height:180px;display:grid}
+}

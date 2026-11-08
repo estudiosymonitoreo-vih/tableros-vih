@@ -22,9 +22,24 @@ window.crearMapaSVIH = (() => {
   const paises = base.paises.features.map(f => path(f.geometry));
   const provincias = base.provincias.features.map(f => path(f.geometry));
   const normalizar = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/, argentina$/,"").replace(/^provincia de /,"").replace(/^ciudad autonoma de buenos aires$/,"ciudad de buenos aires").replace(/^caba$|^caba, argentina$/,"ciudad de buenos aires").trim();
-  // Posiciones cartográficas de rótulos; nunca sustituyen coordenadas institucionales.
+  // Posiciones de rótulos y burbujas agregadas; nunca sustituyen coordenadas institucionales.
   const rotulos = {'buenos aires':[-60,-36.8],'ciudad de buenos aires':[-55.8,-35.5],catamarca:[-67.6,-26.1],chaco:[-60.5,-26.1],chubut:[-68.3,-43.5],cordoba:[-64,-32.2],corrientes:[-57.8,-28.8],'entre rios':[-59.2,-32.4],formosa:[-59.5,-24.5],jujuy:[-65.9,-23], 'la pampa':[-65,-37.6],'la rioja':[-67,-29.6],mendoza:[-69,-34.3],misiones:[-54.6,-26.9],neuquen:[-70,-38.5],'rio negro':[-67,-40.8],salta:[-64.1,-24.6],'san juan':[-68.8,-30.8],'san luis':[-66,-33.7],'santa cruz':[-69,-49.5],'santa fe':[-61,-30.9],'santiago del estero':[-63.4,-28], 'tierra del fuego':[-67.5,-54.4],tucuman:[-65.3,-26.9]};
   const coordenadas = g => g.type === 'Polygon' ? g.coordinates.flat() : g.type === 'MultiPolygon' ? g.coordinates.flat(2) : [];
+  function contienePunto(geometry, punto) {
+    const anillo = a => {let dentro=false;for(let i=0,j=a.length-1;i<a.length;j=i++){
+      const [x,y]=a[i],[u,v]=a[j];
+      if((y>punto[1])!==(v>punto[1])&&punto[0]<(u-x)*(punto[1]-y)/(v-y)+x)dentro=!dentro;
+    }return dentro;};
+    const poligonos=geometry.type==='Polygon'?[geometry.coordinates]:geometry.type==='MultiPolygon'?geometry.coordinates:[];
+    return poligonos.some(p=>anillo(p[0])&&!p.slice(1).some(anillo));
+  }
+  // Provincia geográfica de la institución; no confundir con su jurisdicción de atención.
+  const cacheProvincia=new Map();
+  const provinciasPorPunto=base.provincias.features.slice().sort((a,b)=>Number(normalizar(b.id)==='ciudad de buenos aires')-Number(normalizar(a.id)==='ciudad de buenos aires'));
+  function provinciaDePunto(r){const clave=`${r.Longitud},${r.Latitud}`;
+    if(!cacheProvincia.has(clave))cacheProvincia.set(clave,provinciasPorPunto.find(p=>contienePunto(p.geometry,[r.Longitud,r.Latitud]))||null);
+    return cacheProvincia.get(clave);
+  }
   // Límites públicos en gris, detrás de los puntos y textos. Se dibuja solo lo visible.
   const capasDetalle=[['departamentos',12,.55],['barrios_caba',.45,.6],['localidades_ba',.8,.5]];
   const cacheDetalle={};
@@ -113,8 +128,8 @@ window.crearMapaSVIH = (() => {
     paises.forEach(p => tierra.append(svg("path", {d: p, fill: "#c4c4c4", stroke: "#939393", "stroke-width": ".65", "vector-effect": "non-scaling-stroke", "fill-rule": "evenodd"})));
     const division = svg("g", {class: "division-provincial"});
     provincias.forEach(p => division.append(svg("path", {d: p, fill: "#f5f5ee", stroke: "#7c8586", "stroke-width": ".8", "vector-effect": "non-scaling-stroke", "fill-rule": "evenodd"})));
-    const puntos = svg("g", {class: "puntos-instituciones"}), nombres = svg("g", {class: "nombres-instituciones", "pointer-events": "none"});
-    map.append(tierra, division, puntos, nombres);
+    const puntos = svg("g", {class: "puntos-instituciones"}), nombres = svg("g", {class: "nombres-instituciones", "pointer-events": "none"}), agrupados=svg('g',{class:'burbujas-provincias'});
+    map.append(tierra, division, puntos, nombres, agrupados);
     const actualizarLimites=crearDetalleCartografico(map,puntos);
     const popup = document.createElement("div"); popup.className = "mapa-detalle"; popup.hidden = true; frame.append(popup);
     const tooltip=document.createElement('div');tooltip.className='mapa-tooltip';tooltip.id='mapa-tooltip-'+(++contadorMapas);tooltip.setAttribute('role','tooltip');tooltip.hidden=true;frame.append(tooltip);
@@ -148,6 +163,30 @@ window.crearMapaSVIH = (() => {
       const texto = svg("text", {class: "nombre-institucion", fill: "#203049", "paint-order": "stroke", stroke: "#fff", "stroke-linejoin": "round"}, String(r[nombre] || "Institución sin nombre"));
       puntos.append(c); nombres.append(texto); nodos.push({r, x, y, radio, c, texto});
     });
+    const grupos=new Map();let sinProvincia=0;
+    validos.forEach(r=>{const p=provinciaDePunto(r);if(!p){sinProvincia++;return;}
+      if(!grupos.has(p.id))grupos.set(p.id,{provincia:p,total:0,instituciones:0});
+      const g=grupos.get(p.id);g.total+=r[cantidad];g.instituciones++;
+    });
+    const maxProvincia=Math.max(1,...[...grupos.values()].map(g=>g.total)),burbujas=[];
+    [...grupos.values()].sort((a,b)=>b.total-a.total).forEach(g=>{
+      const clave=normalizar(g.provincia.id),coords=clave==='ciudad de buenos aires'?[-58.44,-34.61]:rotulos[clave];
+      if(!coords)return;
+      const [x,y]=project(coords),radio=24*Math.sqrt(g.total/maxProvincia);
+      const resumen=`${g.provincia.id}: ${fmt(g.total)} personas · ${fmt(g.instituciones)} instituciones de esta selección`;
+      const c=svg('circle',{cx:x,cy:y,fill:'#4285f4','fill-opacity':.8,stroke:'#e4f0ff','stroke-width':.8,'vector-effect':'non-scaling-stroke',tabindex:0,role:'button','aria-label':resumen,'data-provincia':g.provincia.id,'data-cantidad':g.total});
+      c.append(svg('title',{},resumen));c.setAttribute('aria-describedby',tooltip.id);
+      const mostrar=(x,y)=>{tooltip.textContent=resumen+'\nAcercar para ver instituciones';tooltip.hidden=false;ubicarTooltip(x,y)};
+      c.addEventListener('mouseenter',e=>mostrar(e.clientX,e.clientY));c.addEventListener('mousemove',e=>ubicarTooltip(e.clientX,e.clientY));c.addEventListener('mouseleave',()=>tooltip.hidden=true);
+      c.addEventListener('focus',()=>{const b=c.getBoundingClientRect();mostrar(b.left+b.width/2,b.top+b.height/2)});c.addEventListener('blur',()=>tooltip.hidden=true);
+      const enfocar=()=>{tooltip.hidden=true;popup.hidden=true;const a=coordenadas(g.provincia.geometry).map(project),xs=a.map(p=>p[0]),ys=a.map(p=>p[1]),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;
+        let fw=Math.max(.7,Math.max(...xs)-Math.min(...xs))*1.25,fh=Math.max(.7,Math.max(...ys)-Math.min(...ys))*1.25;const aspecto=width()/height();if(fw/fh<aspecto)fw=fh*aspecto;else fh=fw/aspecto;
+        zoom=Math.max(1.21,Math.min(zoomMaximo,inicial.w/fw));vista={x:cx-inicial.w/zoom/2,y:cy-inicial.h/zoom/2,w:inicial.w/zoom,h:inicial.h/zoom};pintar();
+      };
+      c.addEventListener('click',e=>{if(!moved||e.detail===0)enfocar()});c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();enfocar()}});
+      agrupados.append(c);burbujas.push({c,radio});
+    });
+    const avisoProvincia=document.createElement('small');avisoProvincia.className='mapa-agrupacion-nota';avisoProvincia.textContent=`${sinProvincia} instituciones sin provincia cartográfica: visibles al acercar.`;frame.append(avisoProvincia);
     const controles = document.createElement("div"); controles.className = "mapa-controles";
     function boton(texto, label, accion) {const b = document.createElement("button"); b.type = "button"; b.textContent = texto; b.setAttribute("aria-label", label); b.onclick = accion; controles.append(b);}
     const estado = document.createElement("span"); estado.className = "mapa-zoom"; estado.setAttribute("aria-live", "polite");
@@ -156,6 +195,12 @@ window.crearMapaSVIH = (() => {
       map.setAttribute("viewBox", `${vista.x} ${vista.y} ${vista.w} ${vista.h}`);
       actualizarLimites(vista);
       const unidad = vista.w / width(), ocupados = [];
+      const agrupar=zoom<=1.2;
+      if(frame.dataset.agrupacion!==(agrupar?'provincia':'institucion')){tooltip.hidden=true;popup.hidden=true;}
+      puntos.style.display=agrupar?'none':'';nombres.style.display=agrupar?'none':'';agrupados.style.display=agrupar?'':'none';
+      frame.dataset.agrupacion=agrupar?'provincia':'institucion';frame.dataset.sinProvincia=sinProvincia;
+      avisoProvincia.hidden=!agrupar||sinProvincia===0;
+      burbujas.forEach(n=>n.c.setAttribute('r',n.radio*unidad));
       nodos.forEach(n => {n.c.setAttribute("r", n.radio * unidad); n.texto.style.display = "none";});
       // Desde 4×: solo nombres visibles y sin superposición. Hover/clic siempre da el nombre completo.
       if (zoom >= 4) nodos.forEach(n => {
