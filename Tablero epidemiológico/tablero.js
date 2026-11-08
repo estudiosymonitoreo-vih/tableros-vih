@@ -1,3 +1,4 @@
+// Author: Ariel Adaszko
 /* Tablero autónomo: consume exclusivamente tablas agregadas, sin servicios externos. */
 'use strict';
 (() => {
@@ -52,7 +53,11 @@ function filtro(host,datos,campo,etiqueta,clave,inicial,multiple=false,orden){
  opciones.forEach(v=>{const l=nodo('label'),i=nodo('input');i.type='checkbox';i.checked=actual.includes(v);i.value=String(v);l.append(i,nodo('span',String(v)));
  i.onchange=()=>{const nuevos=i.checked?[...estado[clave],v]:estado[clave].filter(x=>x!==v);if(!nuevos.length){i.checked=true;return;}estado[clave]=nuevos;render();const abierto=document.querySelector(`details[data-clave="${clave}"]`);abierto.open=true;const foco=[...abierto.querySelectorAll('input[type=checkbox]')].find(n=>n.value===String(v));if(foco)foco.focus();};grupo.append(l);});
  busca.oninput=()=>{for(const l of grupo.children)l.hidden=!l.textContent.toLocaleLowerCase('es').includes(busca.value.toLocaleLowerCase('es'));};lista.append(busca,grupo);d.append(lista);etiquetaN.append(d);
- }host.append(etiquetaN);return estado[clave];
+ }
+ const trazos={indicador:'M4 19V11h4v8m2 0V5h4v14m2 0V8h4v11',geografia:'M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16',region:'M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16',genero:'M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2',edad:'M12 3v18M5 7h14M5 12h14M5 17h14',anio:'M4 5h16v16H4zM4 10h16M8 2v6M16 2v6'};
+ etiquetaN.dataset.tipo=campo;const caja=nodo('div',null,'selector-visual'),icono=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'selector-icono'});icono.append(svg('path',{d:trazos[campo]||trazos.indicador}));caja.append(etiquetaN.lastElementChild,icono);etiquetaN.append(caja);
+ if(multiple){const marca=nodo('small',`${actual.length}`,'cantidad-selecciones');marca.title='Cantidad de selecciones';etiquetaN.firstElementChild.append(marca);}
+ host.append(etiquetaN);return estado[clave];
 }
 function controles(host){const c=nodo('div',null,'controles');host.append(c);return c;}
 function panel(host,titulo){const p=nodo('section',null,'panel');p.append(nodo('h3',titulo));host.append(p);return p;}
