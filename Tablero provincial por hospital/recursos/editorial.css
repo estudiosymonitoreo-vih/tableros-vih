@@ -434,3 +434,9 @@ button,select,input,.rotulo,.etiqueta,.tabla-definiciones th,.panel-mapa h3{font
   .territorial-tratamiento{grid-template-rows:68px 166px 217px}
   .tt-esquemas>.rotulo{font-size:14px!important}
 }
+
+/* Balance por ámbito: ranking más abierto y Sankey territorial contenido. */
+@media(min-width:700px){
+  .comparativo-barras{margin-top:-22px}
+}
+.tt-flujo>.interior{flex:none;height:280px;max-height:100%}
