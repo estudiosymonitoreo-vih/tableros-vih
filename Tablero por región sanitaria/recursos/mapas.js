@@ -199,7 +199,7 @@ window.crearMapaSVIH = (() => {
       if(frame.dataset.agrupacion!==(agrupar?'provincia':'institucion')){tooltip.hidden=true;popup.hidden=true;}
       puntos.style.display=agrupar?'none':'';nombres.style.display=agrupar?'none':'';agrupados.style.display=agrupar?'':'none';
       frame.dataset.agrupacion=agrupar?'provincia':'institucion';frame.dataset.sinProvincia=sinProvincia;
-      avisoProvincia.hidden=!agrupar||sinProvincia===0;
+      avisoProvincia.hidden=!agrupar||sinProvincia===0||normalizar(seleccion)==="pais";
       burbujas.forEach(n=>n.c.setAttribute('r',n.radio*unidad));
       nodos.forEach(n => {n.c.setAttribute("r", n.radio * unidad); n.texto.style.display = "none";});
       // Desde 4×: solo nombres visibles y sin superposición. Hover/clic siempre da el nombre completo.
