@@ -76,3 +76,6 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 
 /* Año como grupo; el color identifica la vía en todos los años. */
 .evolucion-vias .grupo-via{grid-template-columns:42px minmax(0,1fr)}.evolucion-vias .nombre-via{font-weight:600;font-size:12px}
+
+/* El ranking conserva el mismo color que el mapa y su escala. */
+.ranking .barra-ranking i{background:var(--color-mapa,#6289af)!important}.ranking .barra-ranking i::after{background:var(--color-mapa,#7ed7ef)}
