@@ -29,7 +29,7 @@ function tituloSVG(n,txt){n.append(svg('title',{},txt));return n;}
 function valorSeguro(r,campo){return r[campo]==null?null:Number(r[campo]);}
 function conjunto(datos,campo,orden){const opciones=uniq(datos.map(r=>r[campo]).filter(v=>v!=null));return orden?[...orden.filter(v=>opciones.includes(v)),...opciones.filter(v=>!orden.includes(v)).sort()]:opciones.sort((a,b)=>typeof a==='number'?a-b:String(a).localeCompare(String(b),'es'));}
 function filtro(host,datos,campo,etiqueta,clave,inicial,multiple=false,orden){
- const opciones=conjunto(datos,campo,orden), estado=estados[pagina];
+ const opciones=conjunto(datos,campo,orden).filter(v=>campo!=='geografia'||!/^desconocid[oa]s?$|^SD$|^sin dato/i.test(String(v).trim())), estado=estados[pagina];
  if(!(clave in estado))estado[clave]=multiple?[inicial??opciones[0]]:(inicial??opciones[0]);
  let actual=multiple?estado[clave].filter(v=>opciones.includes(v)):estado[clave];
  if(multiple&&!actual.length)actual=[opciones[0]];
@@ -59,11 +59,12 @@ function detalle(host,filas){
  b.disabled=!filas.length;b.onclick=()=>{const csv=[campos,...filas.map(r=>campos.map(c=>r[c]??''))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=nodo('a');a.href=url;a.download=`vih-${pagina}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};acciones.append(ver,b);host.append(acciones);
 }
 function vacio(host){host.append(nodo('p','Sin datos para esta selección.','vacio'));}
-function leyenda(host,series){const l=nodo('div',null,'leyenda');series.forEach((s,i)=>{const t=nodo('span'),m=nodo('i',null,'muestra');m.style.background=colores[i%colores.length];t.append(m,document.createTextNode(s));l.append(t);});host.append(l);}
-function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720}={}){
+function abreviarVia(v){return ({'Prácticas sexuales con mujeres sin protección':'Sexual con mujeres (sin protección)','Prácticas sexuales con varones sin protección':'Sexual con varones (sin protección)','Prácticas sexuales con trans sin protección':'Sexual con personas trans (sin protección)','Uso compartido de equipo de inyección en los últimos 10 años':'Equipo de inyección compartido'})[v]||v;}
+function leyenda(host,series){const l=nodo('div',null,'leyenda');series.forEach((s,i)=>{const t=nodo('span'),m=nodo('i',null,'muestra');m.style.background=colores[i%colores.length];t.append(m,document.createTextNode(abreviarVia(s)));t.title=s;l.append(t);});host.append(l);}
+function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null}={}){
  if(!filas.some(r=>r.valor!=null)){vacio(host);detalle(host,filas);return;}
- const xs=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
- const w=innerWidth<=700?720:ancho,h=390,L=55,R=22,U=35,B=42,iw=w-L-R,ih=h-U-B;
+ const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
+ const w=innerWidth<=700?720:ancho,h=alto,L=55,R=22,U=35,B=42,iw=w-L-R,ih=h-U-B;
  const s=svg('svg',{viewBox:`0 0 ${w} ${h}`,class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
  const max=porcentaje?100:Math.max(1,...filas.map(r=>r.valor??0))*1.13;
  const x=i=>L+(i+.5)*iw/xs.length, y=v=>U+ih*(1-v/max);
@@ -71,7 +72,7 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  xs.forEach((a,i)=>s.append(svg('text',{x:x(i),y:h-17,'text-anchor':'middle'},a)));
  const matriz=new Map(filas.map(r=>[`${r.anio}|${r.serie||'Valor'}`,r.valor]));
  series.forEach((nombre,j)=>{let segmentos=[],tramo=[];xs.forEach((a,i)=>{const v=matriz.get(`${a}|${nombre}`);if(v==null){if(tramo.length)segmentos.push(tramo);tramo=[];return;}
- const color=tipo==='linea'&&series.length===1?'#73d4ef':colores[j%colores.length],etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
+ const color=tipo==='linea'&&series.length===1?'#73d4ef':(coloresSeries?.[nombre]||colores[j%colores.length]),etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
  if(tipo==='linea'){const final=i===xs.length-1;tramo.push([x(i),y(v)]);s.append(tituloSVG(svg('circle',{cx:x(i),cy:y(v),r:4,fill:final?'#ffdc8d':color,tabindex:0,'aria-label':tooltip}),tooltip));s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
  else {const ancho=iw/xs.length*.74;let base=0,xx=x(i)-ancho/2,bw=ancho;
  if(tipo==='apilado'){for(let k=0;k<j;k++)base+=matriz.get(`${a}|${series[k]}`)??0;}else{bw=ancho/series.length;xx+=j*bw;}
@@ -79,7 +80,7 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  if(tipo==='barras'){const xxLabel=xx+bw/2,yyLabel=y(v+base)-8;s.append(svg('text',{x:xxLabel,y:yyLabel,'text-anchor':series.length>3?'start':'middle',class:'valor-barra',...(series.length>3?{transform:`rotate(-55 ${xxLabel} ${yyLabel})`}:{})},etiqueta));}
  if(v>8&&tipo==='apilado')s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff'},fmt(v)));
  }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>s.prepend(svg('polyline',{points:tr.map(p=>p.join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8})));});
- host.append(s);leyenda(host,series);if(tipo==='linea'&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
+ host.append(s);leyenda(host,series);if(coloresSeries)host.querySelectorAll('.leyenda .muestra').forEach((m,i)=>m.style.background=coloresSeries[series[i]]||colores[i%colores.length]);if(tipo==='linea'&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
 }
 const nombreMapa=n=>n==='Ciudad de Buenos Aires'?'CABA':n;
 const posicionesProvincia={
@@ -131,18 +132,39 @@ function seccionGeografia(host){const c=controles(host),s=filtro(c,T.regiones,'g
  const g=layout(host),p=panel(g,'Distribución de diagnósticos por región');grafico(p,T.regiones.filter(r=>r.genero===s&&r.edad===e).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:regiones});
  const m=panel(g,'Participación provincial en los diagnósticos');mapa(m,T.provincias.filter(r=>r.genero===s&&r.edad===e&&r.anio===a&&r.indicador==='Porcentaje'),'valor','%');m.append(nodo('p','Porcentaje sobre el total de diagnósticos de las provincias con residencia conocida, según los filtros elegidos.','nota'));}
 function seccionGenero(host){const c=controles(host),g=filtro(c,T.genero,'geografia','Unidad geográfica','g','Argentina',false,geos),e=filtro(c,T.genero,'edad','Grupo de edad','e','Todas las edades',false,edades),grid=layout(host);
- grafico(panel(grid,'Proporción de diagnósticos por género'),T.genero.filter(r=>r.geografia===g&&r.edad===e).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true});
+ grafico(panel(grid,'Proporción de diagnósticos por género'),T.genero.filter(r=>r.geografia===g&&r.edad===e).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:['Mujer','Varón',...uniq(T.genero.map(r=>r.serie)).filter(v=>!['Mujer','Varón'].includes(v))],coloresSeries:{'Mujer':colores[0],'Varón':colores[3],'Mujer trans':colores[1],'Otro':colores[2],'Varón trans':colores[4]}});
  grafico(panel(grid,'Razón varones / mujeres'),T.razon.filter(r=>r.geografia===g&&r.edad===e).map(r=>({anio:r.anio,serie:'Razón varones / mujeres',valor:r.valor})));}
 function seccionEdad(host){const c=controles(host),g=filtro(c,T.edad,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.edad,'genero','Género','s','Todos los géneros',false,generos),grid=layout(host);
  grafico(panel(grid,'Distribución por grupo de edad'),T.edad.filter(r=>r.geografia===g&&r.genero===s).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
  grafico(panel(grid,'Mediana de edad al diagnóstico'),T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({anio:r.anio,serie:'Mediana de edad',valor:r.valor})),{unidad:'años',decimales:0});}
-function seccionVias(host){const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad','e','Todas las edades',false,edades);const disponibles=T.vias.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(disponibles.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5);
- grafico(panel(host,'Distribución según vía de transmisión · últimos cinco años disponibles'),disponibles.filter(r=>ultimos.includes(r.anio)).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'barras',porcentaje:true,ancho:1600});}
+function seccionVias(host){
+ const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica · ambos gráficos','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género · evolución','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad · evolución','e','Todas las edades',false,edades);
+ const varones=T.vias.filter(r=>r.geografia===g&&r.genero==='Varón'&&edades.slice(1).includes(r.edad)),a=filtro(c,varones,'anio','Año · varones por edad','a',anios.at(-1));
+ const disponibles=T.vias.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(disponibles.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5),grid=layout(host);
+ grafico(panel(grid,'Vías de transmisión · evolución de los últimos cinco años'),disponibles.filter(r=>ultimos.includes(r.anio)).map(r=>({anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'barras',porcentaje:true,alto:250});
+ const p=panel(grid,`Vías de transmisión en varones · por edad · ${a??'sin año disponible'}`);
+ grafico(p,varones.filter(r=>r.anio===a).map(r=>({anio:r.edad,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenX:edades.slice(1),alto:250});
+ p.insertBefore(nodo('p','Varones cis. Cada barra representa el 100% de las vías informadas en ese grupo de edad; los grupos sin casos se muestran sin barra.','nota'),p.lastElementChild);
+}
 function seccionDiagnostico(host){
- const c=controles(host),g=filtro(c,T.diagnostico,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.diagnostico,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.diagnostico,'edad','Grupo de edad','e','Todas las edades',false,edades);
- const hist=T.diagnostico.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(hist.map(r=>r.anio)).sort((a,b)=>a-b).slice(-4),p=panel(host,'Diagnóstico tardío y enfermedad avanzada · evolución');
- grafico(p,hist.filter(r=>ultimos.includes(r.anio)).flatMap(r=>[{anio:r.anio,serie:'Diagnóstico tardío (incluye avanzada)',valor:r.tardio},{anio:r.anio,serie:'Enfermedad avanzada',valor:r.avanzada}]),{tipo:'barras',porcentaje:true,datosDetalle:hist.filter(r=>ultimos.includes(r.anio))});
- const n=nodo('p','Diagnóstico tardío incluye enfermedad avanzada. Las barras se comparan, no se suman. Porcentajes sobre casos con dato de oportunidad diagnóstica.','nota');p.insertBefore(n,p.lastElementChild);
+ const c=controles(host),g=filtro(c,T.diagnostico,'geografia','Unidad geográfica · ambos gráficos','g','Argentina',false,geos),s=filtro(c,T.diagnostico,'genero','Género · evolución','s','Todos los géneros',false,generos),e=filtro(c,T.diagnostico,'edad','Grupo de edad · ambos gráficos','e','Todas las edades',false,edades);
+ const rutas=(T.diagnostico_vias||[]).filter(r=>r.geografia===g&&r.edad===e),a=rutas.length?filtro(c,rutas,'anio','Año · varones por vía','a',anios.at(-1)):null;
+ const grid=layout(host),hist=T.diagnostico.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(hist.map(r=>r.anio)).sort((a,b)=>a-b).slice(-4),p=panel(grid,'Diagnóstico tardío y enfermedad avanzada · evolución');
+ const barras=filas=>filas.flatMap(r=>[{anio:r.anio,serie:'Diagnóstico tardío (incluye avanzada)',valor:r.tardio},{anio:r.anio,serie:'Enfermedad avanzada',valor:r.avanzada}]);
+ grafico(p,barras(hist.filter(r=>ultimos.includes(r.anio))),{tipo:'barras',porcentaje:true,alto:250,datosDetalle:hist.filter(r=>ultimos.includes(r.anio))});
+ p.insertBefore(nodo('p','Diagnóstico tardío incluye enfermedad avanzada. Las barras se comparan, no se suman. Porcentajes sobre casos con dato de oportunidad diagnóstica.','nota'),p.lastElementChild);
+ const q=panel(grid,`Diagnóstico tardío en varones · por vía · ${a??'sin año disponible'}`),seleccion=rutas.filter(r=>r.anio===a);
+ graficoDiagnosticoVias(q,seleccion);
+ q.insertBefore(nodo('p','Varones cis. Cada vía usa sus casos con dato de oportunidad diagnóstica como denominador. DT incluye enfermedad avanzada; las barras se comparan, no se suman.','nota'),q.lastElementChild);
+
+}
+function graficoDiagnosticoVias(host,filas){
+ if(!filas.length){vacio(host);detalle(host,filas);return;}
+ const abreviar=v=>({'Prácticas sexuales con mujeres sin protección':'Sexual con mujeres','Prácticas sexuales con varones sin protección':'Sexual con varones','Prácticas sexuales con trans sin protección':'Sexual con personas trans','Uso compartido de equipo de inyección en los últimos 10 años':'Equipo de inyección compartido'})[v]||v;
+ const lista=nodo('div',null,'diagnostico-vias');
+ filas.forEach(r=>{const fila=nodo('div',null,'via-diagnostico'),nombre=nodo('span',abreviar(r.via),'via-nombre');nombre.title=r.via;fila.append(nombre);
+ const barras=nodo('div',null,'via-barras');[['tardio','Diagnóstico tardío',colores[0]],['avanzada','Enfermedad avanzada',colores[1]]].forEach(([campo,etiqueta,color])=>{const linea=nodo('div',null,'via-metrica'),pista=nodo('div',null,'via-pista'),barra=nodo('i'),valor=nodo('strong',r[campo]==null?'Sin datos':exacto(r[campo],1)+'%');barra.style.width=`${r[campo]??0}%`;barra.style.background=color;pista.append(barra);linea.append(pista,valor);linea.setAttribute('role','img');linea.setAttribute('aria-label',`${r.via} · ${etiqueta}: ${valor.textContent} (${r.validos} casos con dato)`);barras.append(linea);});fila.append(barras);lista.append(fila);});host.append(lista);
+ leyenda(host,['Diagnóstico tardío (incluye avanzada)','Enfermedad avanzada']);detalle(host,filas);
 }
 function seccionMapasDiagnostico(host){
  const c=controles(host),s=filtro(c,T.diagnostico,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.diagnostico,'edad','Grupo de edad','e','Todas las edades',false,edades),a=filtro(c,T.diagnostico,'anio','Año','a',anios.at(-1));

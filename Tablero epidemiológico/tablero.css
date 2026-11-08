@@ -29,3 +29,17 @@ main{background:#242c50}header{height:68px}h1{font-size:26px}.titulo-vista{heigh
  .panel{padding:12px 0}.ranking{min-height:400px}
  .fila-ranking{grid-template-columns:minmax(65px,1.2fr) minmax(25px,1fr) 36px;font-size:9px}
 }
+
+/* Navegación superior, como el tablero SVIH: todas las solapas a la vista. */
+#navegacion{display:flex;flex:none;height:44px;border-bottom:1px solid #7890ae;gap:0;align-items:stretch}
+#navegacion button{flex:1;width:auto;min-width:0;justify-content:center;text-align:center;gap:5px;padding:5px 6px;border-radius:0;font-size:12px;font-weight:600;color:#f5f5f8;line-height:1.15;border-bottom:3px solid transparent}
+#navegacion button[aria-current=page]{background:#3f587b;border-bottom-color:#8bd9f5;color:#fff}
+#navegacion button:hover{background:#344867}
+#navegacion .nav-icon{width:22px;height:22px;flex-basis:22px;padding:3px;border-radius:5px}
+footer .acerca{margin:0;padding:3px 7px;font-size:10px;white-space:nowrap;background:transparent;color:#c9d7ec;border:1px solid #536c91;display:block}
+@media(max-width:700px){#navegacion{height:auto;overflow-x:auto;min-height:50px}#navegacion button{flex:0 0 155px}#navegacion button span{max-width:120px}}
+
+.diagnostico-vias{display:flex;flex:1;min-height:0;flex-direction:column;justify-content:space-evenly;gap:5px}.via-diagnostico{display:grid;grid-template-columns:175px minmax(0,1fr);gap:10px;align-items:center}.via-nombre{font-size:11px;line-height:1.2}.via-barras{display:flex;flex-direction:column;gap:3px}.via-metrica{display:grid;grid-template-columns:minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:11px}.via-pista{background:#1f2844;height:9px}.via-pista i{display:block;height:100%}.via-metrica strong{text-align:right;font-weight:600;white-space:nowrap}
+@media(max-width:700px){header{height:auto}.via-diagnostico{grid-template-columns:110px minmax(0,1fr)}.diagnostico-vias{min-height:290px;flex:auto}.via-nombre,.via-metrica{font-size:10px}}
+
+.leyenda span{min-width:0;max-width:100%;overflow-wrap:anywhere}.via-diagnostico{flex:1;min-height:0}.via-barras{gap:2px}.via-metrica{font-size:10px;line-height:1.1}.via-pista{height:7px}.diagnostico-vias{gap:3px}.via-nombre{font-size:10px}
