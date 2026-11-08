@@ -466,3 +466,9 @@ button,select,input,.rotulo,.etiqueta,.tabla-definiciones th,.panel-mapa h3{font
   .detalles{margin-top:15px}
   .panel-mapa{top:-197px;height:532px}
 }
+
+/* Leyenda de versión según la solapa, compartida por los tres tableros. */
+.version-tablero{display:none}
+main[data-vista="general"] .version-tablero,main[data-vista="definiciones"] .version-tablero{display:inline}
+.version-tablero .version-aa{display:none}
+main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
