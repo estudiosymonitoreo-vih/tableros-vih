@@ -173,14 +173,14 @@ function seccionGenero(host){const c=controles(host),g=filtro(c,T.genero,'geogra
 function seccionEdad(host){const c=controles(host),g=filtro(c,T.edad,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.edad,'genero','Género','s','Todos los géneros',false,generos),grid=layout(host);
  grafico(panel(grid,'Distribución por grupo de edad'),T.edad.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
  grafico(panel(grid,'Mediana de edad al diagnóstico'),T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,anio:r.anio,serie:'Mediana de edad',valor:r.valor})),{unidad:'años',decimales:0});}
-// Barras horizontales por vía y año, con valores fuera de la barra y escala común.
+// Barras horizontales agrupadas por año, con valores fuera de la barra y escala común.
 function graficoViasBarras(host,filas){
  if(!filas.length){vacio(host);detalle(host,filas);return;}
  const anios=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),vias=uniq(filas.map(r=>r.serie)),lista=nodo('div',null,'evolucion-vias');
- for(const via of vias){const grupo=nodo('div',null,'grupo-via'),nombre=nodo('span',abreviarVia(via),'nombre-via');nombre.title=via;grupo.append(nombre);const barras=nodo('div',null,'barras-anuales');
-  anios.forEach((anio,i)=>{const r=filas.find(r=>r.serie===via&&r.anio===anio),v=r?.valor,linea=nodo('div',null,'barra-anual'),pista=nodo('div',null,'pista-anual'),barra=nodo('i');barra.style.width=`${v??0}%`;barra.style.background=colores[i%colores.length];pista.append(barra);linea.append(pista,nodo('strong',v==null?'Sin datos':exacto(v,1)+'%'));linea.setAttribute('role','img');linea.setAttribute('aria-label',`${anio} · ${via}: ${v==null?'Sin datos':exacto(v,1)+'%'}`);linea.title=linea.getAttribute('aria-label');barras.append(linea);});grupo.append(barras);lista.append(grupo);
+ for(const anio of anios){const grupo=nodo('div',null,'grupo-via'),nombre=nodo('span',anio,'nombre-via');grupo.append(nombre);const barras=nodo('div',null,'barras-anuales');
+  vias.forEach((via,i)=>{const r=filas.find(r=>r.serie===via&&r.anio===anio),v=r?.valor,linea=nodo('div',null,'barra-anual'),pista=nodo('div',null,'pista-anual'),barra=nodo('i');barra.style.width=`${v??0}%`;barra.style.background=colores[i%colores.length];pista.append(barra);linea.append(pista,nodo('strong',v==null?'Sin datos':exacto(v,1)+'%'));linea.setAttribute('role','img');linea.setAttribute('aria-label',`${anio} · ${via}: ${v==null?'Sin datos':exacto(v,1)+'%'}`);linea.title=linea.getAttribute('aria-label');barras.append(linea);});grupo.append(barras);lista.append(grupo);
  }
- host.append(lista);leyenda(host,anios.map(String));host.append(nodo('p','Cada barra representa un año. Escala común: 0–100%; valores al final de cada fila.','nota'));detalle(host,filas);
+ host.append(lista);leyenda(host,vias);host.append(nodo('p','Cada grupo representa un año y cada barra una vía de transmisión. Escala común: 0–100%; valores al final de cada fila.','nota'));detalle(host,filas);
 }
 function seccionVias(host){
  const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género · evolución','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad · evolución','e','Todas las edades',false,edades);

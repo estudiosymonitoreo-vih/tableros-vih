@@ -73,3 +73,6 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 /* Solo la fila de indicadores crece un 50% respecto de su tamaño compacto. */
 .resumen-indicadores{height:60px;gap:18px}.tarjeta-resumen{min-height:60px;padding:4.5px 12px;border-radius:7.5px;gap:7.5px}.tarjeta-resumen>div{column-gap:13.5px}.resumen-etiqueta{font-size:13.5px}.resumen-numero{font-size:30px}.resumen-contexto{font-size:12px;margin-top:1.5px}.resumen-icono{width:24px;height:24px}
 @media(max-width:700px){.resumen-indicadores{height:auto}.tarjeta-resumen{min-height:72px}.resumen-numero{font-size:31.5px}.selector-icono{top:7px}}
+
+/* Año como grupo; el color identifica la vía en todos los años. */
+.evolucion-vias .grupo-via{grid-template-columns:42px minmax(0,1fr)}.evolucion-vias .nombre-via{font-weight:600;font-size:12px}
