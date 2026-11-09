@@ -63,10 +63,9 @@ function controles(host){const c=nodo('div',null,'controles');host.append(c);ret
 function panel(host,titulo){const p=nodo('section',null,'panel');p.append(nodo('h3',titulo));host.append(p);return p;}
 function layout(host,clase='dos'){const n=nodo('div',null,clase);host.append(n);return n;}
 function muestra(host,filas){
- const grupos=new Map();
- for(const r of filas){const clave=r.muestraSerie||'';if(!grupos.has(clave))grupos.set(clave,{n:0,falta:false});const v=grupos.get(clave);if(r.insuficiente||('valor' in r&&r.valor==null))continue;if(r.n==null||!Number.isFinite(r.n))v.falta=true;else v.n+=r.n;}
- if(!grupos.size)grupos.set('',{n:0,falta:false});
- const texto=[...grupos].map(([clave,v])=>`n = ${v.falta?'no disponible':fmt(v.n,0)}${grupos.size>1?' ('+clave+')':''}`).join(' · ');
+ const usadas=filas.filter(r=>!r.insuficiente&&(!('valor' in r)||r.valor!=null));
+ const total=host.dataset.nTotal!=null?Number(host.dataset.nTotal):usadas.reduce((s,r)=>s+(r.n??0),0);
+ const texto=`n = ${fmt(total,0)}`;
  const n=nodo('p',texto,'muestra-n');n.title='Casos válidos utilizados en el gráfico para los filtros y el período mostrados. En DT/EA se aplica un mínimo de cobertura del 55% en mapas y del 60% en evolución y vías.';host.append(n);
 }
 function detalle(host,filas){
@@ -159,7 +158,17 @@ function seccionCasos(host){
  const grid=layout(host),p=panel(grid,'Evolución de casos y tasas'),c=controles(p);
  const ind=filtro(c,T.casos,'indicador','Indicador','indicador','Casos'),geo=filtro(c,T.casos,'geografia','Unidad geográfica','geo','Argentina',true,geos),sexo=filtro(c,T.casos,'genero','Sexo','sexo','Ambos sexos',true,['Ambos sexos','Mujeres','Varones']),edad=filtro(c,T.casos,'edad','Grupo de edad','edad','Todas las edades',true,edades);
  const filas=T.casos.filter(r=>ind===r.indicador&&geo.includes(r.geografia)&&sexo.includes(r.genero)&&edad.includes(r.edad));
- grafico(p,filas.map(r=>({...r,anio:r.anio,serie:`${r.geografia} · ${r.genero} · ${r.edad}`,muestraSerie:`${r.geografia} · ${r.genero} · ${r.edad}`,valor:r.valor})),{unidad:ind==='Casos'?'casos':'por 100.000 habitantes',decimales:ind==='Casos'?0:1});
+ // Solo las dimensiones que varían necesitan repetirse en la leyenda.
+ const dimensiones=[['geografia',geo],['genero',sexo],['edad',edad]].filter(([,valores])=>valores.length>1).map(([campo])=>campo);
+ const nombreSerie=r=>(dimensiones.length?dimensiones.map(c=>r[c]):[r.geografia]).join(' · ');
+ const visibles=filas.filter(r=>r.valor!=null),porAnio=new Map();
+ for(const r of visibles){if(!porAnio.has(r.anio))porAnio.set(r.anio,[]);porAnio.get(r.anio).push(r);}
+ const total=(T.muestra_casos||[]).filter(c=>(porAnio.get(c.anio)||[]).some(r=>
+  (r.geografia==='Argentina'||r.geografia===c.geografia||r.geografia===c.region)&&
+  (r.genero==='Ambos sexos'||r.genero===c.genero)&&
+  (r.edad==='Todas las edades'||r.edad===c.edad))).reduce((s,r)=>s+r.n,0);
+ p.dataset.nTotal=String(total);
+ grafico(p,filas.map(r=>({...r,anio:r.anio,serie:nombreSerie(r),valor:r.valor})),{unidad:ind==='Casos'?'casos':'por 100.000 habitantes',decimales:ind==='Casos'?0:1});
  const m=panel(grid,'Distribución provincial'),cm=controles(m),prov=T.casos.filter(r=>r.nivel==='Provincial');
  const im=filtro(cm,prov,'indicador','Indicador del mapa','im','Tasa por 100.000 habitantes'),am=filtro(cm,prov,'anio','Año','am',anios.at(-1)),sm=filtro(cm,prov,'genero','Sexo','sm','Ambos sexos'),em=filtro(cm,prov,'edad','Grupo de edad','em','Todas las edades',false,edades);
  mapa(m,prov.filter(r=>r.indicador===im&&r.anio===am&&r.genero===sm&&r.edad===em),'valor',im==='Casos'?'':' por 100 mil',{'Ambos sexos':'#237bd1','Mujeres':'#c47729','Varones':'#9466c6'}[sm]||'#237bd1');
