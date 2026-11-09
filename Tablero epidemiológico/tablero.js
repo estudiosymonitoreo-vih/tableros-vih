@@ -159,7 +159,8 @@ function seccionCasos(host){
  const ind=filtro(c,T.casos,'indicador','Indicador','indicador','Casos'),geo=filtro(c,T.casos,'geografia','Unidad geográfica','geo','Argentina',true,geos),sexo=filtro(c,T.casos,'genero','Sexo','sexo','Ambos sexos',true,['Ambos sexos','Mujeres','Varones']),edad=filtro(c,T.casos,'edad','Grupo de edad','edad','Todas las edades',true,edades);
  const filas=T.casos.filter(r=>ind===r.indicador&&geo.includes(r.geografia)&&sexo.includes(r.genero)&&edad.includes(r.edad));
  // Solo las dimensiones que varían necesitan repetirse en la leyenda.
- const dimensiones=[['geografia',geo],['genero',sexo],['edad',edad]].filter(([,valores])=>valores.length>1).map(([campo])=>campo);
+ const filtrosSeries=[{campo:'geografia',etiqueta:'Geografía',valores:geo},{campo:'genero',etiqueta:'Sexo',valores:sexo},{campo:'edad',etiqueta:'Edad',valores:edad}];
+ const dimensiones=filtrosSeries.filter(f=>f.valores.length>1).map(f=>f.campo);
  const nombreSerie=r=>(dimensiones.length?dimensiones.map(c=>r[c]):[r.geografia]).join(' · ');
  const visibles=filas.filter(r=>r.valor!=null),porAnio=new Map();
  for(const r of visibles){if(!porAnio.has(r.anio))porAnio.set(r.anio,[]);porAnio.get(r.anio).push(r);}
@@ -169,6 +170,12 @@ function seccionCasos(host){
   (r.edad==='Todas las edades'||r.edad===c.edad))).reduce((s,r)=>s+r.n,0);
  p.dataset.nTotal=String(total);
  grafico(p,filas.map(r=>({...r,anio:r.anio,serie:nombreSerie(r),valor:r.valor})),{unidad:ind==='Casos'?'casos':'por 100.000 habitantes',decimales:ind==='Casos'?0:1});
+ const fijos=filtrosSeries.filter(f=>f.valores.length===1).map(f=>`${f.etiqueta}: ${f.valores[0]}`);
+ const comunes=nodo('p',fijos.length?fijos.join(' · '):'Comparación por geografía, sexo y edad.','contexto-series');
+ comunes.setAttribute('aria-label','Filtros comunes a todas las series');
+ const leyenda=p.querySelector('.leyenda');p.insertBefore(comunes,leyenda||p.querySelector('.muestra-n'));
+ // Si todos los filtros son únicos, la línea neutra identifica la única serie.
+ if(leyenda&&!dimensiones.length)leyenda.hidden=true;
  const m=panel(grid,'Distribución provincial'),cm=controles(m),prov=T.casos.filter(r=>r.nivel==='Provincial');
  const im=filtro(cm,prov,'indicador','Indicador del mapa','im','Tasa por 100.000 habitantes'),am=filtro(cm,prov,'anio','Año','am',anios.at(-1)),sm=filtro(cm,prov,'genero','Sexo','sm','Ambos sexos'),em=filtro(cm,prov,'edad','Grupo de edad','em','Todas las edades',false,edades);
  mapa(m,prov.filter(r=>r.indicador===im&&r.anio===am&&r.genero===sm&&r.edad===em),'valor',im==='Casos'?'':' por 100 mil',{'Ambos sexos':'#237bd1','Mujeres':'#c47729','Varones':'#9466c6'}[sm]||'#237bd1');

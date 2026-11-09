@@ -79,3 +79,6 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 
 /* El ranking conserva el mismo color que el mapa y su escala. */
 .ranking .barra-ranking i{background:var(--color-mapa,#6289af)!important}.ranking .barra-ranking i::after{background:var(--color-mapa,#7ed7ef)}
+
+/* Los filtros comunes se leen una sola vez, sin una referencia de color. */
+.contexto-series{font-size:11px;line-height:1.35;color:#d1dfef;margin:0;flex:none}
