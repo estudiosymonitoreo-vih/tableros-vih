@@ -164,13 +164,6 @@ function colorMapa(genero,avanzada=false){
  const paletas={'Ambos sexos':['#237bd1','#d67555'],'Todos los géneros':['#237bd1','#d67555'],'Mujer':['#c47729','#9b4f16'],'Mujeres':['#c47729','#9b4f16'],'Varón':['#9466c6','#704396'],'Varones':['#9466c6','#704396'],'Mujer trans':['#cc529a','#98366f'],'Varón trans':['#168e9b','#0b6772']};
  return (paletas[genero]||paletas['Todos los géneros'])[avanzada?1:0];
 }
-// Media móvil trienal calculada exclusivamente con los cinco años visibles.
-function tendenciaMortalidad(filas){
- const valores=[2020,2021,2022,2023,2024].map(a=>filas.find(r=>r.anio===a)?.valor);
- if(valores.some(v=>!Number.isFinite(v)))return {flecha:'',texto:'Sin datos para tendencia'};
- const medias=[0,1,2].map(i=>valores.slice(i,i+3).reduce((a,b)=>a+b,0)/3),delta=medias[2]-medias[0];
- return {flecha:delta>.05?'↗':delta<-.05?'↘':'→',texto:delta>.05?'Ascendente':delta<-.05?'Descendente':'Estable'};
-}
 function seccionMortalidad(host){
  const datos=T.mortalidad||[],c=controles(host);
  if(!datos.length){host.append(nodo('p','Regenerá el tablero para incorporar el archivo auxiliar de mortalidad.'));return;}
@@ -190,11 +183,6 @@ function seccionMortalidad(host){
  p.querySelectorAll('.muestra-n').forEach(n=>n.remove());
  barrasPanel.classList.add('barras-mortalidad');barrasPanel.append(p.querySelector('.ranking'));
  const acciones=p.querySelector('.acciones-datos');if(acciones)barrasPanel.append(acciones);
- // El mapa existente incluye el ranking de barras horizontales en orden descendente.
- p.querySelectorAll('text[data-provincia]').forEach(t=>{const geo=t.getAttribute('data-provincia'),tendencia=tendenciaMortalidad(filas.filter(r=>r.geografia===geo));const x=Number(t.getAttribute('x'))+t.getBBox().width/2+2,y=Number(t.getAttribute('y'))-3,dy=tendencia.texto==='Ascendente'?-4:tendencia.texto==='Descendente'?4:0;
- const flecha=svg('path',{d:`M0,0L7,${dy}M4,${dy-3}L7,${dy}L4,${dy+3}`,transform:`translate(${x},${y})`,fill:'none',stroke:'#142b48','stroke-width':1.2,class:'flecha-tendencia','data-tendencia':tendencia.texto});
- t.parentNode.append(tituloSVG(flecha,`${geo}: tendencia ${tendencia.texto.toLowerCase()}`));tituloSVG(t,`${geo}: ${t.textContent} · Tendencia ${tendencia.texto.toLowerCase()}`);});
- host.append(nodo('p','Flecha hacia arriba y a la derecha: ascendente; horizontal: estable; hacia abajo y a la derecha: descendente. Medias móviles de 3 años dentro de 2020–2024; se compara la media 2022–2024 con 2020–2022. Diferencia mayor a 0,05: ascendente; menor a −0,05: descendente; el resto: estable. Unidad: tasas por 100.000 habitantes.','nota'));
  host.append(nodo('p','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
  $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
 }
@@ -307,6 +295,7 @@ function seccionMapasDiagnostico(host){
 function seccionDefiniciones(host){
  const grid=layout(host,'definiciones-grid');
  const definiciones=[
+  ['Tasa de mortalidad por sida','Mide las defunciones por causas asociadas al VIH en un año y territorio, por cada 100.000 habitantes. La tasa bruta divide las defunciones por la población del mismo año, territorio y sexo seleccionado. La tasa ajustada por edad combina las tasas específicas por edad usando una población estándar para facilitar comparaciones entre poblaciones con distintas estructuras etarias.','Tasa bruta = defunciones por causas asociadas al VIH / población × 100.000. Tasa ajustada = suma de tasas específicas por edad ponderadas por la población estándar.','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75; DEIS / Ministerio de Salud de la Nación. Se muestran las tasas publicadas: tabla 2020–2024 y tarjeta nacional, barras y mapa de 2024. La tasa ajustada no representa un conteo de defunciones.'],
   ['Tasa de diagnósticos de VIH','Número de diagnósticos de VIH registrados en un año, dividido por la población de referencia del mismo año y territorio, multiplicado por 100.000. Al filtrar sexo o edad se utiliza la población del grupo correspondiente.','Tasa = diagnósticos de VIH / población × 100.000','Describe diagnósticos notificados, no el momento de adquisición del VIH. La notificación puede retrasarse y las series pueden actualizarse. No se interpreta como incidencia de nuevas infecciones.'],
   ['Razón varones / mujeres','Cociente entre la cantidad de diagnósticos de VIH de las categorías Varones y Mujeres del análisis de género, para el mismo período, territorio y grupo de edad.','Razón = diagnósticos en Varones / diagnósticos en Mujeres','Por ejemplo, 2,3 expresa 2,3 diagnósticos en Varones por cada diagnóstico en Mujeres. No es un porcentaje ni una tasa poblacional. Si el denominador es cero, se muestra Sin datos. Las categorías trans se mantienen diferenciadas en la distribución por género.'],
   ['Diagnóstico tardío de VIH','En este tablero reúne los diagnósticos clasificados como Tardío o Avanzado: estadios OMS 3 y 4 derivados por el procesamiento a partir de la información clínica e inmunológica. Incluye enfermedad avanzada. Como referencia clínica habitual en adultos, se asocia con CD4 menor de 350 células/mm³ o una enfermedad definitoria de sida, independientemente del CD4.','Porcentaje = (Tardío + Avanzado) / casos válidos × 100','El denominador conserva la definición del informe: excluye SD; la categoría Desconocido integra actualmente los casos válidos. No se deben sumar los porcentajes de diagnóstico tardío y enfermedad avanzada.'],
