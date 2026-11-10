@@ -83,7 +83,7 @@ function detalle(host,filas){
 function vacio(host){host.append(nodo('p','Sin datos para esta selección.','vacio'));}
 function abreviarVia(v){return ({'Prácticas sexuales con mujeres sin protección':'Sexual con mujeres (sin protección)','Prácticas sexuales con varones sin protección':'Sexual con varones (sin protección)','Prácticas sexuales con trans sin protección':'Sexual con personas trans (sin protección)','Uso compartido de equipo de inyección en los últimos 10 años':'Equipo de inyección compartido'})[v]||v;}
 function leyenda(host,series){const l=nodo('div',null,'leyenda');series.forEach((s,i)=>{const t=nodo('span'),m=nodo('i',null,'muestra');m.style.background=colores[i%colores.length];t.append(m,document.createTextNode(textoVisible(abreviarVia(s))));t.title=s;l.append(t);});host.append(l);}
-function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null}={}){
+function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null,separacionBarras=1}={}){
  if(!filas.some(r=>r.valor!=null)&&!filas.some(r=>r.insuficiente)){vacio(host);detalle(host,datosDetalle||filas);return;}
  const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
  const s=svg('svg',{class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});
@@ -100,7 +100,8 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  if(tipo==='linea'||tipo==='puntos'){const final=i===xs.length-1;tramo.push([x(i),y(v)]);s.append(tituloSVG(svg('circle',{cx:x(i),cy:y(v),r:tipo==='puntos'?7:4,fill:final?'#ffdc8d':color,tabindex:0,'aria-label':tooltip}),tooltip));s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
  else {const ancho=iw/xs.length*.74;let base=0,xx=x(i)-ancho/2,bw=ancho;
  if(tipo==='apilado'){for(let k=0;k<j;k++)base+=matriz.get(`${a}|${series[k]}`)??0;}else{bw=ancho/series.length;xx+=j*bw;}
- s.append(tituloSVG(svg('rect',{x:xx,y:y(v+base),width:Math.max(1,bw-1),height:ih*v/max,fill:color,tabindex:0,'aria-label':tooltip}),tooltip));
+ const hueco=tipo==='barras'?Math.min(separacionBarras,bw*.2):1;
+ s.append(tituloSVG(svg('rect',{x:xx+(tipo==='barras'?hueco/2:0),y:y(v+base),width:Math.max(1,bw-hueco),height:ih*v/max,fill:color,tabindex:0,'aria-label':tooltip}),tooltip));
  if(tipo==='barras'){const xxLabel=xx+bw/2,yyLabel=y(v+base)-8;s.append(svg('text',{x:xxLabel,y:yyLabel,'text-anchor':series.length>3?'start':'middle',class:'valor-barra',...(series.length>3?{transform:`rotate(-55 ${xxLabel} ${yyLabel})`}:{})},etiqueta));}
  if(v>8&&tipo==='apilado')s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff',class:'valor-apilado'},fmt(v)+(porcentaje?'%':'')));
  }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>s.prepend(svg('polyline',{points:tr.map(p=>p.join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8})));});
@@ -247,7 +248,7 @@ function seccionDiagnostico(host){
  const rutas=(T.diagnostico_vias||[]).filter(r=>r.geografia===g&&r.edad===e&&/^(Prácticas sexuales|Uso compartido de equipo de inyección)/.test(r.via)),a=s==='Varón'&&rutas.length?filtro(c,rutas,'anio','Año · varones por vía','a',anios.at(-1)):null;
  const grid=layout(host,s==='Varón'?'dos':'una diagnostico-acotado'),hist=T.diagnostico.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(hist.map(r=>r.anio)).sort((a,b)=>a-b).slice(-4),p=panel(grid,'Diagnóstico tardío de VIH y enfermedad avanzada · evolución');
  const barras=filas=>filas.flatMap(r=>[{...r,anio:r.anio,serie:'Diagnóstico tardío (incluye avanzada)',valor:r.tardio},{...r,anio:r.anio,serie:'Enfermedad avanzada',valor:r.avanzada}]);
- grafico(p,barras(hist.filter(r=>ultimos.includes(r.anio))),{tipo:'barras',porcentaje:true,alto:390,datosDetalle:hist.filter(r=>ultimos.includes(r.anio))});
+ grafico(p,barras(hist.filter(r=>ultimos.includes(r.anio))),{tipo:'barras',porcentaje:true,alto:390,separacionBarras:6,datosDetalle:hist.filter(r=>ultimos.includes(r.anio))});
  p.insertBefore(nodo('p','Diagnóstico tardío incluye enfermedad avanzada. Las barras se comparan, no se suman. Porcentajes sobre casos con dato de oportunidad diagnóstica.','nota'),p.lastElementChild);
  if(s!=='Varón')return;
  const q=panel(grid,`Diagnóstico tardío de VIH en varones · por vía · ${a??'sin año disponible'}`),seleccion=rutas.filter(r=>r.anio===a);
