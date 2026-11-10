@@ -90,3 +90,11 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
  .grafico{height:0;flex:1 1 0;min-height:0}
 }
 @media(min-width:701px) and (max-height:760px){header{height:36px}.logo-institucional{height:38px}#navegacion{height:26px}}
+/* Diagnóstico sin comparación por vía: ancho moderado y centrado. */
+.diagnostico-acotado>.panel{max-width:1100px;width:100%;margin-inline:auto}
+.definiciones-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:1fr 1fr;gap:18px;flex:1;min-height:0}.definiciones-grid .panel{gap:12px}.definiciones-grid h3{font-size:18px}.definiciones-grid p{font-size:14px;line-height:1.5;margin:0}.definiciones-grid .formula-definicion{font-size:15px;background:#304463;border-radius:5px;padding:12px;color:#d6f2fc}.definiciones-grid .nota{font-size:12px}
+@media(max-width:700px){.definiciones-grid{display:flex;flex-direction:column}.definiciones-grid .panel{min-height:0}.definiciones-grid p{font-size:13px}.definiciones-grid h3{font-size:17px}}
+.diagnostico-acotado>.panel{max-width:1400px;width:85%}.definiciones-grid .panel{gap:8px}.definiciones-grid h3{font-size:16px}.definiciones-grid p{font-size:13px;line-height:1.35}.definiciones-grid .formula-definicion{font-size:13px;padding:8px}.definiciones-grid .nota{font-size:11px}
+@media(max-width:700px){.diagnostico-acotado>.panel{width:100%}}
+@media(min-width:701px) and (max-height:760px){.evolucion-vias{gap:3px}.evolucion-vias .barras-anuales{gap:1px}.evolucion-vias .barra-anual{font-size:9px}.evolucion-vias .pista-anual{height:6px}}
+.diagnostico-acotado>.panel{flex:0 1 85%}
