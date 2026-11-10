@@ -13,7 +13,7 @@ for(const nombre of ['diagnostico','diagnostico_vias','diagnostico_regional'])if
 });
 function paraMapaDT(r){if(!r)return r;const insuficiente=!(r.total>0&&r.validos/r.total>=.55),original=porcentajesDT.get(r)||r;return {...r,insuficiente,tardio:insuficiente?null:original.tardio,avanzada:insuficiente?null:original.avanzada};}
 const colores=['#4c94f1','#efa056','#b38ae5','#b7ca6b','#32b6c9','#e7c63c','#e078b2','#807cce','#d9b886'];
-const paginas=[['casos','Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','Distribución por género','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['edad','Distribución por edad','M4 20V14h4v6m2 0V9h4v11m2 0V3h4v17'],['vias','Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
+const paginas=[['casos','Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','Distribución por género','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['edad','Distribución por edad','M4 20V14h4v6m2 0V9h4v11m2 0V3h4v17'],['vias','Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['mortalidad','Mortalidad por sida','M3 19V5m0 14h18M6 8l5 3 4-2 6 7'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
 const edades=['Todas las edades','0-9','10-14','15-19','20-24','25-34','35-44','45-54','55-64','65 o más'];
 const generos=['Todos los géneros','Varón','Mujer','Mujer trans','Varón trans'];
 const regiones=['GBA','Centro','Cuyo','NEA','NOA','Patagonia'];
@@ -164,6 +164,35 @@ function colorMapa(genero,avanzada=false){
  const paletas={'Ambos sexos':['#237bd1','#d67555'],'Todos los géneros':['#237bd1','#d67555'],'Mujer':['#c47729','#9b4f16'],'Mujeres':['#c47729','#9b4f16'],'Varón':['#9466c6','#704396'],'Varones':['#9466c6','#704396'],'Mujer trans':['#cc529a','#98366f'],'Varón trans':['#168e9b','#0b6772']};
  return (paletas[genero]||paletas['Todos los géneros'])[avanzada?1:0];
 }
+// Media móvil trienal calculada exclusivamente con los cinco años visibles.
+function tendenciaMortalidad(filas){
+ const valores=[2020,2021,2022,2023,2024].map(a=>filas.find(r=>r.anio===a)?.valor);
+ if(valores.some(v=>!Number.isFinite(v)))return {flecha:'',texto:'Sin datos para tendencia'};
+ const medias=[0,1,2].map(i=>valores.slice(i,i+3).reduce((a,b)=>a+b,0)/3),delta=medias[2]-medias[0];
+ return {flecha:delta>.05?'↗':delta<-.05?'↘':'→',texto:delta>.05?'Ascendente':delta<-.05?'Descendente':'Estable'};
+}
+function seccionMortalidad(host){
+ const datos=T.mortalidad||[],c=controles(host);
+ if(!datos.length){host.append(nodo('p','Regenerá el tablero para incorporar el archivo auxiliar de mortalidad.'));return;}
+ const sexo=filtro(c,datos,'sexo','Sexo','sexo','Ambos sexos',false,['Ambos sexos','Varones','Mujeres']);
+ const tipo=filtro(c,datos,'tipo','Tipo de tasa','tipo','Tasa bruta',false,['Tasa bruta','Tasa ajustada por edad']);
+ const filas=datos.filter(r=>r.sexo===sexo&&r.tipo===tipo&&r.anio>=2020),geografias=uniq(filas.map(r=>r.geografia)).sort(geoSort);
+ const tablaPanel=panel(host,`${tipo} por 100.000 habitantes · 2020–2024`),wrap=nodo('div',null,'tabla-mortalidad'),tabla=nodo('table');
+ const head=nodo('thead'),hr=nodo('tr');['Jurisdicción',2020,2021,2022,2023,2024].forEach(t=>{const th=nodo('th',String(t));th.scope='col';hr.append(th);});head.append(hr);tabla.append(head);
+ const body=nodo('tbody');for(const geo of geografias){const tr=nodo('tr'),th=nodo('th',geo);th.scope='row';tr.append(th);for(const a of [2020,2021,2022,2023,2024])tr.append(nodo('td',exacto(filas.find(r=>r.geografia===geo&&r.anio===a)?.valor,1)));body.append(tr);}tabla.append(body);wrap.append(tabla);tablaPanel.append(wrap);
+ const p=panel(host,`${tipo} por provincia · 2024`),actuales=filas.filter(r=>r.anio===2024&&r.geografia!=='Argentina');
+ p.classList.add('panel-mortalidad');
+ mapa(p,actuales,'valor',' por 100.000 habitantes',colorMapa(sexo));
+ p.querySelectorAll('.muestra-n').forEach(n=>n.remove());
+ // El mapa existente incluye el ranking de barras horizontales en orden descendente.
+ p.querySelectorAll('text[data-provincia]').forEach(t=>{const geo=t.getAttribute('data-provincia'),tendencia=tendenciaMortalidad(filas.filter(r=>r.geografia===geo));const x=Number(t.getAttribute('x'))+t.getBBox().width/2+2,y=Number(t.getAttribute('y'))-3,dy=tendencia.texto==='Ascendente'?-4:tendencia.texto==='Descendente'?4:0;
+ const flecha=svg('path',{d:`M0,0L7,${dy}M4,${dy-3}L7,${dy}L4,${dy+3}`,transform:`translate(${x},${y})`,fill:'none',stroke:'#142b48','stroke-width':1.2,class:'flecha-tendencia','data-tendencia':tendencia.texto});
+ t.parentNode.append(tituloSVG(flecha,`${geo}: tendencia ${tendencia.texto.toLowerCase()}`));tituloSVG(t,`${geo}: ${t.textContent} · Tendencia ${tendencia.texto.toLowerCase()}`);});
+ p.append(nodo('p','Flecha hacia arriba y a la derecha: ascendente; horizontal: estable; hacia abajo y a la derecha: descendente. Medias móviles de 3 años dentro de 2020–2024; se compara la media 2022–2024 con 2020–2022. Diferencia mayor a 0,05: ascendente; menor a −0,05: descendente; el resto: estable. Unidad: tasas por 100.000 habitantes.','nota'));
+ host.append(nodo('p','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
+ $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
+}
+
 function seccionCasos(host){
  const grid=layout(host),p=panel(grid,'Evolución de casos de VIH'),c=controles(p);
  const ind=filtro(c,T.casos,'indicador','Indicador','indicador','Casos'),geo=filtro(c,T.casos,'geografia','Unidad geográfica','geo','Argentina',true,geos),sexo=filtro(c,T.casos,'genero','Sexo','sexo','Ambos sexos',true,['Ambos sexos','Mujeres','Varones']),edad=filtro(c,T.casos,'edad','Grupo de edad','edad','Todas las edades',true,edades);
@@ -295,7 +324,7 @@ function crearBandaFiltros(control,titulo,alcance){
  h.append(icono,document.createTextNode(titulo),nodo('span',alcance,'filtro-alcance'));banda.append(h,control);return banda;
 }
 function presentarResumen(){
- if(pagina==='definiciones')return;
+ if(pagina==='definiciones'||pagina==='mortalidad')return;
  const host=$('contenido'),e=estados[pagina],ultimo=anios.at(-1),tarjetas=[];
  const esNumero=v=>typeof v==='number'&&Number.isFinite(v);
  const porcentaje=v=>esNumero(v)?exacto(v,1)+'%':'Sin datos';
@@ -380,8 +409,8 @@ function presentarResumen(){
 function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find(p=>p[0]===pagina);$('titulo').textContent=page[1];
  const version=pagina==='casos'?'V 2.0':pagina==='definiciones'?'V 2.0 AA':'';$('version-tablero').textContent=version;$('version-tablero').hidden=!version;
  $('contenido').replaceChildren();document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.pagina===pagina?'page':'false'));
- ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,edad:seccionEdad,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico,definiciones:seccionDefiniciones})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
- paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4'],definiciones:['#7561bb','#f0ecfa']}[id];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
+ ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,edad:seccionEdad,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico,mortalidad:seccionMortalidad,definiciones:seccionDefiniciones})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
+ paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4'],mortalidad:['#237bd1','#e8f0fd'],definiciones:['#7561bb','#f0ecfa']}[id];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
  $('navegacion').append($('restablecer'));
  $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${anios.at(-1)}`;$('fecha-exportacion').textContent=`Fecha de exportación de la base: ${D.meta.fecha_exportacion||'no informada'}`;$('demo').hidden=!D.meta.demostracion;
  $('restablecer').onclick=()=>{estados[pagina]={};render();};window.addEventListener('hashchange',()=>{if(paginas.some(p=>p[0]===location.hash.slice(1))){pagina=location.hash.slice(1);render();}});

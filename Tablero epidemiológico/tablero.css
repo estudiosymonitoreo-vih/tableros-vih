@@ -105,3 +105,10 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .torta .valor-torta{font-size:13px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#242c50;stroke-width:3px;stroke-linejoin:round}.torta .porcion-torta:hover,.torta .porcion-torta:focus{stroke:#fff;stroke-width:2px}.torta .linea-torta{pointer-events:none}
 
 .pie-derecho{display:flex;flex-direction:row;align-items:baseline;gap:18px;text-align:right}.pie-derecho>span,.version-tablero{white-space:nowrap}.version-tablero{font-size:9px;line-height:1;color:#b9c9df;font-weight:400}
+
+/* Tabla de mortalidad: cinco años siempre visibles mediante desplazamiento. */
+.tabla-mortalidad{overflow:auto;max-height:360px}.tabla-mortalidad table{border-collapse:collapse;width:100%;font-size:14px}.tabla-mortalidad th,.tabla-mortalidad td{padding:7px 12px;border-bottom:1px solid #dae7f5;text-align:right}.tabla-mortalidad th:first-child{text-align:left}.tabla-mortalidad thead{position:sticky;top:0;background:#303c61}.tabla-mortalidad tbody tr:nth-child(even){background:#2b385a}
+
+.control[data-tipo=sexo] select,.control[data-tipo=tipo] select{padding-left:28px}
+
+.panel-mortalidad .ranking .barra-ranking i{height:8px;top:0}.panel-mortalidad .ranking .barra-ranking i::after{display:none}
