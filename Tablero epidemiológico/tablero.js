@@ -207,26 +207,30 @@ function graficoViasTorta(host,filas){
  const s=svg('svg',{class:'grafico torta',role:'img','aria-label':host.querySelector('h3').textContent});
  s.dibujar=(w,h)=>{
   s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,host.querySelector('h3').textContent);
-  const cx=w/2,cy=h/2,r=Math.max(15,Math.min((w-170)/2,(h-42)/2)),externas=[];
+  const cx=w/2,cy=h/2,r=.75*Math.max(24,Math.min(w*.23,(h-60)/2)),externas=[],linea=15;
+  const partir=(texto,ancho)=>{const limite=Math.max(10,Math.floor(ancho/6.8)),lineas=[];for(const palabra of texto.split(' ')){if(!lineas.length||lineas.at(-1).length+palabra.length+1>limite)lineas.push(palabra);else lineas[lineas.length-1]+=' '+palabra;}return lineas;};
+  const rotulo=(x,y,lineas,ancla,clase,lado)=>{const t=svg('text',{x,y,'text-anchor':ancla,class:`valor-torta ${clase}`,...(lado?{'data-lado':lado}:{})});lineas.forEach((texto,i)=>t.append(svg('tspan',{x,dy:i?linea:0},texto)));s.append(t);};
   let angulo=-Math.PI/2;
   filas.forEach((fila,i)=>{
-   const fraccion=fila.n/total;if(!(fraccion>0))return;
-   const fin=angulo+2*Math.PI*fraccion,medio=(angulo+fin)/2,punto=(a,radio)=>[cx+radio*Math.cos(a),cy+radio*Math.sin(a)],inicio=punto(angulo,r),ultimo=punto(fin,r),porcentaje=exacto(fila.valor,1)+'%',color=colores[i%colores.length];
-   const porcion=fraccion>=1-1e-10?svg('circle',{cx,cy,r}):svg('path',{d:`M${cx},${cy}L${inicio[0]},${inicio[1]}A${r},${r} 0 ${fraccion>.5?1:0} 1 ${ultimo[0]},${ultimo[1]}Z`});
-   porcion.setAttribute('class','porcion-torta');porcion.setAttribute('fill',color);porcion.setAttribute('stroke','#242c50');porcion.setAttribute('stroke-width','1');porcion.setAttribute('tabindex','0');porcion.setAttribute('aria-label',`${fila.serie}: ${porcentaje} · n = ${fmt(fila.n,0)}`);tituloSVG(porcion,porcion.getAttribute('aria-label'));s.append(porcion);
-   if(2*r*.64*Math.sin(Math.min(Math.PI,fin-angulo)/2)>porcentaje.length*7+12&&fin-angulo>.28){
-    const [x,y]=punto(medio,r*.64);s.append(svg('text',{x,y:y+4,'text-anchor':'middle',class:'valor-torta interior'},porcentaje));
-   }else{const lado=Math.cos(medio)>=0?1:-1;externas.push({lado,origen:punto(medio,r*.98),codo:punto(medio,r+12),y:cy+(r+15)*Math.sin(medio),porcentaje,color});}
+   const fraccion=fila.n/total,fin=angulo+2*Math.PI*fraccion,medio=(angulo+fin)/2,punto=(a,radio)=>[cx+radio*Math.cos(a),cy+radio*Math.sin(a)],inicio=punto(angulo,r),ultimo=punto(fin,r),porcentaje=exacto(fila.valor,1)+'%',color=colores[i%colores.length],nombre=textoVisible(abreviarVia(fila.serie));
+   if(fraccion>0){const porcion=fraccion>=1-1e-10?svg('circle',{cx,cy,r}):svg('path',{d:`M${cx},${cy}L${inicio[0]},${inicio[1]}A${r},${r} 0 ${fraccion>.5?1:0} 1 ${ultimo[0]},${ultimo[1]}Z`});
+    porcion.setAttribute('class','porcion-torta');porcion.setAttribute('fill',color);porcion.setAttribute('stroke','#242c50');porcion.setAttribute('stroke-width','1');porcion.setAttribute('tabindex','0');porcion.setAttribute('aria-label',`${fila.serie}: ${porcentaje} · n = ${fmt(fila.n,0)}`);tituloSVG(porcion,porcion.getAttribute('aria-label'));s.append(porcion);
+   }
+   const internas=[...partir(nombre,Math.min(175,r*.8)),porcentaje],anchoInterior=Math.max(...internas.map(t=>t.length))*6.8;
+   if(fraccion>=.14&&internas.length*linea<=r*.5&&2*r*.52*Math.sin(Math.min(Math.PI,fin-angulo)/2)>anchoInterior+14){
+    const [x,y]=punto(medio,r*.52);rotulo(x,y-(internas.length-1)*linea/2+4,internas,'middle','interior');
+   }else{const lado=Math.cos(medio)>=0?1:-1,anchoExterior=Math.max(65,w/2-r-46),lineas=[...partir(nombre,anchoExterior),porcentaje];externas.push({lado,origen:fraccion>0?punto(medio,r*.98):null,codo:punto(medio,r+10),y:cy+(r+15)*Math.sin(medio),lineas,alto:lineas.length*linea,color});}
    angulo=fin;
   });
   for(const lado of [-1,1]){
-   const etiquetas=externas.filter(e=>e.lado===lado).sort((a,b)=>a.y-b.y),min=cy-r-8,max=cy+r+8,separacion=20;
-   etiquetas.forEach((e,i)=>e.y=Math.max(min,e.y,i?etiquetas[i-1].y+separacion:min));
-   for(let i=etiquetas.length-1;i>=0;i--)etiquetas[i].y=Math.min(etiquetas[i].y,i===etiquetas.length-1?max:etiquetas[i+1].y-separacion);
-   etiquetas.forEach(e=>{const x=cx+lado*(r+34);s.append(svg('polyline',{points:`${e.origen.join(',')} ${e.codo.join(',')} ${x},${e.y}`,fill:'none',stroke:e.color,'stroke-width':1.4,class:'linea-torta'}),svg('text',{x:x+lado*5,y:e.y+4,'text-anchor':lado>0?'start':'end',class:'valor-torta exterior','data-lado':lado},e.porcentaje));});
+   const etiquetas=externas.filter(e=>e.lado===lado).sort((a,b)=>a.y-b.y),min=8,max=h-8,separacion=8;
+   etiquetas.forEach((e,i)=>e.y=Math.max(e.y,min+e.alto/2,i?etiquetas[i-1].y+etiquetas[i-1].alto/2+separacion+e.alto/2:min));
+   for(let i=etiquetas.length-1;i>=0;i--)etiquetas[i].y=Math.min(etiquetas[i].y,i===etiquetas.length-1?max-etiquetas[i].alto/2:etiquetas[i+1].y-etiquetas[i+1].alto/2-separacion-etiquetas[i].alto/2);
+   etiquetas.forEach(e=>{const x=cx+lado*(r+27);if(e.origen)s.append(svg('polyline',{points:`${e.origen.join(',')} ${e.codo.join(',')} ${x},${e.y}`,fill:'none',stroke:e.color,'stroke-width':1.4,class:'linea-torta'}));rotulo(x+lado*5,e.y-(e.lineas.length-1)*linea/2+4,e.lineas,lado>0?'start':'end','exterior',lado);});
   }
+
  };
- s.dibujar(720,390);host.append(s);leyenda(host,filas.map(r=>r.serie));detalle(host,filas);
+ s.dibujar(720,390);host.append(s);detalle(host,filas);
 }
 function seccionVias(host){
  const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género · torta 2025','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad · torta 2025','e','Todas las edades',false,edades);
