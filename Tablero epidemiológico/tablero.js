@@ -196,7 +196,8 @@ function graficoViasBarras(host,filas){
  if(!filas.length){vacio(host);detalle(host,filas);return;}
  const anios=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),vias=uniq(filas.map(r=>r.serie)),lista=nodo('div',null,'evolucion-vias');
  for(const anio of anios){const grupo=nodo('div',null,'grupo-via'),nombre=nodo('span',anio,'nombre-via');grupo.append(nombre);const barras=nodo('div',null,'barras-anuales');
-  vias.forEach((via,i)=>{const r=filas.find(r=>r.serie===via&&r.anio===anio),v=r?.valor,linea=nodo('div',null,'barra-anual'),pista=nodo('div',null,'pista-anual'),barra=nodo('i');barra.style.width=`${v??0}%`;barra.style.background=colores[i%colores.length];pista.append(barra);linea.append(pista,nodo('strong',v==null?'Sin datos':exacto(v,1)+'%'));linea.setAttribute('role','img');linea.setAttribute('aria-label',`${anio} · ${via}: ${v==null?'Sin datos':exacto(v,1)+'%'}`);linea.title=linea.getAttribute('aria-label');barras.append(linea);});grupo.append(barras);lista.append(grupo);
+  const ordenadas=vias.map((via,i)=>({via,i,r:filas.find(r=>r.serie===via&&r.anio===anio)})).sort((a,b)=>(b.r?.valor??-Infinity)-(a.r?.valor??-Infinity)||a.i-b.i);
+  ordenadas.forEach(({via,i,r})=>{const v=r?.valor,linea=nodo('div',null,'barra-anual'),pista=nodo('div',null,'pista-anual'),barra=nodo('i');barra.style.width=`${v??0}%`;barra.style.background=colores[i%colores.length];pista.append(barra);linea.append(pista,nodo('strong',v==null?'Sin datos':exacto(v,1)+'%'));linea.setAttribute('role','img');linea.dataset.via=via;linea.setAttribute('aria-label',`${anio} · ${via}: ${v==null?'Sin datos':exacto(v,1)+'%'}`);linea.title=linea.getAttribute('aria-label');barras.append(linea);});grupo.append(barras);lista.append(grupo);
  }
  host.append(lista);leyenda(host,vias);host.append(nodo('p','Cada grupo representa un año y cada barra una vía de transmisión. Escala común: 0–100%; valores al final de cada fila.','nota'));detalle(host,filas);
 }
