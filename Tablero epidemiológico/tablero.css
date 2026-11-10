@@ -103,3 +103,5 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 @media(min-width:701px){.vias-acotadas>.panel{flex:0 1 65%;width:65%;margin-inline:auto}}
 
 .torta .valor-torta{font-size:13px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#242c50;stroke-width:3px;stroke-linejoin:round}.torta .porcion-torta:hover,.torta .porcion-torta:focus{stroke:#fff;stroke-width:2px}.torta .linea-torta{pointer-events:none}
+
+.pie-derecho{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}.version-tablero{font-size:9px;line-height:1;color:#b9c9df;font-weight:400}
