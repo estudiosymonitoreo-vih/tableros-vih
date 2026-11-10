@@ -155,8 +155,9 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
  const ranking=nodo('div',null,'ranking');ranking.dataset.maximo=String(max);ranking.style.setProperty('--color-mapa',color);[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;if(v==null||!Number.isFinite(v))row.classList.add('sin-dato');bar.append(i);if(insuficientes.has(n)){row.classList.add('insuficiente');row.append(nodo('span',n),nodo('span','Sin datos suficientes','aviso-insuficiente'));}else row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)+(unidad==='%'?'%':'')));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
 }
 function seccionCasos(host){
- const grid=layout(host),p=panel(grid,'Evolución de casos y tasas'),c=controles(p);
+ const grid=layout(host),p=panel(grid,'Evolución de casos'),c=controles(p);
  const ind=filtro(c,T.casos,'indicador','Indicador','indicador','Casos'),geo=filtro(c,T.casos,'geografia','Unidad geográfica','geo','Argentina',true,geos),sexo=filtro(c,T.casos,'genero','Sexo','sexo','Ambos sexos',true,['Ambos sexos','Mujeres','Varones']),edad=filtro(c,T.casos,'edad','Grupo de edad','edad','Todas las edades',true,edades);
+ p.querySelector('h3').textContent=ind==='Casos'?'Evolución de casos':'Evolución de tasas por 100.000 habitantes';
  const filas=T.casos.filter(r=>ind===r.indicador&&geo.includes(r.geografia)&&sexo.includes(r.genero)&&edad.includes(r.edad));
  // Solo las dimensiones que varían necesitan repetirse en la leyenda.
  const filtrosSeries=[{campo:'geografia',etiqueta:'Geografía',valores:geo},{campo:'genero',etiqueta:'Sexo',valores:sexo},{campo:'edad',etiqueta:'Edad',valores:edad}];
@@ -176,8 +177,9 @@ function seccionCasos(host){
  const leyenda=p.querySelector('.leyenda');p.insertBefore(comunes,leyenda||p.querySelector('.muestra-n'));
  // Si todos los filtros son únicos, la línea neutra identifica la única serie.
  if(leyenda&&!dimensiones.length)leyenda.hidden=true;
- const m=panel(grid,'Distribución provincial'),cm=controles(m),prov=T.casos.filter(r=>r.nivel==='Provincial');
+ const m=panel(grid,'Casos por provincia'),cm=controles(m),prov=T.casos.filter(r=>r.nivel==='Provincial');
  const im=filtro(cm,prov,'indicador','Indicador del mapa','im','Tasa por 100.000 habitantes'),am=filtro(cm,prov,'anio','Año','am',anios.at(-1)),sm=filtro(cm,prov,'genero','Sexo','sm','Ambos sexos'),em=filtro(cm,prov,'edad','Grupo de edad','em','Todas las edades',false,edades);
+ m.querySelector('h3').textContent=im==='Casos'?'Casos por provincia':'Tasas por provincia (por 100.000 habitantes)';
  mapa(m,prov.filter(r=>r.indicador===im&&r.anio===am&&r.genero===sm&&r.edad===em),'valor',im==='Casos'?'':' por 100 mil',{'Ambos sexos':'#237bd1','Mujeres':'#c47729','Varones':'#9466c6'}[sm]||'#237bd1');
 }
 function seccionGeografia(host){const c=controles(host),s=filtro(c,T.regiones,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.regiones,'edad','Grupo de edad','e','Todas las edades',false,edades),a=filtro(c,T.provincias,'anio','Año del mapa y ranking','a',anios.at(-1));
