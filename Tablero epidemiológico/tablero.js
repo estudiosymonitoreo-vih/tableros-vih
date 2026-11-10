@@ -177,18 +177,24 @@ function seccionMortalidad(host){
  const sexo=filtro(c,datos,'sexo','Sexo','sexo','Ambos sexos',false,['Ambos sexos','Varones','Mujeres']);
  const tipo=filtro(c,datos,'tipo','Tipo de tasa','tipo','Tasa bruta',false,['Tasa bruta','Tasa ajustada por edad']);
  const filas=datos.filter(r=>r.sexo===sexo&&r.tipo===tipo&&r.anio>=2020),geografias=uniq(filas.map(r=>r.geografia)).sort(geoSort);
- const tablaPanel=panel(host,`${tipo} por 100.000 habitantes · 2020–2024`),wrap=nodo('div',null,'tabla-mortalidad'),tabla=nodo('table');
+ const nacional=filas.find(r=>r.geografia==='Argentina'&&r.anio===2024);
+ const resumen=nodo('section',null,'resumen-indicadores resumen-mortalidad');resumen.setAttribute('aria-label','Tasa nacional de mortalidad por sida');
+ tarjetaResumen(resumen,`${tipo} de mortalidad por sida · Argentina`,exacto(nacional?.valor,1),`${sexo} · 2024 · por 100.000 habitantes`);host.append(resumen);
+ const columnas=nodo('div',null,'mortalidad-columnas');host.append(columnas);
+ const tablaPanel=panel(columnas,'Tasas por 100.000 · 2020–2024'),wrap=nodo('div',null,'tabla-mortalidad'),tabla=nodo('table');
  const head=nodo('thead'),hr=nodo('tr');['Jurisdicción',2020,2021,2022,2023,2024].forEach(t=>{const th=nodo('th',String(t));th.scope='col';hr.append(th);});head.append(hr);tabla.append(head);
  const body=nodo('tbody');for(const geo of geografias){const tr=nodo('tr'),th=nodo('th',geo);th.scope='row';tr.append(th);for(const a of [2020,2021,2022,2023,2024])tr.append(nodo('td',exacto(filas.find(r=>r.geografia===geo&&r.anio===a)?.valor,1)));body.append(tr);}tabla.append(body);wrap.append(tabla);tablaPanel.append(wrap);
- const p=panel(host,`${tipo} por provincia · 2024`),actuales=filas.filter(r=>r.anio===2024&&r.geografia!=='Argentina');
+ const barrasPanel=panel(columnas,'Tasas por provincia · 2024'),p=panel(columnas,'Mapa de tasas · 2024'),actuales=filas.filter(r=>r.anio===2024&&r.geografia!=='Argentina');
  p.classList.add('panel-mortalidad');
  mapa(p,actuales,'valor',' por 100.000 habitantes',colorMapa(sexo));
  p.querySelectorAll('.muestra-n').forEach(n=>n.remove());
+ barrasPanel.classList.add('barras-mortalidad');barrasPanel.append(p.querySelector('.ranking'));
+ const acciones=p.querySelector('.acciones-datos');if(acciones)barrasPanel.append(acciones);
  // El mapa existente incluye el ranking de barras horizontales en orden descendente.
  p.querySelectorAll('text[data-provincia]').forEach(t=>{const geo=t.getAttribute('data-provincia'),tendencia=tendenciaMortalidad(filas.filter(r=>r.geografia===geo));const x=Number(t.getAttribute('x'))+t.getBBox().width/2+2,y=Number(t.getAttribute('y'))-3,dy=tendencia.texto==='Ascendente'?-4:tendencia.texto==='Descendente'?4:0;
  const flecha=svg('path',{d:`M0,0L7,${dy}M4,${dy-3}L7,${dy}L4,${dy+3}`,transform:`translate(${x},${y})`,fill:'none',stroke:'#142b48','stroke-width':1.2,class:'flecha-tendencia','data-tendencia':tendencia.texto});
  t.parentNode.append(tituloSVG(flecha,`${geo}: tendencia ${tendencia.texto.toLowerCase()}`));tituloSVG(t,`${geo}: ${t.textContent} · Tendencia ${tendencia.texto.toLowerCase()}`);});
- p.append(nodo('p','Flecha hacia arriba y a la derecha: ascendente; horizontal: estable; hacia abajo y a la derecha: descendente. Medias móviles de 3 años dentro de 2020–2024; se compara la media 2022–2024 con 2020–2022. Diferencia mayor a 0,05: ascendente; menor a −0,05: descendente; el resto: estable. Unidad: tasas por 100.000 habitantes.','nota'));
+ host.append(nodo('p','Flecha hacia arriba y a la derecha: ascendente; horizontal: estable; hacia abajo y a la derecha: descendente. Medias móviles de 3 años dentro de 2020–2024; se compara la media 2022–2024 con 2020–2022. Diferencia mayor a 0,05: ascendente; menor a −0,05: descendente; el resto: estable. Unidad: tasas por 100.000 habitantes.','nota'));
  host.append(nodo('p','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
  $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
 }
