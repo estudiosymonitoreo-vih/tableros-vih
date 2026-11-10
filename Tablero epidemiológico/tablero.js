@@ -26,9 +26,11 @@ const exacto=(v,d=1)=>v==null||!Number.isFinite(v)?'Sin datos':v.toLocaleString(
 function abrirDialogo(titulo,contenido){$('dialogo-titulo').textContent=titulo;$('dialogo-contenido').replaceChildren(contenido);if(!$('dialogo').open)$('dialogo').showModal();}
 function ajustarPantalla(){
  if(innerWidth<=700)return;
- const espacio=document.querySelector('.reporte-viewport'),reporte=document.querySelector('main');
- const escala=Math.min((espacio.clientWidth-24)/1366,(espacio.clientHeight-24)/768);
- reporte.style.transform=`scale(${escala})`;reporte.style.left=`${(espacio.clientWidth-1366*escala)/2}px`;reporte.style.top=`${(espacio.clientHeight-768*escala)/2}px`;
+ // Redibujar las coordenadas con el espacio real, sin escalar texto ni mapas.
+ document.querySelectorAll('svg.grafico').forEach(s=>{
+  const ancho=s.clientWidth,alto=s.clientHeight;
+  if(ancho>0&&alto>0)s.dibujar(ancho,alto);
+ });
 }
 
 function textoVisible(texto){return String(texto).replace(/\bVarón\b/g,'Varones').replace(/\bMujer\b/g,'Mujeres').replace(/\s+cis\b/gi,'');}
@@ -84,8 +86,10 @@ function leyenda(host,series){const l=nodo('div',null,'leyenda');series.forEach(
 function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null}={}){
  if(!filas.some(r=>r.valor!=null)&&!filas.some(r=>r.insuficiente)){vacio(host);detalle(host,datosDetalle||filas);return;}
  const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
- const w=innerWidth<=700?720:ancho,h=alto,L=55,R=22,U=35,B=42,iw=w-L-R,ih=h-U-B;
- const s=svg('svg',{viewBox:`0 0 ${w} ${h}`,class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
+ const s=svg('svg',{class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});
+ s.dibujar=(w,h)=>{
+ const L=55,R=22,U=35,B=42,iw=Math.max(1,w-L-R),ih=Math.max(1,h-U-B);
+ s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
  const max=porcentaje?100:Math.max(1,...filas.map(r=>r.valor??0))*1.13;
  const x=i=>L+(i+.5)*iw/xs.length, y=v=>U+ih*(1-v/max);
  for(let j=0;j<=4;j++){const v=max*j/4,yy=y(v);s.append(svg('line',{x1:L,x2:w-R,y1:yy,y2:yy,class:'rejilla'}),svg('text',{x:L-10,y:yy+4,'text-anchor':'end'},fmt(v,v<5?1:0)+(porcentaje?'%':'')));}
@@ -100,6 +104,7 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  if(tipo==='barras'){const xxLabel=xx+bw/2,yyLabel=y(v+base)-8;s.append(svg('text',{x:xxLabel,y:yyLabel,'text-anchor':series.length>3?'start':'middle',class:'valor-barra',...(series.length>3?{transform:`rotate(-55 ${xxLabel} ${yyLabel})`}:{})},etiqueta));}
  if(v>8&&tipo==='apilado')s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff',class:'valor-apilado'},fmt(v)+(porcentaje?'%':'')));
  }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>s.prepend(svg('polyline',{points:tr.map(p=>p.join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8})));});
+ };s.dibujar(ancho,alto);
  host.append(s);leyenda(host,series);if(coloresSeries)host.querySelectorAll('.leyenda .muestra').forEach((m,i)=>m.style.background=coloresSeries[series[i]]||colores[i%colores.length]);if((tipo==='linea'||tipo==='puntos')&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
 }
 const nombreMapa=n=>n==='Ciudad de Buenos Aires'?'CABA':n;
