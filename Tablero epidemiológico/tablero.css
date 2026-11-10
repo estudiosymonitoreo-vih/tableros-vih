@@ -113,15 +113,23 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 
 .panel-mortalidad .ranking .barra-ranking i{height:8px;top:0}.panel-mortalidad .ranking .barra-ranking i::after{display:none}
 
-/* Mortalidad: tabla, barras y mapa comparten toda la altura disponible. */
-.mortalidad-columnas{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,.9fr);gap:18px;flex:1;min-height:0}
+/* Mortalidad: filtros y tarjeta sobre la tabla; barras y mapa desde la tarjeta. */
+.mortalidad-columnas{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 60px minmax(0,1fr);gap:10px 32px;flex:1;min-height:0}
+.mortalidad-columnas>.controles{grid-column:1;grid-row:1;gap:10px}
+.resumen-mortalidad{grid-template-columns:minmax(0,1fr);width:100%;grid-column:1;grid-row:2}
+.resumen-mortalidad .resumen-etiqueta{font-size:12px}
+.resumen-mortalidad .resumen-contexto{font-size:11px}
 .mortalidad-columnas>.panel{height:100%;min-height:0}
+.mortalidad-columnas>.panel:has(.tabla-mortalidad){grid-column:1;grid-row:3}
+.mortalidad-columnas>.barras-mortalidad{grid-column:2;grid-row:2 / 4}
+.mortalidad-columnas>.panel-mortalidad{grid-column:3;grid-row:2 / 4}
 .mortalidad-columnas .tabla-mortalidad{flex:1;min-height:0;max-height:none}
-.mortalidad-columnas .tabla-mortalidad table{font-size:11px}
-.mortalidad-columnas .tabla-mortalidad th,.mortalidad-columnas .tabla-mortalidad td{padding:5px 5px}
+.mortalidad-columnas .tabla-mortalidad table{font-size:11px;table-layout:fixed}
+.mortalidad-columnas .tabla-mortalidad th,.mortalidad-columnas .tabla-mortalidad td{padding:5px 4px}
+.mortalidad-columnas .tabla-mortalidad th:first-child{width:34%}
 .mortalidad-columnas tbody th{position:static;white-space:normal}
-.mortalidad-columnas .ranking{flex:1;min-height:0}
-.barras-mortalidad .fila-ranking{grid-template-columns:minmax(85px,1fr) minmax(50px,1.4fr) 28px;font-size:11px;min-height:16px}
+.mortalidad-columnas .ranking{flex:1;min-height:0;overflow:auto}
+.barras-mortalidad .fila-ranking{grid-template-columns:minmax(85px,1fr) minmax(50px,1.4fr) 28px;font-size:11px;min-height:17px;flex-shrink:0}
 .barras-mortalidad .ranking .barra-ranking i{height:9px;top:0}
 .barras-mortalidad .ranking .barra-ranking i::after{display:none}
 .panel-mortalidad .mapa-y-ranking{display:flex;flex-direction:column}
@@ -130,9 +138,9 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 @media(max-width:700px){
  .mortalidad-columnas{display:flex;flex-direction:column;gap:14px}
  .mortalidad-columnas>.panel{height:auto;min-height:0}
+ .mortalidad-columnas>.controles{flex-wrap:nowrap}
+ .mortalidad-columnas>.controles .control{flex:1;min-width:0}
  .mortalidad-columnas .tabla-mortalidad{max-height:650px;flex:auto}
  .barras-mortalidad .ranking{min-height:650px}
  .panel-mortalidad .mapa-y-ranking{height:650px;min-height:650px}
 }
-
-.resumen-mortalidad{grid-template-columns:minmax(0,1fr);width:min(100%,650px)}

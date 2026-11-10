@@ -180,7 +180,7 @@ function seccionMortalidad(host){
  const nacional=filas.find(r=>r.geografia==='Argentina'&&r.anio===2024);
  const resumen=nodo('section',null,'resumen-indicadores resumen-mortalidad');resumen.setAttribute('aria-label','Tasa nacional de mortalidad por sida');
  tarjetaResumen(resumen,`${tipo} de mortalidad por sida · Argentina`,exacto(nacional?.valor,1),`${sexo} · 2024 · por 100.000 habitantes`);host.append(resumen);
- const columnas=nodo('div',null,'mortalidad-columnas');host.append(columnas);
+ const columnas=nodo('div',null,'mortalidad-columnas');host.append(columnas);columnas.append(c,resumen);
  const tablaPanel=panel(columnas,'Tasas por 100.000 · 2020–2024'),wrap=nodo('div',null,'tabla-mortalidad'),tabla=nodo('table');
  const head=nodo('thead'),hr=nodo('tr');['Jurisdicción',2020,2021,2022,2023,2024].forEach(t=>{const th=nodo('th',String(t));th.scope='col';hr.append(th);});head.append(hr);tabla.append(head);
  const body=nodo('tbody');for(const geo of geografias){const tr=nodo('tr'),th=nodo('th',geo);th.scope='row';tr.append(th);for(const a of [2020,2021,2022,2023,2024])tr.append(nodo('td',exacto(filas.find(r=>r.geografia===geo&&r.anio===a)?.valor,1)));body.append(tr);}tabla.append(body);wrap.append(tabla);tablaPanel.append(wrap);
