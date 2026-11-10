@@ -98,3 +98,8 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 @media(max-width:700px){.diagnostico-acotado>.panel{width:100%}}
 @media(min-width:701px) and (max-height:760px){.evolucion-vias{gap:3px}.evolucion-vias .barras-anuales{gap:1px}.evolucion-vias .barra-anual{font-size:9px}.evolucion-vias .pista-anual{height:6px}}
 .diagnostico-acotado>.panel{flex:0 1 85%}
+
+/* La evolución de vías se centra al 65% cuando no se selecciona Varones. */
+@media(min-width:701px){.vias-acotadas>.panel{flex:0 1 65%;width:65%;margin-inline:auto}}
+
+.torta .valor-torta{font-size:13px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#242c50;stroke-width:3px;stroke-linejoin:round}.torta .porcion-torta:hover,.torta .porcion-torta:focus{stroke:#fff;stroke-width:2px}.torta .linea-torta{pointer-events:none}

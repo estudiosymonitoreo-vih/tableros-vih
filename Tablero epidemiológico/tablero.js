@@ -200,21 +200,39 @@ function seccionGenero(host){const c=controles(host),g=filtro(c,T.genero,'geogra
 function seccionEdad(host){const c=controles(host),g=filtro(c,T.edad,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.edad,'genero','Género','s','Todos los géneros',false,generos),grid=layout(host);
  grafico(panel(grid,'Distribución de diagnósticos de VIH por grupo de edad'),T.edad.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
  grafico(panel(grid,'Mediana de edad al diagnóstico de VIH'),T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,anio:r.anio,serie:'Mediana de edad',valor:r.valor})),{unidad:'años',decimales:0});}
-// Barras horizontales agrupadas por año, con valores fuera de la barra y escala común.
-function graficoViasBarras(host,filas){
- if(!filas.length){vacio(host);detalle(host,filas);return;}
- const anios=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),vias=uniq(filas.map(r=>r.serie)),lista=nodo('div',null,'evolucion-vias');
- for(const anio of anios){const grupo=nodo('div',null,'grupo-via'),nombre=nodo('span',anio,'nombre-via');grupo.append(nombre);const barras=nodo('div',null,'barras-anuales');
-  const ordenadas=vias.map((via,i)=>({via,i,r:filas.find(r=>r.serie===via&&r.anio===anio)})).sort((a,b)=>(b.r?.valor??-Infinity)-(a.r?.valor??-Infinity)||a.i-b.i);
-  ordenadas.forEach(({via,i,r})=>{const v=r?.valor,linea=nodo('div',null,'barra-anual'),pista=nodo('div',null,'pista-anual'),barra=nodo('i');barra.style.width=`${v??0}%`;barra.style.background=colores[i%colores.length];pista.append(barra);linea.append(pista,nodo('strong',v==null?'Sin datos':exacto(v,1)+'%'));linea.setAttribute('role','img');linea.dataset.via=via;linea.setAttribute('aria-label',`${anio} · ${via}: ${v==null?'Sin datos':exacto(v,1)+'%'}`);linea.title=linea.getAttribute('aria-label');barras.append(linea);});grupo.append(barras);lista.append(grupo);
- }
- host.append(lista);leyenda(host,vias);host.append(nodo('p','Cada grupo representa un año y cada barra una vía de transmisión. Escala común: 0–100%; valores al final de cada fila.','nota'));detalle(host,filas);
+// Torta de 2025: porciones exactas según conteos y rótulos externos sin solapamiento.
+function graficoViasTorta(host,filas){
+ const total=filas.reduce((s,r)=>s+(r.n||0),0);
+ if(!filas.length||!total){vacio(host);detalle(host,filas);return;}
+ const s=svg('svg',{class:'grafico torta',role:'img','aria-label':host.querySelector('h3').textContent});
+ s.dibujar=(w,h)=>{
+  s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,host.querySelector('h3').textContent);
+  const cx=w/2,cy=h/2,r=Math.max(15,Math.min((w-170)/2,(h-42)/2)),externas=[];
+  let angulo=-Math.PI/2;
+  filas.forEach((fila,i)=>{
+   const fraccion=fila.n/total;if(!(fraccion>0))return;
+   const fin=angulo+2*Math.PI*fraccion,medio=(angulo+fin)/2,punto=(a,radio)=>[cx+radio*Math.cos(a),cy+radio*Math.sin(a)],inicio=punto(angulo,r),ultimo=punto(fin,r),porcentaje=exacto(fila.valor,1)+'%',color=colores[i%colores.length];
+   const porcion=fraccion>=1-1e-10?svg('circle',{cx,cy,r}):svg('path',{d:`M${cx},${cy}L${inicio[0]},${inicio[1]}A${r},${r} 0 ${fraccion>.5?1:0} 1 ${ultimo[0]},${ultimo[1]}Z`});
+   porcion.setAttribute('class','porcion-torta');porcion.setAttribute('fill',color);porcion.setAttribute('stroke','#242c50');porcion.setAttribute('stroke-width','1');porcion.setAttribute('tabindex','0');porcion.setAttribute('aria-label',`${fila.serie}: ${porcentaje} · n = ${fmt(fila.n,0)}`);tituloSVG(porcion,porcion.getAttribute('aria-label'));s.append(porcion);
+   if(2*r*.64*Math.sin(Math.min(Math.PI,fin-angulo)/2)>porcentaje.length*7+12&&fin-angulo>.28){
+    const [x,y]=punto(medio,r*.64);s.append(svg('text',{x,y:y+4,'text-anchor':'middle',class:'valor-torta interior'},porcentaje));
+   }else{const lado=Math.cos(medio)>=0?1:-1;externas.push({lado,origen:punto(medio,r*.98),codo:punto(medio,r+12),y:cy+(r+15)*Math.sin(medio),porcentaje,color});}
+   angulo=fin;
+  });
+  for(const lado of [-1,1]){
+   const etiquetas=externas.filter(e=>e.lado===lado).sort((a,b)=>a.y-b.y),min=cy-r-8,max=cy+r+8,separacion=20;
+   etiquetas.forEach((e,i)=>e.y=Math.max(min,e.y,i?etiquetas[i-1].y+separacion:min));
+   for(let i=etiquetas.length-1;i>=0;i--)etiquetas[i].y=Math.min(etiquetas[i].y,i===etiquetas.length-1?max:etiquetas[i+1].y-separacion);
+   etiquetas.forEach(e=>{const x=cx+lado*(r+34);s.append(svg('polyline',{points:`${e.origen.join(',')} ${e.codo.join(',')} ${x},${e.y}`,fill:'none',stroke:e.color,'stroke-width':1.4,class:'linea-torta'}),svg('text',{x:x+lado*5,y:e.y+4,'text-anchor':lado>0?'start':'end',class:'valor-torta exterior','data-lado':lado},e.porcentaje));});
+  }
+ };
+ s.dibujar(720,390);host.append(s);leyenda(host,filas.map(r=>r.serie));detalle(host,filas);
 }
 function seccionVias(host){
- const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género · evolución','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad · evolución','e','Todas las edades',false,edades);
+ const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género · torta 2025','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad · torta 2025','e','Todas las edades',false,edades);
  const varones=T.vias.filter(r=>r.geografia===g&&r.genero==='Varón'&&edades.slice(1).includes(r.edad)),a=s==='Varón'?filtro(c,varones,'anio','Año · varones por edad','a',anios.at(-1)):null;
- const disponibles=T.vias.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e),ultimos=uniq(disponibles.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5),grid=layout(host,s==='Varón'?'dos':'una');
- graficoViasBarras(panel(grid,'Vías de transmisión en diagnósticos de VIH · últimos cinco años'),disponibles.filter(r=>ultimos.includes(r.anio)));
+ const disponibles=T.vias.filter(r=>r.geografia===g&&r.genero===s&&r.edad===e&&r.anio===2025),grid=layout(host,s==='Varón'?'dos':'una vias-acotadas');
+ graficoViasTorta(panel(grid,'Vías de transmisión en diagnósticos de VIH · 2025'),disponibles);
  if(s!=='Varón')return;
  const p=panel(grid,`Vías de transmisión en diagnósticos de VIH en varones · por edad · ${a??'sin año disponible'}`);
  grafico(p,varones.filter(r=>r.anio===a).map(r=>({...r,anio:r.edad,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenX:edades.slice(1),alto:390});
@@ -321,12 +339,12 @@ function presentarResumen(){
     ['Grupo de edad más frecuente',grupo?.serie||'Sin datos',grupo?porcentaje(grupo.valor)+' de los diagnósticos':'Sin datos'],
     ['Proporción de 55 años o más',porcentaje(mayores),`Distribución por edad · ${ultimo}`]);
   }else if(pagina==='vias'){
-   const filas=T.vias.filter(r=>r.geografia===e.g&&r.genero===e.s&&r.edad===e.e);
-   const periodos=uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b).slice(-5),anio=periodos.at(-1);
+   const filas=T.vias.filter(r=>r.geografia===e.g&&r.genero===e.s&&r.edad===e.e&&r.anio===2025);
+   const anio=2025;
    const actuales=filas.filter(r=>r.anio===anio),via=mayor(actuales),desconocida=actuales.find(r=>/desconoc/i.test(r.serie));
    tarjetas.push([`Vía de mayor proporción${anio?' · '+anio:''}`,porcentaje(via?.valor),via?.serie||'Sin datos'],
     ['Vía desconocida',porcentaje(desconocida?.valor),`${e.g} · ${e.s} · ${e.e}`],
-    ['Período mostrado',periodos.length?`${periodos[0]}–${anio}`:'Sin datos','Últimos cinco años disponibles para esta selección']);
+    ['Año de la torta',filas.length?'2025':'Sin datos','Diagnósticos de VIH de 2025 para esta selección']);
   }else if(pagina==='diagnostico'||pagina==='mapas-diagnostico'){
    const anio=pagina==='diagnostico'?ultimo:e.a,geografia=pagina==='diagnostico'?e.g:(e.r||'Argentina');
    const dato=T.diagnostico.find(r=>r.geografia===geografia&&r.genero===e.s&&r.edad===e.e&&r.anio===anio),fila=pagina==='mapas-diagnostico'?paraMapaDT(dato):dato;
