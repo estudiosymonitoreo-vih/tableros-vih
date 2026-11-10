@@ -155,3 +155,12 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
  .definiciones-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
  .definiciones-grid>.panel:first-child{grid-column:3;grid-row:1 / 3}
 }
+
+/* El mapa ocupa también la altura del pie de datos del ranking. */
+.mapa-extendido{grid-template-rows:minmax(0,1fr) auto auto;row-gap:6px}
+.mapa-extendido>.mapa-columna{grid-column:1;grid-row:1 / 4}
+.mapa-extendido>.ranking{grid-column:2;grid-row:1;overflow:auto}
+.mapa-extendido>.muestra-n{grid-column:2;grid-row:2}
+.mapa-extendido>.acciones-datos{grid-column:2;grid-row:3;flex-wrap:wrap}
+.mapa-extendido .mapa-info{min-height:12px}
+.mapa-extendido .nota-referencia{margin:0}

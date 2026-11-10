@@ -154,11 +154,22 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
   }
   etiquetas.forEach(({t,x,y,originalY})=>{t.style.fontSize=`${16/escalaRegion}px`;t.style.strokeWidth=`${2.2/escalaRegion}px`;t.setAttribute('y',y);tituloSVG(t,t.getAttribute('data-provincia')+': '+t.textContent);if(Math.abs(y-originalY)*escalaRegion>3)regionalG.insertBefore(svg('line',{x1:x,y1:originalY,x2:x,y2:y,stroke:'#dae7f5','stroke-width':.8/escalaRegion}),t);});
  }
- let z=1,dx=0,dy=0;const transforma=()=>g.setAttribute('transform',`translate(${dx},${dy}) translate(165,210) scale(${z}) translate(-165,-210)`);
+ // Encuadre nacional sobre las provincias y el rótulo de CABA, con margen mínimo.
+ let marco={x:0,y:0,ancho:330,alto:420};
+ if(!regional){
+  const puntos=[];const recorrer=v=>{if(typeof v[0]==='number')puntos.push(proy(v));else v.forEach(recorrer);};features.forEach(f=>recorrer(f.geometry.coordinates));
+  const caba=proy([-53.2,-35.8]);puntos.push([caba[0]+20,caba[1]-14],[caba[0]+20,caba[1]+14]);
+  const xs=puntos.map(p=>p[0]),ys=puntos.map(p=>p[1]);
+  marco={x:Math.min(...xs)-8,y:Math.min(...ys)-8,ancho:Math.max(...xs)-Math.min(...xs)+16,alto:Math.max(...ys)-Math.min(...ys)+16};
+  s.setAttribute('viewBox',`${marco.x} ${marco.y} ${marco.ancho} ${marco.alto}`);
+ }
+ const centroX=marco.x+marco.ancho/2,centroY=marco.y+marco.alto/2;
+ let z=1,dx=0,dy=0;const transforma=()=>g.setAttribute('transform',`translate(${dx},${dy}) translate(${centroX},${centroY}) scale(${z}) translate(${-centroX},${-centroY})`);
  const botones=nodo('div',null,'zoom');[['+','Acercar',()=>z=Math.min(6,z*1.4)],['−','Alejar',()=>z=Math.max(1,z/1.4)],['↺','Restablecer mapa',()=>{z=1;dx=0;dy=0;}]].forEach(([txt,label,fn])=>{const b=nodo('button',txt);b.setAttribute('aria-label',label);b.onclick=()=>{fn();transforma();};botones.append(b);});
- let inicio=null;s.onpointerdown=e=>{inicio=[e.clientX,e.clientY,dx,dy];s.setPointerCapture(e.pointerId);};s.onpointermove=e=>{if(inicio){const rect=s.getBoundingClientRect();dx=inicio[2]+(e.clientX-inicio[0])*330/rect.width;dy=inicio[3]+(e.clientY-inicio[1])*420/rect.height;transforma();}};s.onpointerup=s.onpointercancel=()=>{inicio=null;};
+ let inicio=null;s.onpointerdown=e=>{inicio=[e.clientX,e.clientY,dx,dy];s.setPointerCapture(e.pointerId);};s.onpointermove=e=>{if(inicio){const rect=s.getBoundingClientRect();dx=inicio[2]+(e.clientX-inicio[0])*marco.ancho/rect.width;dy=inicio[3]+(e.clientY-inicio[1])*marco.alto/rect.height;transforma();}};s.onpointerup=s.onpointercancel=()=>{inicio=null;};
  wrap.append(s,botones);columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,${color}33,${color})`;escala.append(nodo('span',unidad==='%'?'0%':'0'),grad,nodo('span',fmt(max)+unidad),nodo('span',campo==='valor'?'Gris: sin datos':'Gris: sin datos suficientes (<55% válidos)'));if(!validos.length)escala.replaceChildren(nodo('span',campo==='valor'?'Sin datos para esta selección.':'Sin jurisdicciones con datos suficientes.'));columna.append(escala);
  const ranking=nodo('div',null,'ranking');ranking.dataset.maximo=String(max);ranking.style.setProperty('--color-mapa',color);[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;if(v==null||!Number.isFinite(v))row.classList.add('sin-dato');bar.append(i);if(insuficientes.has(n)){row.classList.add('insuficiente');row.append(nodo('span',n),nodo('span','Sin datos suficientes','aviso-insuficiente'));}else row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)+(unidad==='%'?'%':'')));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
+ if(pagina!=='mortalidad'){division.classList.add('mapa-extendido');division.append(host.querySelector('.muestra-n'),host.querySelector('.acciones-datos'));}
 }
 function colorMapa(genero,avanzada=false){
  const paletas={'Ambos sexos':['#237bd1','#d67555'],'Todos los géneros':['#237bd1','#d67555'],'Mujer':['#c47729','#9b4f16'],'Mujeres':['#c47729','#9b4f16'],'Varón':['#9466c6','#704396'],'Varones':['#9466c6','#704396'],'Mujer trans':['#cc529a','#98366f'],'Varón trans':['#168e9b','#0b6772']};
