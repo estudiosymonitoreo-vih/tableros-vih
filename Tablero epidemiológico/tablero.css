@@ -168,3 +168,20 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 /* Un único encabezado para las dos representaciones provinciales de mortalidad. */
 .mortalidad-comparacion{grid-column:2 / 4;grid-row:2 / 4;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:8px 32px;min-width:0;min-height:0;border-top:1px solid #597092;padding-top:8px}.mortalidad-comparacion>h3{grid-column:1 / -1}.mortalidad-comparacion>.panel{border-top:0;padding-top:0;min-height:0}
 @media(max-width:700px){.mortalidad-comparacion{display:flex;flex-direction:column;gap:14px}.mortalidad-comparacion>.panel{height:auto;min-height:0}}
+
+/* Mortalidad: tabla, barras provinciales, mapa y dos gráficos nacionales por edad. */
+@media(min-width:701px){
+ .mortalidad-columnas{grid-template-columns:minmax(0,1.12fr) minmax(0,.78fr) minmax(0,.78fr) minmax(0,1.02fr);column-gap:18px}
+ .mortalidad-comparacion{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px}
+ .mortalidad-edad-columna{grid-column:4;grid-row:2 / 4;display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0;min-height:0}
+ .mortalidad-edad-columna .panel{min-height:0;overflow:hidden}
+ .barras-mortalidad .fila-ranking{grid-template-columns:minmax(72px,1.05fr) minmax(36px,1fr) 26px;font-size:10px;min-height:18px}
+ .panel-mortalidad .mapa{width:100%;height:100%}
+}
+.mortalidad-edad-columna h3{font-size:13px;line-height:1.2}.mortalidad-edad-columna .panel{gap:5px}.mortalidad-edad-columna .nota{font-size:10px}
+.lista-tasas-edad{list-style:none;margin:0;padding:0;display:flex;flex:1;min-height:0;flex-direction:column;justify-content:space-between;gap:2px}
+.fila-tasa-edad{display:grid;grid-template-columns:83px minmax(0,1fr) 26px;gap:6px;align-items:center;min-height:12px;font-size:10px;line-height:1.1}.fila-tasa-edad strong{text-align:right}
+.pista-tasa-edad{height:8px;background:#1f2844}.pista-tasa-edad i{display:block;height:100%}
+.dona-mortalidad .rotulo-dona{font-size:11px;fill:#f3f6ff}.dona-mortalidad .centro-dona{font-size:13px;font-weight:600}.dona-mortalidad .centro-dona-nota{font-size:8px;fill:#c6d5ed}
+.porcion-dona:hover,.porcion-dona:focus{stroke:white;stroke-width:2px}.mortalidad-edad-columna .acciones-datos{gap:5px}.mortalidad-edad-columna .acciones-datos button{font-size:9px;padding:3px 6px}
+@media(max-width:700px){.mortalidad-edad-columna{display:flex;flex-direction:column;gap:14px}.mortalidad-edad-columna .panel{min-height:0}.lista-tasas-edad{min-height:220px;flex:auto}.mortalidad-edad-columna .dona-mortalidad{height:260px;min-height:260px;flex:auto}}

@@ -182,6 +182,41 @@ function colorMapa(genero,avanzada=false){
  const paletas={'Ambos sexos':['#237bd1','#d67555'],'Todos los géneros':['#237bd1','#d67555'],'Mujer':['#c47729','#9b4f16'],'Mujeres':['#c47729','#9b4f16'],'Varón':['#9466c6','#704396'],'Varones':['#9466c6','#704396'],'Mujer trans':['#cc529a','#98366f'],'Varón trans':['#168e9b','#0b6772']};
  return (paletas[genero]||paletas['Todos los géneros'])[avanzada?1:0];
 }
+function graficosMortalidadEdad(host,filas,sexo){
+ const tasas=panel(host,'Tasas de mortalidad por sida por edad · 2024');tasas.classList.add('mortalidad-tasas-edad');
+ const distribucion=panel(host,'Distribución de defunciones por sida por edad · 2024');distribucion.classList.add('mortalidad-distribucion-edad');
+ if(!filas.length){vacio(tasas);vacio(distribucion);return;}
+ tasas.append(nodo('p',`${sexo} · por 100.000 habitantes`,'nota contexto-mortalidad-edad'));
+ const lista=nodo('ol',null,'lista-tasas-edad'),max=Math.max(1,...filas.map(r=>r.tasa));
+ filas.forEach(r=>{const fila=nodo('li',null,'fila-tasa-edad'),pista=nodo('div',null,'pista-tasa-edad'),barra=nodo('i');
+  fila.dataset.edad=r.grupo_edad;fila.dataset.valor=r.tasa;barra.style.width=`${r.tasa/max*100}%`;barra.style.background=colorMapa(sexo);pista.append(barra);
+  fila.append(nodo('span',r.grupo_edad),pista,nodo('strong',exacto(r.tasa,1),'valor-tasa-edad'));fila.title=`${r.grupo_edad}: ${exacto(r.tasa,1)} por 100.000 habitantes`;lista.append(fila);
+ });tasas.append(lista);detalle(tasas,filas);tasas.querySelector('.muestra-n').remove();
+ distribucion.append(nodo('p',`${sexo} · porcentaje de defunciones`,'nota contexto-mortalidad-edad'));
+ const s=svg('svg',{class:'grafico dona-mortalidad',role:'img','aria-label':distribucion.querySelector('h3').textContent+' · '+sexo});
+ s.dibujar=(w,h)=>{
+  s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,distribucion.querySelector('h3').textContent+' · '+sexo);
+  const cx=w/2,cy=h/2,r=Math.max(20,Math.min(w*.20,h*.39)),interior=r*.57,total=filas.reduce((a,f)=>a+f.porcentaje,0),rotulos=[];
+  const paleta=[...colores,'#9baac4'];let angulo=-Math.PI/2;
+  filas.forEach((f,i)=>{
+   const fraccion=f.porcentaje/total,fin=angulo+fraccion*Math.PI*2,medio=(angulo+fin)/2,punto=(a,radio)=>[cx+radio*Math.cos(a),cy+radio*Math.sin(a)],color=paleta[i],texto=`${f.grupo_edad}: ${exacto(f.porcentaje,1)}%`;
+   if(fraccion>0){const a=punto(angulo,r),b=punto(fin,r),c=punto(fin,interior),d=punto(angulo,interior),grande=fraccion>.5?1:0;
+    const porcion=tituloSVG(svg('path',{d:`M${a}A${r},${r} 0 ${grande} 1 ${b}L${c}A${interior},${interior} 0 ${grande} 0 ${d}Z`,fill:color,stroke:'#242c50','stroke-width':1,class:'porcion-dona',tabindex:0,'data-edad':f.grupo_edad,'data-porcentaje':f.porcentaje,'aria-label':texto}),texto);s.append(porcion);
+   }
+   const lado=Math.cos(medio)>=0?1:-1,nombre=f.grupo_edad.replace(' años','').replace(' y más','+').replaceAll('-','–');
+   rotulos.push({lado,y:cy+(r+9)*Math.sin(medio),origen:fraccion>0?punto(medio,r):null,color,nombre,porcentaje:f.porcentaje,edad:f.grupo_edad});angulo=fin;
+  });
+  for(const lado of [-1,1]){
+   const etiquetas=rotulos.filter(e=>e.lado===lado).sort((a,b)=>a.y-b.y),paso=13,min=10,max=h-6;
+   etiquetas.forEach((e,i)=>e.y=Math.max(min,e.y,i?etiquetas[i-1].y+paso:min));
+   for(let i=etiquetas.length-1;i>=0;i--)etiquetas[i].y=Math.min(etiquetas[i].y,i===etiquetas.length-1?max:etiquetas[i+1].y-paso);
+   etiquetas.forEach(e=>{const x=cx+lado*(r+16);if(e.origen)s.append(svg('polyline',{points:`${e.origen} ${cx+lado*(r+8)},${e.y} ${x},${e.y}`,fill:'none',stroke:e.color,'stroke-width':1,class:'linea-dona'}));
+    s.append(svg('text',{x:x+lado*3,y:e.y+3,'text-anchor':lado>0?'start':'end',class:'rotulo-dona','data-lado':lado,'data-edad':e.edad,'data-porcentaje':e.porcentaje},`${e.nombre} · ${exacto(e.porcentaje,1)}%`));
+   });
+  }
+  s.append(svg('text',{x:cx,y:cy-1,'text-anchor':'middle',class:'centro-dona'},'2024'),svg('text',{x:cx,y:cy+13,'text-anchor':'middle',class:'centro-dona-nota'},'defunciones'));
+ };s.dibujar(360,210);distribucion.append(s);detalle(distribucion,filas);distribucion.querySelector('.muestra-n').remove();
+}
 function seccionMortalidad(host){
  const datos=T.mortalidad||[],c=controles(host);
  if(!datos.length){host.append(nodo('p','Regenerá el tablero para incorporar el archivo auxiliar de mortalidad.'));return;}
@@ -205,6 +240,8 @@ function seccionMortalidad(host){
  encabezado.id='titulo-mortalidad-comparacion';comparacion.append(encabezado);
  for(const panelDatos of [barrasPanel,p]){panelDatos.querySelector('h3').remove();panelDatos.dataset.tituloDatos=tituloComun;panelDatos.setAttribute('aria-labelledby',encabezado.id);comparacion.append(panelDatos);}
  columnas.append(comparacion);
+ const edadColumna=nodo('section',null,'mortalidad-edad-columna');edadColumna.setAttribute('aria-label','Mortalidad por sida por edad en 2024');columnas.append(edadColumna);
+ graficosMortalidadEdad(edadColumna,(T.mortalidad_edad||[]).filter(r=>r.sexo===sexo&&r.anio===2024),sexo);
 
  host.append(nodo('p','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
  $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
