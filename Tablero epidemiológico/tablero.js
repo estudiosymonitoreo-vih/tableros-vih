@@ -221,29 +221,31 @@ function seccionMortalidad(host){
  const datos=T.mortalidad||[],c=controles(host);
  if(!datos.length){host.append(nodo('p','Regenerá el tablero para incorporar el archivo auxiliar de mortalidad.'));return;}
  const sexo=filtro(c,datos,'sexo','Sexo','sexo','Ambos sexos',false,['Ambos sexos','Varones','Mujeres']);
- const tipo=filtro(c,datos,'tipo','Tipo de tasa','tipo','Tasa bruta',false,['Tasa bruta','Tasa ajustada por edad']);
- const filas=datos.filter(r=>r.sexo===sexo&&r.tipo===tipo&&r.anio>=2020),geografias=uniq(filas.map(r=>r.geografia)).sort(geoSort);
+ const tipo=filtro(c,datos,'tipo','Indicador','tipo','Tasa bruta',false,['Tasa bruta','Tasa ajustada por edad','Defunciones']);
+ const defunciones=tipo==='Defunciones',decimales=defunciones?0:1,unidad=defunciones?'':' por 100.000 habitantes',titulo=defunciones?'Defunciones por sida':'Tasa de mortalidad por sida por 100.000 habitantes';
+ const filas=datos.filter(r=>r.sexo===sexo&&r.tipo===tipo&&r.anio>=2020),extras=['Desconocido','Otro país'],geografias=[...uniq(filas.map(r=>r.geografia)).filter(g=>!extras.includes(g)).sort(geoSort),...extras.filter(g=>filas.some(r=>r.geografia===g))];
  const nacional=filas.find(r=>r.geografia==='Argentina'&&r.anio===2024);
- const resumen=nodo('section',null,'resumen-indicadores resumen-mortalidad');resumen.setAttribute('aria-label','Tasa nacional de mortalidad por sida');
- tarjetaResumen(resumen,`${tipo} de mortalidad por sida · Argentina`,exacto(nacional?.valor,1),`${sexo} · 2024 · por 100.000 habitantes`);host.append(resumen);
+ const resumen=nodo('section',null,'resumen-indicadores resumen-mortalidad');resumen.setAttribute('aria-label',defunciones?'Defunciones nacionales por sida':'Tasa nacional de mortalidad por sida');
+ tarjetaResumen(resumen,defunciones?'Defunciones por sida · Argentina':`${tipo} de mortalidad por sida · Argentina`,exacto(nacional?.valor,decimales),`${sexo} · 2024${unidad?' · por 100.000 habitantes':''}`);host.append(resumen);
  const columnas=nodo('div',null,'mortalidad-columnas');host.append(columnas);columnas.append(c,resumen);
- const tablaPanel=panel(columnas,'Tasa de mortalidad por sida por 100.000 habitantes · 2020–2024'),wrap=nodo('div',null,'tabla-mortalidad'),tabla=nodo('table');
+ const tablaPanel=panel(columnas,`${titulo} · 2020–2024`),wrap=nodo('div',null,'tabla-mortalidad'),tabla=nodo('table');
  const head=nodo('thead'),hr=nodo('tr');['Jurisdicción',2020,2021,2022,2023,2024].forEach(t=>{const th=nodo('th',String(t));th.scope='col';hr.append(th);});head.append(hr);tabla.append(head);
- const body=nodo('tbody');for(const geo of geografias){const tr=nodo('tr'),th=nodo('th',geo);th.scope='row';tr.append(th);for(const a of [2020,2021,2022,2023,2024])tr.append(nodo('td',exacto(filas.find(r=>r.geografia===geo&&r.anio===a)?.valor,1)));body.append(tr);}tabla.append(body);wrap.append(tabla);tablaPanel.append(wrap);
- const barrasPanel=panel(columnas,'Tasa de mortalidad por sida por 100.000 habitantes · por provincia · 2024'),p=panel(columnas,'Mapa de tasa de mortalidad por sida por 100.000 habitantes · 2024'),actuales=filas.filter(r=>r.anio===2024&&r.geografia!=='Argentina');
+ const body=nodo('tbody');for(const geo of geografias){const tr=nodo('tr'),th=nodo('th',geo);th.scope='row';tr.append(th);for(const a of [2020,2021,2022,2023,2024])tr.append(nodo('td',exacto(filas.find(r=>r.geografia===geo&&r.anio===a)?.valor,decimales)));body.append(tr);}tabla.append(body);wrap.append(tabla);tablaPanel.append(wrap);
+ const barrasPanel=panel(columnas,`${titulo} · por provincia · 2024`),p=panel(columnas,`Mapa de ${titulo.toLowerCase()} · 2024`),actuales=filas.filter(r=>r.anio===2024&&r.geografia!=='Argentina'&&!extras.includes(r.geografia));
  p.classList.add('panel-mortalidad');
- mapa(p,actuales,'valor',' por 100.000 habitantes',colorMapa(sexo));
+ mapa(p,actuales,'valor',unidad,colorMapa(sexo));
+ if(defunciones){const nota=nodo('p',null,'nota mortalidad-residencias');nota.setAttribute('aria-live','polite');extras.forEach((g,i)=>{if(i)nota.append(document.createTextNode(' · '));const valor=filas.find(r=>r.geografia===g&&r.anio===2024)?.valor;nota.append(nodo('span',`${g}: ${exacto(valor,0)}`));});p.querySelector('.mapa-columna').append(nota);}
  p.querySelectorAll('.muestra-n').forEach(n=>n.remove());
  barrasPanel.classList.add('barras-mortalidad');barrasPanel.append(p.querySelector('.ranking'));
  const acciones=p.querySelector('.acciones-datos');if(acciones)barrasPanel.append(acciones);
- const tituloComun='Tasa de mortalidad por sida por 100.000 habitantes · por provincia · 2024',comparacion=nodo('section',null,'mortalidad-comparacion'),encabezado=nodo('h3',tituloComun);
+ const tituloComun=`${titulo} · por provincia · 2024`,comparacion=nodo('section',null,'mortalidad-comparacion'),encabezado=nodo('h3',tituloComun);
  encabezado.id='titulo-mortalidad-comparacion';comparacion.append(encabezado);
  for(const panelDatos of [barrasPanel,p]){panelDatos.querySelector('h3').remove();panelDatos.dataset.tituloDatos=tituloComun;panelDatos.setAttribute('aria-labelledby',encabezado.id);comparacion.append(panelDatos);}
  columnas.append(comparacion);
  const edadColumna=nodo('section',null,'mortalidad-edad-columna');edadColumna.setAttribute('aria-label','Mortalidad por sida por edad en 2024');columnas.append(edadColumna);
  graficosMortalidadEdad(edadColumna,(T.mortalidad_edad||[]).filter(r=>r.sexo===sexo&&r.anio===2024),sexo);
 
- host.append(nodo('p','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
+ host.append(nodo('p',defunciones?'Fuente de defunciones: CSV procesados DEIS 2020–2024. Tasas y distribución por edad: tablas de 2024 incorporadas al tablero.':'Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
  $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
 }
 
