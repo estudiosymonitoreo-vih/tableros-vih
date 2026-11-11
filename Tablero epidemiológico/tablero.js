@@ -77,7 +77,7 @@ function detalle(host,filas){
  campos.forEach(c=>{const th=nodo('th',c);th.scope='col';hr.append(th);});head.append(hr);table.append(head);
  const body=nodo('tbody');filas.forEach(r=>{const tr=nodo('tr');campos.forEach(c=>tr.append(nodo('td',typeof r[c]==='number'?fmt(r[c],3):r[c]??'Sin datos')));body.append(tr);});table.append(body);scroll.append(table);
  const acciones=nodo('div',null,'acciones-datos'),ver=nodo('button','Ver datos'),b=nodo('button','Descargar CSV');
- ver.onclick=()=>abrirDialogo(host.querySelector('h3')?.textContent||'Datos del gráfico',scroll);
+ ver.onclick=()=>abrirDialogo(host.dataset.tituloDatos||host.querySelector('h3')?.textContent||'Datos del gráfico',scroll);
  b.disabled=!filas.length;b.onclick=()=>{const csv=[campos,...filas.map(r=>campos.map(c=>r[c]??''))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=nodo('a');a.href=url;a.download=`vih-${pagina}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};acciones.append(ver,b);host.append(acciones);
 }
 function vacio(host){host.append(nodo('p','Sin datos para esta selección.','vacio'));}
@@ -201,6 +201,11 @@ function seccionMortalidad(host){
  p.querySelectorAll('.muestra-n').forEach(n=>n.remove());
  barrasPanel.classList.add('barras-mortalidad');barrasPanel.append(p.querySelector('.ranking'));
  const acciones=p.querySelector('.acciones-datos');if(acciones)barrasPanel.append(acciones);
+ const tituloComun='Tasa de mortalidad por sida por 100.000 habitantes · por provincia · 2024',comparacion=nodo('section',null,'mortalidad-comparacion'),encabezado=nodo('h3',tituloComun);
+ encabezado.id='titulo-mortalidad-comparacion';comparacion.append(encabezado);
+ for(const panelDatos of [barrasPanel,p]){panelDatos.querySelector('h3').remove();panelDatos.dataset.tituloDatos=tituloComun;panelDatos.setAttribute('aria-labelledby',encabezado.id);comparacion.append(panelDatos);}
+ columnas.append(comparacion);
+
  host.append(nodo('p','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
  $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
 }

@@ -164,3 +164,7 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .mapa-extendido>.acciones-datos{grid-column:2;grid-row:3;flex-wrap:wrap}
 .mapa-extendido .mapa-info{min-height:12px}
 .mapa-extendido .nota-referencia{margin:0}
+
+/* Un único encabezado para las dos representaciones provinciales de mortalidad. */
+.mortalidad-comparacion{grid-column:2 / 4;grid-row:2 / 4;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:8px 32px;min-width:0;min-height:0;border-top:1px solid #597092;padding-top:8px}.mortalidad-comparacion>h3{grid-column:1 / -1}.mortalidad-comparacion>.panel{border-top:0;padding-top:0;min-height:0}
+@media(max-width:700px){.mortalidad-comparacion{display:flex;flex-direction:column;gap:14px}.mortalidad-comparacion>.panel{height:auto;min-height:0}}
