@@ -1,3 +1,4 @@
+// Autor: Ariel Adaszko
 "use strict";
 // Correspondencia literal del CASE de Looker Studio provisto por la persona usuaria.
 window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({

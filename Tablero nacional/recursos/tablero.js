@@ -1,3 +1,4 @@
+// Autor: Ariel Adaszko
 "use strict";
 (() => {
   const datos = JSON.parse(document.getElementById("datos-tablero").textContent);

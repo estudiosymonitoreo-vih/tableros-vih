@@ -1,3 +1,4 @@
+// Autor: Ariel Adaszko
 "use strict";
 // Un único contrato de unidades para mapa, tarjeta nacional y barras.
 window.SVIH_COMPARATIVO = Object.freeze([
