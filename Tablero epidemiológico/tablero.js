@@ -246,7 +246,7 @@ function seccionMortalidad(host){
  const edadColumna=nodo('section',null,'mortalidad-edad-columna');edadColumna.setAttribute('aria-label','Mortalidad por sida por edad en 2024');columnas.append(edadColumna);
  graficosMortalidadEdad(edadColumna,(T.mortalidad_edad||[]).filter(r=>r.sexo===sexo&&r.anio===2024),sexo);
 
- host.append(nodo('p',defunciones?'Fuente de defunciones: CSV procesados DEIS 2020–2024. Tasas y distribución por edad: tablas de 2024 incorporadas al tablero.':'Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75. DEIS / Ministerio de Salud de la Nación.','nota'));
+ if(defunciones)host.append(nodo('p','Fuente de defunciones: CSV procesados DEIS 2020–2024. Tasas y distribución por edad: tablas de 2024 incorporadas al tablero.','nota'));
  $('periodo').textContent='Fuente: DEIS / Ministerio de Salud · Mortalidad por causas asociadas al VIH · 2020–2024';
 }
 
