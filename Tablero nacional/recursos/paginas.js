@@ -50,7 +50,9 @@
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
     const perfilMediana=!!host.closest('.perfil-mediana');
-    const W=Math.max(200,host.clientWidth),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
+    // Cada barra histórica conserva su valor: reservar ancho mínimo evita que
+    // múltiples períodos terminen con fuentes ilegibles; móvil permite desplazar.
+    const W=Math.max(200,host.clientWidth,historico?xs.length*ss.length*12+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:historico?80:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
     const bruto=Math.max(0,...a.map(r=>r[y])),pot=10**Math.floor(Math.log10(bruto/4||1)),salto=[1,2,2.5,5,10].find(z=>z*pot>=bruto/4)*pot;
     const max=pct?100:Math.ceil(bruto/(salto||1))*(salto||1),min=Math.min(0,...a.map(r=>r[y]));
     const minDato=Math.min(...a.map(r=>r[y])),estricta=log&&minDato>0&&bruto/minDato>=10,simetrica=log&&minDato<=0;
@@ -58,6 +60,7 @@
     const lo=estricta?Math.floor(Math.log10(minDato)):trans(min),hi=estricta?Math.ceil(Math.log10(max)):trans(max);
     const unit=v=>estricta&&v===0?0:(trans(v)-lo)/(hi-lo||1);
     const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"grafico-svg",role:"img","aria-label":host.parentElement.querySelector("h3")?.textContent||"Gráfico"});
+    if(historico){s.style.minWidth=W+'px';host.style.overflowX='auto';}
     if(host.closest(".perfil-residencia")){s.style.minHeight=H+"px";s.style.flex="none";}
     const ticks=estricta?Array.from({length:Math.max(1,Math.round(hi-lo)+1)},(_,i)=>lo+i):(horizontal&&W<280?[0,2,4]:[0,1,2,3,4]).map(i=>lo+(hi-lo)*i/4);
     ticks.forEach(v=>{const q=(v-lo)/(hi-lo||1),pos=horizontal?left+iw*q:top+ih-ih*q,val=estricta?10**v:simetrica?Math.sign(v)*(10**Math.abs(v)-1):v,txt=formato?formato(val):null;const texto=txt?.endsWith('%')?txt:Math.abs(val)>=1000?f(val/1000,Math.abs(val)%1000?1:0)+" mil":txt||f(val,pct?0:Math.abs(val)<2&&val!==0?1:0)+(pct?"%":"");s.append(sv("line",horizontal?{x1:pos,y1:top,x2:pos,y2:top+ih,stroke:"#ffffff38"}:{x1:left,y1:pos,x2:W-right,y2:pos,stroke:"#ffffff38"}));s.append(sv("text",{x:horizontal?pos:left-5,y:horizontal?H-8:pos+4,"text-anchor":horizontal?"middle":"end",fill:"white","font-size":11},texto));});
@@ -70,7 +73,13 @@
         const color=cs[(serie?j:!horizontal&&xs.length<=8?i:0)%cs.length];
         const unica=!horizontal&&a.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
         const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;rect.setAttribute('y',cy-1);rect.setAttribute('height',2);rect.setAttribute('rx',1);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
-        if((xs.length<=8||horizontal)&&!(horizontal&&band<11)){const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:left+i*step+step*.1+(j+.45)*band,ty=horizontal?top+i*step+step*.1+(j+.65)*band:pos-5;s.append(sv("text",{class:"etiqueta-valor",x:tx,y:ty,fill:"white","font-size":horizontal?10:11,"text-anchor":horizontal?"start":"middle"},texto));}
+        if((historico||xs.length<=8||horizontal)&&!(horizontal&&band<11)){
+          const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:bx+ancho/2,ty=horizontal?top+i*step+step*.1+(j+.65)*band:Math.min(base,pos)-5;
+          const fuente=historico?Math.max(8,Math.min(11,band*.9/(texto.length*.6))):horizontal?10:11,girar=historico&&texto.length*fuente*.6>band*.9;
+          const attrs={class:"etiqueta-valor",x:tx,y:ty,fill:"white","font-size":fuente,"text-anchor":girar||horizontal?"start":"middle"};
+          if(girar)attrs.transform=`rotate(-90 ${tx} ${ty})`;
+          s.append(sv("text",attrs,texto));
+        }
       });if(path.length)s.append(sv("polyline",{points:path.join(" "),fill:"none",stroke:colores[j%7],"stroke-width":2}));
     });host.append(s);if(serie)leyenda(host,ss,cs);if(anualTarv)nota(host,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado.");if(log)host.dataset.escala=estricta?"logaritmica":simetrica?"simetrica":"lineal";
   }
@@ -194,10 +203,10 @@
       leyenda(cuerpo,['Residencia','Atención']);
       const scroll=el('div','perfil-jurisdicciones-grafico');scroll.tabIndex=0;scroll.setAttribute('aria-label','Jurisdicciones: residencia y atención; lista desplazable');cuerpo.append(scroll);
       nota(cuerpo,'Porcentaje del total nacional de personas en TARV. —: sin dato en la fuente.');
-      // La ventana distribuye todas las filas en su altura útil; en escritorio
-      // pasa a dos columnas si una sola obligaría a comprimir las etiquetas.
+      // La ventana conserva una sola columna y distribuye todas las filas en
+      // su altura útil, sin desplazar ni cambiar el orden de jurisdicciones.
       const W=Math.max(280,scroll.clientWidth),T=24,disponible=scroll.clientHeight;
-      const columnas=completo&&W>=700&&(disponible-T-12)/filas.length<24?2:1,filasColumna=Math.ceil(filas.length/columnas),separacion=24;
+      const columnas=1,filasColumna=filas.length,separacion=0;
       const anchoColumna=(W-separacion*(columnas-1))/columnas,L=anchoColumna>550?225:Math.min(170,anchoColumna*.46),R=48;
       const paso=completo?Math.min(26,Math.max(1,(disponible-T-12)/filasColumna)):26,H=T+filasColumna*paso+12,iw=anchoColumna-L-R,fuente=Math.min(11,paso*.54);
       const max=Math.max(10,Math.ceil(Math.max(...filas.flatMap(r=>[r.residencia??0,r.atencion??0]))/10)*10);
