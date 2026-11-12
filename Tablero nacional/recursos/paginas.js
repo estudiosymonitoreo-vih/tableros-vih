@@ -144,6 +144,14 @@
   const nav=document.querySelector("nav");nav.replaceChildren();paginas.forEach(([id,nombre])=>{const a=el("a"),[color,dibujo]=iconos[id],icono=sv("svg",{viewBox:"0 0 24 24",class:"nav-icon","aria-hidden":"true",fill:"none",stroke:color,"stroke-width":1.8,"stroke-linejoin":"round","stroke-linecap":"round"});icono.style.background=color+'18';icono.append(sv("path",{d:dibujo}));a.append(icono,el("span",null,nombre));a.href="#"+id;a.dataset.pagina=id;nav.append(a);});
   const tarjetasTotal=(host,items)=>items.forEach(([nombre,v,pct])=>{const p=panel(host,nombre,"mini");p.append(el("div","numero-indicador",f(v,pct?1:0)+(pct?"%":"")));});
   // Composición de las maquetas aprobadas, con datos del contrato original.
+  // Las vistas completas comparten diálogo nativo, cierre y limpieza (también Escape).
+  function abrirDialogoEditorial(titulo, dibujar) {
+    const modal=el('dialog','editorial-dialog'),cabecera=el('div','dialog-cabecera');
+    const encabezado=el('h2',null,titulo);encabezado.id='titulo-vista-completa';modal.setAttribute('aria-labelledby',encabezado.id);
+    const cerrar=el('button',null,'Cerrar');cerrar.type='button';cerrar.onclick=()=>modal.close();
+    const cuerpo=el('div','dialog-tabla');cabecera.append(encabezado,cerrar);modal.append(cabecera,cuerpo);document.body.append(modal);
+    modal.addEventListener('close',()=>modal.remove());modal.showModal();dibujar(cuerpo);
+  }
   function tablaEditorial(host, datos, cols, limite = 5) {
     if(host.classList.contains("tabla-definiciones"))return tabla(host,datos,cols,limite);
     if (!datos.length) return vacio(host);
@@ -157,14 +165,55 @@
     vista.querySelectorAll('td:first-child').forEach(td => td.title=td.textContent);
     const abrir = el('button','ver-completo',`${f(datos.length)} registros · ver tabla completa`);
     abrir.type='button';host.append(abrir);
-    abrir.onclick=()=>{
-      const modal=el('dialog','editorial-dialog'),cabecera=el('div','dialog-cabecera');
-      const titulo=el('h2',null,host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa');
-      titulo.id='titulo-tabla-completa';modal.setAttribute('aria-labelledby',titulo.id);
-      const cerrar=el('button',null,'Cerrar');cerrar.type='button';cerrar.onclick=()=>modal.close();
-      cabecera.append(titulo,cerrar);const cuerpo=el('div','dialog-tabla');modal.append(cabecera,cuerpo);document.body.append(modal);
-      tabla(cuerpo,datos,cols);modal.addEventListener('close',()=>modal.remove());modal.showModal();
+    abrir.onclick=()=>abrirDialogoEditorial(host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa',cuerpo=>tabla(cuerpo,datos,cols));
+  }
+  function jurisdiccionesPerfil(host) {
+    // Ambas series usan el total nacional TARV al corte. El Porcentaje de residencia
+    // del caché excluye NA en su denominador y por eso no se compara directamente.
+    const total=d.general.find(r=>ordenJurisdiccion(r.Provincia_atencion)===0)?.N_TARV;
+    if(!numeric(total)||total<=0){nota(host,'No hay un total nacional de personas en TARV válido para calcular los porcentajes.');return;}
+    const clave=v=>ordenJurisdiccion(v)===1?'caba':ordenJurisdiccion(v)===2?'buenos aires':normalizarJurisdiccion(v);
+    const datos=new Map();let duplicada=false;
+    const incorporar=(filas,campo,numerador,serie)=>{
+      const vistas=new Set();
+      filas.forEach(r=>{
+        const nombre=r[campo];if(typeof nombre!=='string'||!nombre.trim()||ordenJurisdiccion(nombre)===0)return;
+        const k=clave(nombre);if(vistas.has(k)){duplicada=true;return;}vistas.add(k);
+        if(!datos.has(k))datos.set(k,{jurisdiccion:etiquetaJurisdiccion(nombre.replace(/, Argentina$/i,'')),residencia:null,atencion:null});
+        datos.get(k)[serie]=numeric(r[numerador])&&r[numerador]>=0?100*r[numerador]/total:null;
+      });
     };
+    incorporar(t.residencia||[],'Prov_residencia','Personas','residencia');
+    incorporar(d.general,'Provincia_atencion','N_TARV','atencion');
+    if(duplicada){nota(host,'Hay jurisdicciones duplicadas en la fuente; no se agregaron valores.');return;}
+    const filas=[...datos.values()].sort((a,b)=>(b.residencia??-1)-(a.residencia??-1)||(b.atencion??-1)-(a.atencion??-1)||compararJurisdicciones(a.jurisdiccion,b.jurisdiccion));
+    if(!filas.length)return vacio(host);
+    const dibujar=cuerpo=>{
+      cuerpo.classList.add('perfil-jurisdicciones');
+      leyenda(cuerpo,['Residencia','Atención']);
+      const scroll=el('div','perfil-jurisdicciones-grafico');scroll.tabIndex=0;scroll.setAttribute('aria-label','Jurisdicciones: residencia y atención; lista desplazable');cuerpo.append(scroll);
+      const W=Math.max(280,cuerpo.clientWidth),L=W>550?225:Math.min(150,W*.43),R=55,T=24,paso=44,H=T+filas.length*paso+25,iw=W-L-R;
+      const max=Math.max(10,Math.ceil(Math.max(...filas.flatMap(r=>[r.residencia??0,r.atencion??0]))/10)*10);
+      const s=sv('svg',{viewBox:`0 0 ${W} ${H}`,class:'grafico-svg',role:'img','aria-label':'Porcentaje del total nacional de personas en TARV por jurisdicción de residencia y atención'});
+      s.style.height=H+'px';s.style.minHeight=H+'px';
+      for(let i=0;i<=4;i++){const valor=max*i/4,x=L+iw*i/4;s.append(sv('line',{x1:x,y1:T,x2:x,y2:H-20,stroke:'#ffffff38'}),sv('text',{x,y:15,'text-anchor':'middle',fill:'white','font-size':10},f(valor,valor%1?1:0)+'%'));}
+      filas.forEach((r,i)=>{
+        const y=T+i*paso,label=sv('text',{x:L-8,y:y+23,'text-anchor':'end',fill:'white','font-size':11},r.jurisdiccion.length>(W>550?32:21)?r.jurisdiccion.slice(0,W>550?31:20)+'…':r.jurisdiccion);
+        label.append(sv('title',{},r.jurisdiccion));s.append(label);
+        ['residencia','atencion'].forEach((serie,j)=>{
+          const valor=r[serie],by=y+6+j*15,color=colores[j],texto=numeric(valor)?f(valor,1)+'%':'—';
+          if(numeric(valor)){
+            const barra=sv('rect',{x:L,y:by,width:iw*valor/max,height:11,fill:color,class:'barra-dato','data-categoria':r.jurisdiccion,'data-serie':serie,'data-valor':valor});
+            barra.append(sv('title',{},`${r.jurisdiccion} · ${j?'Atención':'Residencia'}: ${texto}`));s.append(barra);
+          }
+          s.append(sv('text',{x:L+(numeric(valor)?iw*valor/max:0)+5,y:by+10,fill:color,'font-size':10,class:'etiqueta-valor'},texto));
+        });
+      });scroll.append(s);
+      nota(cuerpo,'Porcentaje del total nacional de personas en TARV. —: sin dato en la fuente.');
+    };
+    dibujar(host);
+    const ver=el('button','ver-completo','Ver todas las jurisdicciones');ver.type='button';ver.setAttribute('aria-haspopup','dialog');
+    ver.onclick=()=>abrirDialogoEditorial('Jurisdicción de residencia y atención',dibujar);host.parentElement.append(ver);
   }
   function medianaEditorial(host, datos) {
     const a=datos.filter(r=>numeric(r.Mediana_edad));if(!a.length)return vacio(host);
@@ -202,10 +251,8 @@
     grupos.forEach(([nombre,aliases],i)=>{const r=filas('genero').find(r=>aliases.includes(r.Genero)),linea=el('div'),muestra=el('i');muestra.style.background=paleta[i];linea.append(muestra,el('span',null,nombre),el('strong',null,f(r?.Casos)),el('span',null,numeric(r?.Porcentaje)?f(r.Porcentaje,1)+'%':'—'));lista.append(linea)});
     dibujo?.querySelectorAll('circle').forEach((c,i)=>c.setAttribute('stroke',paleta[i%paleta.length]));
     tablaEditorial(panel(g,'Residencia de las personas en TARV','perfil-localidades'),participacion(filas('localidades'),'Cantidad'),[['Localidad_residencia','Localidad'],['Cantidad','Personas'],['participacion','%',1,true]],5);
-    const residencia=panel(g,'Jurisdicción de residencia','perfil-residencia');residencia.dataset.excepcion='nacional';
-    const residentes=(t.residencia||[]).filter(r=>!r.Prov_residencia.startsWith('País')).sort((a,b)=>b.Porcentaje-a.Porcentaje).map(r=>({...r,Prov_residencia:r.Prov_residencia.replace(/, Argentina$/,'')}));
-    barras(residencia,residentes,'Prov_residencia','Porcentaje',null,{horizontal:true,formato:v=>f(v,1)+'%'});
-    const ver=el('button','ver-completo','Ver todas las jurisdicciones');ver.type='button';ver.onclick=()=>{residencia.scrollTop=residencia.scrollHeight};residencia.parentElement.append(ver);
+    const residencia=panel(g,'Jurisdicción de residencia y atención','perfil-residencia');residencia.dataset.excepcion='nacional';
+    jurisdiccionesPerfil(residencia);
     const orden=['Mujer CIS','Varón CIS','Mujer trans','Varón trans'],adultos=r=>orden.includes(r.Genero);
     medianaEditorial(panel(g,'Mediana de edad según género','perfil-mediana'),filas('mediana').filter(adultos).sort((a,b)=>orden.indexOf(a.Genero)-orden.indexOf(b.Genero)).map(r=>({...r,Genero:r.Genero.replace(' CIS','')})));
     edadEditorial(panel(g,'Distribución por género y edad','perfil-edad'),filas('edad').filter(adultos).map(r=>({...r,Genero:r.Genero.replace(' CIS','')})));

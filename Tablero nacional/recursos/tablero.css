@@ -88,3 +88,16 @@ aside{overflow-y:auto;scrollbar-width:thin}
 @media(max-width:699px){.pagina-principal .fila-epidemiologia{grid-template-columns:minmax(0,1fr)}.pagina-principal .acceso-epidemiologico{width:75%;justify-self:center;min-height:33px;margin-bottom:10px}}
 /* Tres líneas evitan que el ajuste automático reduzca las etiquetas. */
 .pagina-principal .fila-epidemiologia .epi .etiqueta{height:46px;min-height:46px;padding-top:0;padding-bottom:0}
+
+/* Perfil compara residencia y atención sin comprimir las dos barras por fila. */
+.perfil-jurisdicciones{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.perfil-jurisdicciones>.leyenda{margin:0 0 8px;justify-content:flex-start}
+.perfil-jurisdicciones-grafico{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;flex:1}
+.perfil-jurisdicciones-grafico .grafico-svg{flex:none;display:block}
+.perfil-residencia .perfil-jurisdicciones .barra-dato[data-serie=residencia]{fill:#9ed9fa}
+.perfil-residencia .perfil-jurisdicciones .barra-dato[data-serie=atencion]{fill:#f1ac60}
+.perfil-residencia .interior.perfil-jurisdicciones{overflow:hidden}
+.perfil-jurisdicciones-grafico:focus-visible{outline:2px solid #9ed9fa;outline-offset:-2px}
+.perfil-jurisdicciones>.nota{flex:none;font-size:10px}
+.dialog-tabla.perfil-jurisdicciones{height:calc(85vh - 100px)}
+@media(max-width:699px){.perfil-residencia .perfil-jurisdicciones{height:470px;max-height:470px}.dialog-tabla.perfil-jurisdicciones{height:calc(80vh - 110px)}}
