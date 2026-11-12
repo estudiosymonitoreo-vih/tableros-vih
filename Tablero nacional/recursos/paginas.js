@@ -154,7 +154,7 @@
   const mini=el("div");mini.id="mini-mapa";home.append(mini);window.crearMapaComparativoSVIH(mini,[],{mini:true,seleccion:provincia()});
   const notas=el("div","notas-principal");notas.append(el("p",null,"(*) Los indicadores epidemiológicos corresponden a información suministrada por todos los subsistemas de salud al SNVS. TARV y PrEP corresponden al subsector público."),el("p",null,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado."));home.append(notas);
   const otras=el("div","pagina");otras.id="vista-pagina";home.after(otras);
-  const paginas=[["general","General TARV"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
+  const paginas=[["general","Principales indicadores"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
   let activa="general",histIndicador=null,histPeriodos=null,histJurisdicciones=null,histOrden='alfabetico',indicadorComparativo="N_TARV",comparativoOrden='valor';
   // Símbolos semánticos a color: tablero, población, cápsula, trayectoria,
   // laboratorio, prevención, urgencia, territorio, comparación y glosario.

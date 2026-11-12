@@ -54,7 +54,8 @@
       const pais = origen.find(x=>x.Provincia_atencion==="País"), ref = document.createElement("span");
       ref.className="referencia-nacional";ref.textContent=`${formato(pais?.[campo],1,escala,porcentaje)} nac.`;valor.append(ref);
     }
-    if (serie) {
+    // La participación nacional siempre es 100%: no dibujar su curva plana.
+    if (serie && !(campo === 'Proporcion_diagnosticos_2025' && provincia === 'País')) {
       const origenSeries=contexto&&contexto.indicadores.some(c=>c.campo===campo)?contexto.series:datos.series;
       const puntos = (origenSeries[serie] || []).filter(x => x.provincia === provincia).sort((a,b) => a.anio - b.anio);
       const validos = puntos.filter(x => Number.isFinite(x.valor) && Number.isFinite(x.anio));
