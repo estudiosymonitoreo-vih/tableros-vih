@@ -472,3 +472,7 @@ button,select,input,.rotulo,.etiqueta,.tabla-definiciones th,.panel-mapa h3{font
 main[data-vista="general"] .version-tablero,main[data-vista="definiciones"] .version-tablero{display:inline}
 .version-tablero .version-aa{display:none}
 main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
+
+/* Colores de los valores principales; se conservan los tamaños existentes. */
+.territorial .tg-kpis .tg-instituciones .numero-indicador{color:#9ed9fa!important}
+.territorial .tg-notificados .numero-indicador{color:#fff}
