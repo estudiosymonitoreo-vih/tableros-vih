@@ -1,3 +1,4 @@
+// Autor: Ariel Adaszko
 "use strict";
 (() => {
   const d = JSON.parse(document.getElementById("datos-tablero").textContent), t = d.tablas;
@@ -48,8 +49,10 @@
     if(new Set(a.map(r=>JSON.stringify([r[x],serie?r[serie]:""]))).size!==a.length){nota(host,"Hay claves duplicadas en la fuente; no se agregaron valores.");return;}
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
-    const perfilMediana=!!host.closest('.perfil-mediana');
-    const W=Math.max(200,host.clientWidth),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
+    const perfilMediana=!!host.closest('.perfil-mediana'),comparadorTerritorial=!!host.closest('.tc-grafico');
+    // Cada barra histórica conserva su valor: reservar ancho mínimo evita que
+    // múltiples períodos terminen con fuentes ilegibles; móvil permite desplazar.
+    const W=Math.max(200,host.clientWidth,historico?xs.length*ss.length*(comparadorTerritorial?34:12)+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:comparadorTerritorial?56:historico?80:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):comparadorTerritorial?160:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
     const bruto=Math.max(0,...a.map(r=>r[y])),pot=10**Math.floor(Math.log10(bruto/4||1)),salto=[1,2,2.5,5,10].find(z=>z*pot>=bruto/4)*pot;
     const max=pct?100:Math.ceil(bruto/(salto||1))*(salto||1),min=Math.min(0,...a.map(r=>r[y]));
     const minDato=Math.min(...a.map(r=>r[y])),estricta=log&&minDato>0&&bruto/minDato>=10,simetrica=log&&minDato<=0;
@@ -57,10 +60,21 @@
     const lo=estricta?Math.floor(Math.log10(minDato)):trans(min),hi=estricta?Math.ceil(Math.log10(max)):trans(max);
     const unit=v=>estricta&&v===0?0:(trans(v)-lo)/(hi-lo||1);
     const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"grafico-svg",role:"img","aria-label":host.parentElement.querySelector("h3")?.textContent||"Gráfico"});
+    if(historico){s.style.minWidth=W+'px';host.style.overflowX='auto';}
     if(host.closest(".perfil-residencia")){s.style.minHeight=H+"px";s.style.flex="none";}
     const ticks=estricta?Array.from({length:Math.max(1,Math.round(hi-lo)+1)},(_,i)=>lo+i):(horizontal&&W<280?[0,2,4]:[0,1,2,3,4]).map(i=>lo+(hi-lo)*i/4);
     ticks.forEach(v=>{const q=(v-lo)/(hi-lo||1),pos=horizontal?left+iw*q:top+ih-ih*q,val=estricta?10**v:simetrica?Math.sign(v)*(10**Math.abs(v)-1):v,txt=formato?formato(val):null;const texto=txt?.endsWith('%')?txt:Math.abs(val)>=1000?f(val/1000,Math.abs(val)%1000?1:0)+" mil":txt||f(val,pct?0:Math.abs(val)<2&&val!==0?1:0)+(pct?"%":"");s.append(sv("line",horizontal?{x1:pos,y1:top,x2:pos,y2:top+ih,stroke:"#ffffff38"}:{x1:left,y1:pos,x2:W-right,y2:pos,stroke:"#ffffff38"}));s.append(sv("text",{x:horizontal?pos:left-5,y:horizontal?H-8:pos+4,"text-anchor":horizontal?"middle":"end",fill:"white","font-size":11},texto));});
-    xs.forEach((label,i)=>{if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};if(!horizontal&&xs.length>12){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=historico?10:9;}const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,''),node=sv("text",attrs,text.length>(historico?20:24)?text.slice(0,historico?19:23)+"…":text);if(!horizontal&&xs.length<=8&&text.includes(' ')){node.textContent='';const words=text.split(' '),parts=words.length>2?[words.slice(0,2).join(' '),words.slice(2).join(' ')]:words;parts.forEach((v,j)=>node.append(sv('tspan',{x,dy:j?11:0},v)));}s.append(node);});
+    xs.forEach((label,i)=>{
+      if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;
+      const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8&&!comparadorTerritorial?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={class:'etiqueta-categoria',x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};
+      if(!horizontal&&(comparadorTerritorial||xs.length>12)){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=comparadorTerritorial?9:historico?10:9;}
+      const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,'');
+      // Los nombres hospitalarios largos se distinguen por principio y final;
+      // rotarlos y reservar ancho evita que se pisen aun con ocho categorías.
+      const limite=comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
+      if(!horizontal&&!comparadorTerritorial&&xs.length<=8&&text.includes(' ')){node.textContent='';const words=text.split(' '),parts=words.length>2?[words.slice(0,2).join(' '),words.slice(2).join(' ')]:words;parts.forEach((v,j)=>node.append(sv('tspan',{x,dy:j?11:0},v)));}
+      node.append(sv('title',{},label));s.append(node);
+    });
     ss.forEach((name,j)=>{
       let path=[];
       xs.forEach((label,i)=>{const r=a.find(r=>String(r[x])===label&&(!serie||String(r[serie])===name));if(!r){if(path.length){s.append(sv("polyline",{points:path.join(" "),fill:"none",stroke:colores[j%7],"stroke-width":2}));path=[];}return;}
@@ -69,7 +83,13 @@
         const color=cs[(serie?j:!horizontal&&xs.length<=8?i:0)%cs.length];
         const unica=!horizontal&&a.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
         const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;rect.setAttribute('y',cy-1);rect.setAttribute('height',2);rect.setAttribute('rx',1);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
-        if((xs.length<=8||horizontal)&&!(horizontal&&band<11)){const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:left+i*step+step*.1+(j+.45)*band,ty=horizontal?top+i*step+step*.1+(j+.65)*band:pos-5;s.append(sv("text",{class:"etiqueta-valor",x:tx,y:ty,fill:"white","font-size":horizontal?10:11,"text-anchor":horizontal?"start":"middle"},texto));}
+        if((historico||xs.length<=8||horizontal)&&!(horizontal&&band<11)){
+          const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:bx+ancho/2,ty=horizontal?top+i*step+step*.1+(j+.65)*band:Math.min(base,pos)-5;
+          const fuente=historico?Math.max(8,Math.min(11,band*.9/(texto.length*.6))):horizontal?10:11,girar=historico&&texto.length*fuente*.6>band*.9;
+          const attrs={class:"etiqueta-valor",x:tx,y:ty,fill:"white","font-size":fuente,"text-anchor":girar||horizontal?"start":"middle"};
+          if(girar)attrs.transform=`rotate(-90 ${tx} ${ty})`;
+          s.append(sv("text",attrs,texto));
+        }
       });if(path.length)s.append(sv("polyline",{points:path.join(" "),fill:"none",stroke:colores[j%7],"stroke-width":2}));
     });host.append(s);if(serie)leyenda(host,ss,cs);if(anualTarv)nota(host,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado.");if(log)host.dataset.escala=estricta?"logaritmica":simetrica?"simetrica":"lineal";
   }
@@ -125,7 +145,7 @@
   const notas=el("div","notas-principal");notas.append(el("p",null,"(*) Los indicadores epidemiológicos corresponden a información suministrada por todos los subsistemas de salud al SNVS. TARV y PrEP corresponden al subsector público."),el("p",null,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado."));home.append(notas);
   const otras=el("div","pagina");otras.id="vista-pagina";home.after(otras);
   const paginas=[["general","General TARV"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
-  let activa="general",histIndicador=null,histPeriodos=null,histJurisdicciones=null,indicadorComparativo="N_TARV";
+  let activa="general",histIndicador=null,histPeriodos=null,histJurisdicciones=null,histOrden='alfabetico',indicadorComparativo="N_TARV",comparativoOrden='valor';
   // Símbolos semánticos a color: tablero, población, cápsula, trayectoria,
   // laboratorio, prevención, urgencia, territorio, comparación y glosario.
   const iconos={
@@ -143,6 +163,14 @@
   const nav=document.querySelector("nav");nav.replaceChildren();paginas.forEach(([id,nombre])=>{const a=el("a"),[color,dibujo]=iconos[id],icono=sv("svg",{viewBox:"0 0 24 24",class:"nav-icon","aria-hidden":"true",fill:"none",stroke:color,"stroke-width":1.8,"stroke-linejoin":"round","stroke-linecap":"round"});icono.style.background=color+'18';icono.append(sv("path",{d:dibujo}));a.append(icono,el("span",null,nombre));a.href="#"+id;a.dataset.pagina=id;nav.append(a);});
   const tarjetasTotal=(host,items)=>items.forEach(([nombre,v,pct])=>{const p=panel(host,nombre,"mini");p.append(el("div","numero-indicador",f(v,pct?1:0)+(pct?"%":"")));});
   // Composición de las maquetas aprobadas, con datos del contrato original.
+  // Las vistas completas comparten diálogo nativo, cierre y limpieza (también Escape).
+  function abrirDialogoEditorial(titulo, dibujar) {
+    const modal=el('dialog','editorial-dialog'),cabecera=el('div','dialog-cabecera');
+    const encabezado=el('h2',null,titulo);encabezado.id='titulo-vista-completa';modal.setAttribute('aria-labelledby',encabezado.id);
+    const cerrar=el('button',null,'Cerrar');cerrar.type='button';cerrar.onclick=()=>modal.close();
+    const cuerpo=el('div','dialog-tabla');cabecera.append(encabezado,cerrar);modal.append(cabecera,cuerpo);document.body.append(modal);
+    modal.addEventListener('close',()=>modal.remove());modal.showModal();dibujar(cuerpo);
+  }
   function tablaEditorial(host, datos, cols, limite = 5) {
     if(host.classList.contains("tabla-definiciones"))return tabla(host,datos,cols,limite);
     if (!datos.length) return vacio(host);
@@ -156,14 +184,63 @@
     vista.querySelectorAll('td:first-child').forEach(td => td.title=td.textContent);
     const abrir = el('button','ver-completo',`${f(datos.length)} registros · ver tabla completa`);
     abrir.type='button';host.append(abrir);
-    abrir.onclick=()=>{
-      const modal=el('dialog','editorial-dialog'),cabecera=el('div','dialog-cabecera');
-      const titulo=el('h2',null,host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa');
-      titulo.id='titulo-tabla-completa';modal.setAttribute('aria-labelledby',titulo.id);
-      const cerrar=el('button',null,'Cerrar');cerrar.type='button';cerrar.onclick=()=>modal.close();
-      cabecera.append(titulo,cerrar);const cuerpo=el('div','dialog-tabla');modal.append(cabecera,cuerpo);document.body.append(modal);
-      tabla(cuerpo,datos,cols);modal.addEventListener('close',()=>modal.remove());modal.showModal();
+    abrir.onclick=()=>abrirDialogoEditorial(host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa',cuerpo=>tabla(cuerpo,datos,cols));
+  }
+  function jurisdiccionesPerfil(host) {
+    // Ambas series usan el total nacional TARV al corte. El Porcentaje de residencia
+    // del caché excluye NA en su denominador y por eso no se compara directamente.
+    const total=d.general.find(r=>ordenJurisdiccion(r.Provincia_atencion)===0)?.N_TARV;
+    if(!numeric(total)||total<=0){nota(host,'No hay un total nacional de personas en TARV válido para calcular los porcentajes.');return;}
+    const clave=v=>ordenJurisdiccion(v)===1?'caba':ordenJurisdiccion(v)===2?'buenos aires':normalizarJurisdiccion(v);
+    const datos=new Map();let duplicada=false;
+    const incorporar=(filas,campo,numerador,serie)=>{
+      const vistas=new Set();
+      filas.forEach(r=>{
+        const nombre=r[campo];if(typeof nombre!=='string'||!nombre.trim()||ordenJurisdiccion(nombre)===0)return;
+        const k=clave(nombre);if(vistas.has(k)){duplicada=true;return;}vistas.add(k);
+        if(!datos.has(k))datos.set(k,{jurisdiccion:etiquetaJurisdiccion(nombre.replace(/, Argentina$/i,'')),residencia:null,atencion:null});
+        datos.get(k)[serie]=numeric(r[numerador])&&r[numerador]>=0?100*r[numerador]/total:null;
+      });
     };
+    incorporar(t.residencia||[],'Prov_residencia','Personas','residencia');
+    incorporar(d.general,'Provincia_atencion','N_TARV','atencion');
+    if(duplicada){nota(host,'Hay jurisdicciones duplicadas en la fuente; no se agregaron valores.');return;}
+    const filas=[...datos.values()].sort((a,b)=>(b.residencia??-1)-(a.residencia??-1)||(b.atencion??-1)-(a.atencion??-1)||compararJurisdicciones(a.jurisdiccion,b.jurisdiccion));
+    if(!filas.length)return vacio(host);
+    const dibujar=(cuerpo,completo=false)=>{
+      if(completo)cuerpo.closest('dialog').classList.add('dialogo-jurisdicciones');
+      cuerpo.classList.add('perfil-jurisdicciones');
+      leyenda(cuerpo,['Residencia','Atención']);
+      const scroll=el('div','perfil-jurisdicciones-grafico');scroll.tabIndex=0;scroll.setAttribute('aria-label','Jurisdicciones: residencia y atención; lista desplazable');cuerpo.append(scroll);
+      nota(cuerpo,'Porcentaje del total nacional de personas en TARV. —: sin dato en la fuente.');
+      // La ventana conserva una sola columna y distribuye todas las filas en
+      // su altura útil, sin desplazar ni cambiar el orden de jurisdicciones.
+      const W=Math.max(280,scroll.clientWidth),T=24,disponible=scroll.clientHeight;
+      const columnas=1,filasColumna=filas.length,separacion=0;
+      const anchoColumna=(W-separacion*(columnas-1))/columnas,L=anchoColumna>550?225:Math.min(170,anchoColumna*.46),R=48;
+      const paso=completo?Math.min(26,Math.max(1,(disponible-T-12)/filasColumna)):26,H=T+filasColumna*paso+12,iw=anchoColumna-L-R,fuente=Math.min(11,paso*.54);
+      const max=Math.max(10,Math.ceil(Math.max(...filas.flatMap(r=>[r.residencia??0,r.atencion??0]))/10)*10);
+      const s=sv('svg',{viewBox:`0 0 ${W} ${H}`,class:'grafico-svg',role:'img','aria-label':'Porcentaje del total nacional de personas en TARV por jurisdicción de residencia y atención'});
+      s.style.height=H+'px';s.style.minHeight=H+'px';
+      for(let columna=0;columna<columnas;columna++)for(let i=0;i<=4;i++){const valor=max*i/4,x=columna*(anchoColumna+separacion)+L+iw*i/4;s.append(sv('line',{x1:x,y1:T,x2:x,y2:H-10,stroke:'#ffffff38'}),sv('text',{x,y:15,'text-anchor':'middle',fill:'white','font-size':10},f(valor,valor%1?1:0)+'%'));}
+      filas.forEach((r,i)=>{
+        const origen=Math.floor(i/filasColumna)*(anchoColumna+separacion),y=T+(i%filasColumna)*paso,limite=Math.floor((L-10)/(fuente*.53));
+        const label=sv('text',{x:origen+L-8,y:y+paso/2+fuente*.35,'text-anchor':'end',fill:'white','font-size':fuente},r.jurisdiccion.length>limite?r.jurisdiccion.slice(0,limite-1)+'…':r.jurisdiccion);
+        label.append(sv('title',{},r.jurisdiccion));s.append(label);
+        ['residencia','atencion'].forEach((serie,j)=>{
+          const valor=r[serie],by=y+(paso-13)/2+j*7.5,color=colores[j],texto=numeric(valor)?f(valor,1)+'%':'—';
+          if(numeric(valor)){
+            const barra=sv('rect',{x:origen+L,y:by,width:iw*valor/max,height:5.5,fill:color,class:'barra-dato','data-categoria':r.jurisdiccion,'data-serie':serie,'data-valor':valor});
+            barra.append(sv('title',{},`${r.jurisdiccion} · ${j?'Atención':'Residencia'}: ${texto}`));s.append(barra);
+          }
+          s.append(sv('text',{x:origen+L+(numeric(valor)?iw*valor/max:0)+4,y:by+6,fill:color,'font-size':Math.min(8,fuente),class:'etiqueta-valor'},texto));
+        });
+      });scroll.append(s);
+      if(completo)scroll.setAttribute('aria-label','Todas las jurisdicciones: residencia y atención');
+    };
+    dibujar(host);
+    const ver=el('button','ver-completo','Ver todas las jurisdicciones');ver.type='button';ver.setAttribute('aria-haspopup','dialog');
+    ver.onclick=()=>abrirDialogoEditorial('Jurisdicción de residencia y atención',cuerpo=>dibujar(cuerpo,true));host.parentElement.append(ver);
   }
   function medianaEditorial(host, datos) {
     const a=datos.filter(r=>numeric(r.Mediana_edad));if(!a.length)return vacio(host);
@@ -201,10 +278,8 @@
     grupos.forEach(([nombre,aliases],i)=>{const r=filas('genero').find(r=>aliases.includes(r.Genero)),linea=el('div'),muestra=el('i');muestra.style.background=paleta[i];linea.append(muestra,el('span',null,nombre),el('strong',null,f(r?.Casos)),el('span',null,numeric(r?.Porcentaje)?f(r.Porcentaje,1)+'%':'—'));lista.append(linea)});
     dibujo?.querySelectorAll('circle').forEach((c,i)=>c.setAttribute('stroke',paleta[i%paleta.length]));
     tablaEditorial(panel(g,'Residencia de las personas en TARV','perfil-localidades'),participacion(filas('localidades'),'Cantidad'),[['Localidad_residencia','Localidad'],['Cantidad','Personas'],['participacion','%',1,true]],5);
-    const residencia=panel(g,'Jurisdicción de residencia','perfil-residencia');residencia.dataset.excepcion='nacional';
-    const residentes=(t.residencia||[]).filter(r=>!r.Prov_residencia.startsWith('País')).sort((a,b)=>b.Porcentaje-a.Porcentaje).map(r=>({...r,Prov_residencia:r.Prov_residencia.replace(/, Argentina$/,'')}));
-    barras(residencia,residentes,'Prov_residencia','Porcentaje',null,{horizontal:true,formato:v=>f(v,1)+'%'});
-    const ver=el('button','ver-completo','Ver todas las jurisdicciones');ver.type='button';ver.onclick=()=>{residencia.scrollTop=residencia.scrollHeight};residencia.parentElement.append(ver);
+    const residencia=panel(g,'Jurisdicción de residencia y atención','perfil-residencia');residencia.dataset.excepcion='nacional';
+    jurisdiccionesPerfil(residencia);
     const orden=['Mujer CIS','Varón CIS','Mujer trans','Varón trans'],adultos=r=>orden.includes(r.Genero);
     medianaEditorial(panel(g,'Mediana de edad según género','perfil-mediana'),filas('mediana').filter(adultos).sort((a,b)=>orden.indexOf(a.Genero)-orden.indexOf(b.Genero)).map(r=>({...r,Genero:r.Genero.replace(' CIS','')})));
     edadEditorial(panel(g,'Distribución por género y edad','perfil-edad'),filas('edad').filter(adultos).map(r=>({...r,Genero:r.Genero.replace(' CIS','')})));
@@ -259,7 +334,7 @@
     const grupo=prep?"género":"Genero",orden=prep?["Varón trans","Varón CIS","Mujer trans","Mujer CIS"]:["Varón CIS","Mujer CIS","Mujer trans","Varón trans"];apiladas(panel(g,"Distribución por género y edad","profilaxis-edad"),filas("edad_"+tipo).filter(r=>orden.includes(r[grupo])).sort((a,b)=>orden.indexOf(a[grupo])-orden.indexOf(b[grupo])),grupo,prep?"grupo_edad":"Grupo_edad",prep?"porcentaje":"Porcentaje");
   }
   function historico(host){
-    const rows=(t.historico||[]).filter(r=>!desconocida(r.Provincia_atencion)),controles=el("div","controles-historicos");host.append(controles);const etiquetas=window.SVIH_ETIQUETAS_INDICADORES;const inds=uniq(rows.map(r=>r.Indicador)).filter(k=>Object.hasOwn(etiquetas,k)),periodos=uniq(rows.map(r=>r.Periodo)).sort().reverse();
+    const rows=(t.historico||[]).filter(r=>!desconocida(r.Provincia_atencion)),controles=el("div","controles-historicos con-orden");host.append(controles);const etiquetas=window.SVIH_ETIQUETAS_INDICADORES;const inds=uniq(rows.map(r=>r.Indicador)).filter(k=>Object.hasOwn(etiquetas,k)),periodos=uniq(rows.map(r=>r.Periodo)).sort().reverse();
     if(!inds.length){vacio(host);return;}if(!inds.includes(histIndicador))histIndicador=inds.includes("N_TARV")?"N_TARV":inds[0];if(!histPeriodos)histPeriodos=periodos.slice(0,1);
     const jurisdicciones=uniq(rows.map(r=>r.Provincia_atencion)).sort(compararJurisdicciones);
     if(histJurisdicciones===null)histJurisdicciones=jurisdicciones.includes("País")?["País"]:jurisdicciones.slice(0,1);else histJurisdicciones=histJurisdicciones.filter(v=>jurisdicciones.includes(v));
@@ -272,10 +347,26 @@
     const periodLabel=el("div","selector-periodos"),multi=el("details"),summary=el("summary"),opciones=el("div","opciones-periodos");multi.append(summary,opciones);periodLabel.append(multi);controles.append(periodLabel);
     const actualizarResumen=()=>{summary.textContent=histPeriodos.length===1?"Período: "+new Date(histPeriodos[0]+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})+" ▾":`Período (${histPeriodos.length}) ▾`;};actualizarResumen();
     periodos.forEach(v=>{const l=el("label"),c=el("input");c.type="checkbox";c.value=v;c.checked=histPeriodos.includes(v);l.append(c,document.createTextNode(new Date(v+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})));opciones.append(l);c.onchange=()=>{histPeriodos=[...opciones.querySelectorAll("input:checked")].map(i=>i.value);actualizarResumen();dibujar()};});
+    const ordenHost=el('div','orden-historico'),ordenAyuda=el('small',null,'Ordenar barras'),ordenBoton=el('button','boton-orden-historico');ordenBoton.type='button';ordenHost.append(ordenAyuda,ordenBoton);controles.append(ordenHost);
     const graf=panel(host,"Evolución de indicadores por período","historico-grafico"),estadisticas=el("div","resumen-historico");
     host.append(estadisticas);
     const dibujar=()=>{
-      graf.replaceChildren();estadisticas.replaceChildren();const pct=etiquetas[histIndicador].startsWith("%"),a=rows.filter(r=>r.Indicador===histIndicador&&histPeriodos.includes(r.Periodo)&&histJurisdicciones.includes(r.Provincia_atencion)).sort((a,b)=>compararJurisdicciones(a.Provincia_atencion,b.Provincia_atencion)||b.Periodo.localeCompare(a.Periodo)).map(r=>({...r,periodo_visible:new Date(r.Periodo+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}));
+      graf.replaceChildren();estadisticas.replaceChildren();const pct=etiquetas[histIndicador].startsWith("%"),a=rows.filter(r=>r.Indicador===histIndicador&&histPeriodos.includes(r.Periodo)&&histJurisdicciones.includes(r.Provincia_atencion)).map(r=>({...r,periodo_visible:new Date(r.Periodo+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}));
+      // Comparar jurisdicciones por el último corte seleccionado evita sumar
+      // períodos o separar sus barras. NA al final; empates por nombre visible.
+      const periodoOrden=histPeriodos.slice().sort().at(-1),valoresOrden=new Map(a.filter(r=>r.Periodo===periodoOrden&&numeric(r.Valor)).map(r=>[r.Provincia_atencion,r.Valor]));
+      const alfabetico=(x,y)=>etiquetaJurisdiccion(x).localeCompare(etiquetaJurisdiccion(y),'es');
+      a.sort((x,y)=>{
+        if(histOrden==='valor'){
+          const vx=valoresOrden.get(x.Provincia_atencion),vy=valoresOrden.get(y.Provincia_atencion);
+          if(numeric(vx)!==numeric(vy))return numeric(vx)?-1:1;
+          if(numeric(vx)&&vx!==vy)return vy-vx;
+        }
+        return alfabetico(x.Provincia_atencion,y.Provincia_atencion)||y.Periodo.localeCompare(x.Periodo);
+      });
+      ordenBoton.textContent=histOrden==='valor'?'↓ Valor':'A–Z Jurisdicción';ordenBoton.setAttribute('aria-pressed',String(histOrden==='valor'));
+      ordenBoton.title=histOrden==='valor'?'Mayor a menor según el período más reciente seleccionado. Pulsar para ordenar alfabéticamente.':'Orden alfabético por jurisdicción. Pulsar para ordenar por valor.';
+      ordenAyuda.textContent=histOrden==='valor'&&periodoOrden?'Valor al '+new Date(periodoOrden+'T12:00:00').toLocaleDateString('es-AR'):'Ordenar barras';
       barras(graf,a,"Provincia_atencion","Valor","periodo_visible",{formato:v=>f(v,pct?1:0)+(pct?"%":"")});
       const hayBarras=!!graf.querySelector('.barra-dato'),periodosVisibles=uniq(histPeriodos).sort().reverse();
       estadisticas.classList.toggle('varios-periodos',periodosVisibles.length>1);
@@ -291,12 +382,27 @@
       }
       if(!periodosVisibles.length)estadisticas.append(el('p','sin-datos','Sin períodos seleccionados.'));
     };
+    ordenBoton.onclick=()=>{histOrden=histOrden==='valor'?'alfabetico':'valor';dibujar()};
     sel.onchange=()=>{histIndicador=sel.value;dibujar()};dibujar();
   }
 
   function comparativo(host){
     const datos=t.comparativo||[],g=el("div","comparativo-grid"),selector=el("div","selector-comparativo"),encabezado=el("div","encabezado-selector","Indicador (1)"),buscar=el("input","buscar-indicador"),lista=el("div","lista-indicadores"),vista=el("div","comparativo-vista"),titulo=el("h3","titulo-comparativo"),cuerpo=el("div","comparativo-cuerpo"),mapaHost=el("div","comparativo-mapa"),barHost=el("div","comparativo-barras");buscar.type="search";buscar.placeholder="Escribí el término de búsqueda";buscar.setAttribute("aria-label","Buscar indicador provincial");selector.append(encabezado,buscar,lista);cuerpo.append(mapaHost,barHost);vista.append(titulo,cuerpo);g.append(selector,vista);host.append(g);
-    const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg)});barHost.replaceChildren();barras(barHost,rows.slice().sort((a,b)=>(b.valor??-Infinity)-(a.valor??-Infinity)),"Provincia_atencion","valor",null,{horizontal:true,log:cfg.tipo==="numero",formato});lista.querySelectorAll("input").forEach(i=>i.checked=i.value===indicadorComparativo);mapaHost.dataset.indicador=cfg.id;barHost.dataset.indicador=cfg.id;}
+    const cabecera=el('div','cabecera-comparativo'),ordenHost=el('div','orden-historico'),ordenBoton=el('button','boton-orden-historico');ordenBoton.type='button';ordenHost.append(el('small',null,'Ordenar barras'),ordenBoton);vista.insertBefore(cabecera,titulo);cabecera.append(titulo,ordenHost);
+    let indicadorMapa=null;
+    const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
+      // Alternar el ranking no reconstruye el mapa ni pierde su zoom.
+      if(indicadorMapa!==cfg.id){window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg)});indicadorMapa=cfg.id;}
+      const ordenadas=rows.slice().sort((a,b)=>{
+        if(comparativoOrden==='valor'){
+          if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;
+          if(numeric(a.valor)&&a.valor!==b.valor)return b.valor-a.valor;
+        }
+        return etiquetaJurisdiccion(a.Provincia_atencion).localeCompare(etiquetaJurisdiccion(b.Provincia_atencion),'es');
+      });
+      ordenBoton.textContent=comparativoOrden==='valor'?'↓ Valor':'A–Z Jurisdicción';ordenBoton.setAttribute('aria-pressed',String(comparativoOrden==='valor'));ordenBoton.title=comparativoOrden==='valor'?'Mayor a menor. Pulsar para ordenar alfabéticamente.':'Orden alfabético por jurisdicción. Pulsar para ordenar por valor.';
+      barHost.replaceChildren();barras(barHost,ordenadas,"Provincia_atencion","valor",null,{horizontal:true,log:cfg.tipo==="numero",formato});lista.querySelectorAll("input").forEach(i=>i.checked=i.value===indicadorComparativo);mapaHost.dataset.indicador=cfg.id;barHost.dataset.indicador=cfg.id;}
+    ordenBoton.onclick=()=>{comparativoOrden=comparativoOrden==='valor'?'alfabetico':'valor';dibujar()};
     configs.forEach(cfg=>{const l=el("label"),radio=el("input");radio.type="radio";radio.name="indicador-provincial";radio.value=cfg.id;l.append(radio,el("span",null,cfg.etiqueta));lista.append(l);radio.onchange=()=>{indicadorComparativo=radio.value;dibujar()};});buscar.oninput=()=>{const q=buscar.value.toLocaleLowerCase();lista.querySelectorAll("label").forEach(l=>l.hidden=!l.textContent.toLocaleLowerCase().includes(q));};dibujar();
   }
   const titulos={perfil:"Perfil de las personas con VIH que están en TARV",tratamiento:"Características del TARV",evolucion:"Evolución del TARV",laboratorio:"Carga viral y CD4",prep:"Personas en PrEP",pep:"Profilaxis post exposición",comparativo:"Comparativo por provincia",historico:"Evolución indicadores y comparador interjurisdiccional",definiciones:"Definición de indicadores"};

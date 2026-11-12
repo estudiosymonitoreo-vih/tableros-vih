@@ -1,3 +1,4 @@
+// Autor: Ariel Adaszko
 "use strict";
 // Mapa vectorial local. No carga teselas, fuentes, nombres geográficos ni servicios externos.
 window.crearMapaSVIH = (() => {
