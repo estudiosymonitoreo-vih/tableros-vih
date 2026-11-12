@@ -13,21 +13,22 @@ for(const nombre of ['diagnostico','diagnostico_vias','diagnostico_regional'])if
 });
 function paraMapaDT(r){if(!r)return r;const insuficiente=!(r.total>0&&r.validos/r.total>=.55),original=porcentajesDT.get(r)||r;return {...r,insuficiente,tardio:insuficiente?null:original.tardio,avanzada:insuficiente?null:original.avanzada};}
 const colores=['#4c94f1','#efa056','#b38ae5','#b7ca6b','#32b6c9','#e7c63c','#e078b2','#807cce','#d9b886'];
-const paginas=[['casos','Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','Distribución por género','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['edad','Distribución por edad','M4 20V14h4v6m2 0V9h4v11m2 0V3h4v17'],['vias','Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['mortalidad','Mortalidad por sida','M3 19V5m0 14h18M6 8l5 3 4-2 6 7'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
+const paginas=[['casos','Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','Género y edad','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['vias','Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['mortalidad','Mortalidad por sida','M3 19V5m0 14h18M6 8l5 3 4-2 6 7'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
 const edades=['Todas las edades','0-9','10-14','15-19','20-24','25-34','35-44','45-54','55-64','65 o más'];
 const generos=['Todos los géneros','Varón','Mujer','Mujer trans','Varón trans'];
 const regiones=['GBA','Centro','Cuyo','NEA','NOA','Patagonia'];
 const uniq=a=>[...new Set(a)], fmt=(v,d=1)=>v==null||!Number.isFinite(v)?'Sin datos':v.toLocaleString('es-AR',{maximumFractionDigits:d});
 const geoSort=(a,b)=>(a==='Argentina'?-100:regiones.includes(a)?regiones.indexOf(a)-90:0)-(b==='Argentina'?-100:regiones.includes(b)?regiones.indexOf(b)-90:0)||a.localeCompare(b,'es');
 const geos=uniq(T.casos.map(r=>r.geografia)).sort(geoSort), anios=uniq(T.casos.map(r=>r.anio)).sort((a,b)=>a-b);
-let pagina=paginas.some(p=>p[0]===location.hash.slice(1))?location.hash.slice(1):'casos';
+const destinoInicial=['edad','genero-edad'].includes(location.hash.slice(1))?'genero':location.hash.slice(1);
+let pagina=paginas.some(p=>p[0]===destinoInicial)?destinoInicial:'casos';
+if(destinoInicial==='genero'&&location.hash!=='#genero')history.replaceState(null,'','#genero');
 const estados={};
 const exacto=(v,d=1)=>v==null||!Number.isFinite(v)?'Sin datos':v.toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
 function abrirDialogo(titulo,contenido){$('dialogo-titulo').textContent=titulo;$('dialogo-contenido').replaceChildren(contenido);if(!$('dialogo').open)$('dialogo').showModal();}
 function ajustarPantalla(){
- if(innerWidth<=700)return;
  // Redibujar las coordenadas con el espacio real, sin escalar texto ni mapas.
- document.querySelectorAll('svg.grafico').forEach(s=>{
+ document.querySelectorAll(innerWidth<=700?'.demografia-bloques svg.grafico':'svg.grafico').forEach(s=>{
   const ancho=s.clientWidth,alto=s.clientHeight;
   if(ancho>0&&alto>0)s.dibujar(ancho,alto);
  });
@@ -94,7 +95,7 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
  const s=svg('svg',{class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});
  s.dibujar=(w,h)=>{
- const L=55,R=22,U=35,B=42,iw=Math.max(1,w-L-R),ih=Math.max(1,h-U-B);
+ const compacto=!!host.closest('.demografia-bloques'),L=compacto?42:55,R=compacto?16:22,U=compacto?16:35,B=compacto?27:42,iw=Math.max(1,w-L-R),ih=Math.max(1,h-U-B);
  s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
  const max=porcentaje?100:Math.max(1,...filas.map(r=>r.valor??0))*1.13;
  const x=i=>L+(i+.5)*iw/xs.length, y=v=>U+ih*(1-v/max);
@@ -280,12 +281,38 @@ function seccionCasos(host){
 function seccionGeografia(host){const c=controles(host),s=filtro(c,T.regiones,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.regiones,'edad','Grupo de edad','e','Todas las edades',false,edades),a=filtro(c,T.provincias,'anio','Año del mapa y ranking','a',anios.at(-1));
  const g=layout(host),p=panel(g,'Distribución de diagnósticos de VIH por región');grafico(p,T.regiones.filter(r=>r.genero===s&&r.edad===e).map(r=>({...r,anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:regiones});
  const m=panel(g,'Participación provincial en los diagnósticos de VIH');mapa(m,T.provincias.filter(r=>r.genero===s&&r.edad===e&&r.anio===a&&r.indicador==='Porcentaje'),'valor','%',colorMapa(s));m.append(nodo('p','Porcentaje sobre el total de diagnósticos de las provincias con residencia conocida, según los filtros elegidos.','nota'));}
-function seccionGenero(host){const c=controles(host),g=filtro(c,T.genero,'geografia','Unidad geográfica','g','Argentina',false,geos),e=filtro(c,T.genero,'edad','Grupo de edad','e','Todas las edades',false,edades),grid=layout(host);
- grafico(panel(grid,'Proporción de diagnósticos de VIH por género'),T.genero.filter(r=>r.geografia===g&&r.edad===e).map(r=>({...r,anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:['Mujer','Varón',...uniq(T.genero.map(r=>r.serie)).filter(v=>!['Mujer','Varón'].includes(v))],coloresSeries:{'Mujer':colores[0],'Varón':colores[3],'Mujer trans':colores[1],'Otro':colores[2],'Varón trans':colores[4]}});
- grafico(panel(grid,'Razón varones / mujeres en diagnósticos de VIH'),T.razon.filter(r=>r.geografia===g&&r.edad===e).map(r=>({...r,anio:r.anio,serie:'Razón varones / mujeres',valor:r.valor})),{tipo:'puntos'});}
-function seccionEdad(host){const c=controles(host),g=filtro(c,T.edad,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.edad,'genero','Género','s','Todos los géneros',false,generos),grid=layout(host);
- grafico(panel(grid,'Distribución de diagnósticos de VIH por grupo de edad'),T.edad.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
- grafico(panel(grid,'Mediana de edad al diagnóstico de VIH'),T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,anio:r.anio,serie:'Mediana de edad',valor:r.valor})),{unidad:'años',decimales:0});}
+function seccionGenero(host){
+ const c=controles(host),g=filtro(c,[...T.genero,...T.edad],'geografia','Unidad geográfica','g','Argentina',false,geos);
+ host.append(crearBandaFiltros(c,'Geografía de los cuatro gráficos','Selección compartida'));
+ const grid=nodo('div',null,'demografia-bloques');host.append(grid);
+ const bloque=(clase,titulo)=>{const n=nodo('section',null,`bloque-demografia ${clase}`),cabecera=nodo('div',null,'cabecera-demografia');cabecera.append(nodo('h2',titulo));n.append(cabecera);grid.append(n);return {n,cabecera};};
+ const izquierda=bloque('bloque-genero','Género'),derecha=bloque('bloque-edad','Edad');
+ const cg=controles(izquierda.cabecera),e=filtro(cg,T.genero,'edad','Grupo de edad','e','Todas las edades',false,edades);
+ const ce=controles(derecha.cabecera),s=filtro(ce,T.edad,'genero','Género','s','Todos los géneros',false,generos);
+ izquierda.cabecera.append(crearBandaFiltros(cg,'Filtrar los gráficos de género','Grupo de edad'));
+ derecha.cabecera.append(crearBandaFiltros(ce,'Filtrar los gráficos de edad','Género'));
+ const ultimo=anios.at(-1),pct=v=>typeof v==='number'&&Number.isFinite(v)?exacto(v,1)+'%':'Sin datos';
+ const generoActual=T.genero.filter(r=>r.geografia===g&&r.edad===e&&r.anio===ultimo),razonActual=T.razon.find(r=>r.geografia===g&&r.edad===e&&r.anio===ultimo);
+ const edadActual=T.edad.filter(r=>r.geografia===g&&r.genero===s&&r.anio===ultimo),mediana=T.mediana.find(r=>r.geografia===g&&r.genero===s&&r.anio===ultimo),grupo=[...edadActual].filter(r=>r.serie!=='Todas las edades'&&Number.isFinite(r.valor)).sort((a,b)=>b.valor-a.valor)[0];
+ const mayores=edadActual.filter(r=>['55-64','65 o más'].includes(r.serie)),sumaMayores=mayores.length&&mayores.every(r=>Number.isFinite(r.valor))?mayores.reduce((a,r)=>a+r.valor,0):null;
+ const resumenG=nodo('section',null,'resumen-indicadores'),resumenE=nodo('section',null,'resumen-indicadores');resumenG.setAttribute('aria-label','Resumen de género');resumenE.setAttribute('aria-label','Resumen de edad');
+ izquierda.n.append(resumenG);derecha.n.append(resumenE);
+ tarjetaResumen(resumenG,`Proporción de varones · ${ultimo}`,pct(generoActual.find(r=>r.serie==='Varón')?.valor),`${g} · ${e}`);
+ tarjetaResumen(resumenG,`Proporción de mujeres · ${ultimo}`,pct(generoActual.find(r=>r.serie==='Mujer')?.valor),'Otras categorías permanecen en el gráfico');
+ tarjetaResumen(resumenG,`Razón varones / mujeres · ${ultimo}`,exacto(razonActual?.valor,1),'Cociente de diagnósticos');
+ tarjetaResumen(resumenE,`Mediana de edad · ${ultimo}`,Number.isFinite(mediana?.valor)?exacto(mediana.valor,0)+' años':'Sin datos',`${g} · ${s}`);
+ tarjetaResumen(resumenE,'Grupo de edad más frecuente',grupo?.serie||'Sin datos',grupo?pct(grupo.valor)+' de los diagnósticos':'Sin datos');
+ tarjetaResumen(resumenE,`Proporción de 55 años o más · ${ultimo}`,pct(sumaMayores),'Distribución por edad');
+ const generar=(host,titulo,filas,opciones,tendencia=false)=>{
+  const p=panel(host,titulo);p.classList.add(tendencia?'demografia-tendencia':'demografia-distribucion');grafico(p,filas,opciones);
+  const pie=nodo('div',null,'demografia-pie');for(const selector of ['.leyenda','.muestra-n','.acciones-datos']){const elemento=p.querySelector(selector);if(elemento)pie.append(elemento);}p.append(pie);
+ };
+ generar(izquierda.n,'Proporción de diagnósticos de VIH por género',T.genero.filter(r=>r.geografia===g&&r.edad===e),{tipo:'apilado',porcentaje:true,ordenSeries:['Mujer','Varón',...uniq(T.genero.map(r=>r.serie)).filter(v=>!['Mujer','Varón'].includes(v))],coloresSeries:{'Mujer':colores[0],'Varón':colores[3],'Mujer trans':colores[1],'Otro':colores[2],'Varón trans':colores[4]}});
+ generar(izquierda.n,'Razón varones / mujeres en diagnósticos de VIH',T.razon.filter(r=>r.geografia===g&&r.edad===e).map(r=>({...r,serie:'Razón varones / mujeres'})),{tipo:'puntos'},true);
+ generar(derecha.n,'Distribución de diagnósticos de VIH por grupo de edad',T.edad.filter(r=>r.geografia===g&&r.genero===s),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
+ generar(derecha.n,'Mediana de edad al diagnóstico de VIH',T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,serie:'Mediana de edad'})),{unidad:'años',decimales:0},true);
+ $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${ultimo} · Datos actualizables por retraso de notificación`;
+}
 // Torta de 2025: porciones exactas según conteos y rótulos externos sin solapamiento.
 function graficoViasTorta(host,filas){
  const total=filas.reduce((s,r)=>s+(r.n||0),0);
@@ -381,7 +408,7 @@ function crearBandaFiltros(control,titulo,alcance){
  h.append(icono,document.createTextNode(titulo),nodo('span',alcance,'filtro-alcance'));banda.append(h,control);return banda;
 }
 function presentarResumen(){
- if(pagina==='definiciones'||pagina==='mortalidad')return;
+ if(pagina==='definiciones'||pagina==='mortalidad'||pagina==='genero')return;
  const host=$('contenido'),e=estados[pagina],ultimo=anios.at(-1),tarjetas=[];
  const esNumero=v=>typeof v==='number'&&Number.isFinite(v);
  const porcentaje=v=>esNumero(v)?exacto(v,1)+'%':'Sin datos';
@@ -415,20 +442,6 @@ function presentarResumen(){
    tarjetas.push([`Diagnósticos con provincia conocida · ${e.a}`,exacto(suma(provincias),0),`${e.s} · ${e.e}`],
     ['Región con mayor participación',porcentaje(region?.valor),region?.serie||'Sin datos'],
     ['Comparación territorial','24 provincias',`Mapa y ranking corresponden a ${e.a}`]);
-  }else if(pagina==='genero'){
-   const filas=T.genero.filter(r=>r.geografia===e.g&&r.edad===e.e&&r.anio===ultimo);
-   const razon=T.razon.find(r=>r.geografia===e.g&&r.edad===e.e&&r.anio===ultimo);
-   const valor=genero=>filas.find(r=>r.serie===genero)?.valor;
-   tarjetas.push([`Proporción de varones · ${ultimo}`,porcentaje(valor('Varón')),`${e.g} · ${e.e}`],
-    [`Proporción de mujeres · ${ultimo}`,porcentaje(valor('Mujer')),'Otras categorías permanecen en el gráfico'],
-    [`Razón varones / mujeres · ${ultimo}`,exacto(razon?.valor,1),'Cociente de diagnósticos, no una tasa poblacional']);
-  }else if(pagina==='edad'){
-   const filas=T.edad.filter(r=>r.geografia===e.g&&r.genero===e.s&&r.anio===ultimo),grupo=mayor(filas);
-   const mediana=T.mediana.find(r=>r.geografia===e.g&&r.genero===e.s&&r.anio===ultimo);
-   const mayores=suma(filas.filter(r=>['55-64','65 o más'].includes(r.serie)));
-   tarjetas.push([`Mediana de edad · ${ultimo}`,esNumero(mediana?.valor)?exacto(mediana.valor,0)+' años':'Sin datos',`${e.g} · ${e.s}`],
-    ['Grupo de edad más frecuente',grupo?.serie||'Sin datos',grupo?porcentaje(grupo.valor)+' de los diagnósticos':'Sin datos'],
-    ['Proporción de 55 años o más',porcentaje(mayores),`Distribución por edad · ${ultimo}`]);
   }else if(pagina==='vias'){
    const filas=T.vias.filter(r=>r.geografia===e.g&&r.genero===e.s&&r.edad===e.e&&r.anio===2025);
    const anio=2025;
@@ -466,7 +479,7 @@ function presentarResumen(){
 function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find(p=>p[0]===pagina);$('titulo').textContent=page[1];
  const version=pagina==='casos'?'V 2.0':pagina==='definiciones'?'V 2.0 AA':'';$('version-tablero').textContent=version;$('version-tablero').hidden=!version;
  $('contenido').replaceChildren();document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.pagina===pagina?'page':'false'));
- ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,edad:seccionEdad,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico,mortalidad:seccionMortalidad,definiciones:seccionDefiniciones})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
+ ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico,mortalidad:seccionMortalidad,definiciones:seccionDefiniciones})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
  paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4'],mortalidad:['#237bd1','#e8f0fd'],definiciones:['#7561bb','#f0ecfa']}[id];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
  $('navegacion').append($('restablecer'));
  $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${anios.at(-1)}`;$('fecha-exportacion').textContent=`Fecha de exportación de la base: ${D.meta.fecha_exportacion||'no informada'}`;$('demo').hidden=!D.meta.demostracion;
