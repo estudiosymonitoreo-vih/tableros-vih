@@ -130,6 +130,7 @@ aside{overflow-y:auto;scrollbar-width:thin}
 #epidemiologia.contexto-actualizado .valor-estado{font-size:14px;line-height:1.2;letter-spacing:normal;min-height:32px;white-space:normal}
 /* Solo el color del conteo institucional; conservar su tamaño de fuente. */
 #tarv [data-campo=N_instituciones_disp_TARV]>.valor{color:#9ed9fa}
+#detalle [data-campo=Prop_notificados]>.valor{color:#fff}
 @media(min-width:700px){
   #epidemiologia.contexto-actualizado .tarjeta{display:grid;grid-template-rows:47px 41px 18px;align-content:start}
   #epidemiologia.contexto-actualizado .etiqueta{height:41px;min-height:41px;font-size:10.5px;line-height:1.15;padding:2px 0}
