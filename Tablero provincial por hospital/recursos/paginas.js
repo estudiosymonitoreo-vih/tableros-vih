@@ -154,7 +154,7 @@
   const mini=el("div");mini.id="mini-mapa";home.append(mini);window.crearMapaComparativoSVIH(mini,[],{mini:true,seleccion:provincia()});
   const notas=el("div","notas-principal");notas.append(el("p",null,"(*) Los indicadores epidemiológicos corresponden a información suministrada por todos los subsistemas de salud al SNVS. TARV y PrEP corresponden al subsector público."),el("p",null,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado."));home.append(notas);
   const otras=el("div","pagina");otras.id="vista-pagina";home.after(otras);
-  const paginas=[["general","General TARV"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
+  const paginas=[["general","Principales indicadores"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
   let activa="general",histIndicador=null,histPeriodos=null,histJurisdicciones=null,histOrden='alfabetico',indicadorComparativo="N_TARV",comparativoOrden='valor';
   // Símbolos semánticos a color: tablero, población, cápsula, trayectoria,
   // laboratorio, prevención, urgencia, territorio, comparación y glosario.
@@ -319,7 +319,18 @@
     flujo(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-flujo"),filas("flujo"));
     tortaCohorte(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-cohorte"),filas("flujo"));
     const mensual=panel(g,"Personas en TARV al 30 de junio de cada año","evolucion-mensual"),datosMes=filas('mensual_tarv').filter(r=>numeric(r.Valor)).sort((a,b)=>a.Fecha.localeCompare(b.Fecha));barras(mensual,datosMes,"Fecha","Valor",null,{linea:true});
-    const grafMes=mensual.querySelector('svg');if(grafMes&&datosMes.length){const ultimo=Number(datosMes.at(-1).Fecha.slice(0,4)),puntos=[...grafMes.querySelectorAll('circle')],H=grafMes.viewBox.baseVal.height;datosMes.forEach((r,i)=>{const anio=Number(r.Fecha.slice(0,4));if(r.Fecha.slice(5,7)!=='06'||anio>=ultimo||anio<ultimo-4||!puntos[i])return;const x=puntos[i].getAttribute('cx');grafMes.append(sv('text',{x,y:H*.52,'text-anchor':'middle',fill:'white','font-size':11},String(anio)),sv('text',{x,y:H*.52+24,'text-anchor':'middle',fill:anio===ultimo-1?'#f6a04d':'white','font-size':22},f(r.Valor)));});grafMes.querySelectorAll('polyline').forEach(p=>p.setAttribute('stroke','#b8d8f6'));grafMes.querySelectorAll('circle').forEach(p=>p.setAttribute('fill','#b8d8f6'));}
+    const grafMes=mensual.querySelector('svg');
+    if(grafMes&&datosMes.length){
+      const junios=datosMes.filter(r=>r.Fecha.slice(5,7)==='06').slice(-5),fechasJunio=new Set(junios.map(r=>r.Fecha)),ultimoJunio=junios.at(-1)?.Fecha;
+      const puntos=[...grafMes.querySelectorAll('circle')],H=grafMes.viewBox.baseVal.height;
+      datosMes.forEach((r,i)=>{
+        if(!fechasJunio.has(r.Fecha)||!puntos[i])return;
+        const x=puntos[i].getAttribute('cx'),anio=r.Fecha.slice(0,4);
+        grafMes.append(sv('text',{class:'corte-junio-anio','data-fecha':r.Fecha,x,y:H*.52,'text-anchor':'middle',fill:'white','font-size':11},anio),sv('text',{class:'corte-junio-valor','data-fecha':r.Fecha,x,y:H*.52+24,'text-anchor':'middle',fill:r.Fecha===ultimoJunio?'#f6a04d':'white','font-size':22},f(r.Valor)));
+      });
+      grafMes.querySelectorAll('polyline').forEach(p=>p.setAttribute('stroke','#b8d8f6'));
+      grafMes.querySelectorAll('circle').forEach(p=>p.setAttribute('fill','#b8d8f6'));
+    }
   }
   function laboratorio(host){
     const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable","laboratorio-viral"),actual=general();
