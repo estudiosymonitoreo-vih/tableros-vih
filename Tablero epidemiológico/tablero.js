@@ -283,20 +283,20 @@ function seccionGeografia(host){const c=controles(host),s=filtro(c,T.regiones,'g
  const m=panel(g,'Participación provincial en los diagnósticos de VIH');mapa(m,T.provincias.filter(r=>r.genero===s&&r.edad===e&&r.anio===a&&r.indicador==='Porcentaje'),'valor','%',colorMapa(s));m.append(nodo('p','Porcentaje sobre el total de diagnósticos de las provincias con residencia conocida, según los filtros elegidos.','nota'));}
 function seccionGenero(host){
  const c=controles(host),g=filtro(c,[...T.genero,...T.edad],'geografia','Unidad geográfica','g','Argentina',false,geos);
- host.append(crearBandaFiltros(c,'Geografía de los cuatro gráficos','Selección compartida'));
+ const geografia=crearBandaFiltros(c,'Geografía de los cuatro gráficos','Selección compartida');geografia.classList.add('geografia-demografia');host.append(geografia);
  const grid=nodo('div',null,'demografia-bloques');host.append(grid);
- const bloque=(clase,titulo)=>{const n=nodo('section',null,`bloque-demografia ${clase}`),cabecera=nodo('div',null,'cabecera-demografia');cabecera.append(nodo('h2',titulo));n.append(cabecera);grid.append(n);return {n,cabecera};};
+ const bloque=(clase,titulo)=>{const n=nodo('section',null,`bloque-demografia ${clase}`),cabecera=nodo('div',null,'cabecera-demografia');cabecera.append(nodo('h2',titulo));const indicadores=nodo('aside',null,'indicadores-demografia');indicadores.setAttribute('aria-label',`Filtros e indicadores de ${titulo.toLowerCase()}`);n.append(cabecera,indicadores);grid.append(n);return {n,cabecera,indicadores};};
  const izquierda=bloque('bloque-genero','Género'),derecha=bloque('bloque-edad','Edad');
- const cg=controles(izquierda.cabecera),e=filtro(cg,T.genero,'edad','Grupo de edad','e','Todas las edades',false,edades);
- const ce=controles(derecha.cabecera),s=filtro(ce,T.edad,'genero','Género','s','Todos los géneros',false,generos);
- izquierda.cabecera.append(crearBandaFiltros(cg,'Filtrar los gráficos de género','Grupo de edad'));
- derecha.cabecera.append(crearBandaFiltros(ce,'Filtrar los gráficos de edad','Género'));
+ const cg=controles(izquierda.indicadores),e=filtro(cg,T.genero,'edad','Grupo de edad','e','Todas las edades',false,edades);
+ const ce=controles(derecha.indicadores),s=filtro(ce,T.edad,'genero','Género','s','Todos los géneros',false,generos);
+ izquierda.indicadores.append(crearBandaFiltros(cg,'Filtrar los gráficos de género','Grupo de edad'));
+ derecha.indicadores.append(crearBandaFiltros(ce,'Filtrar los gráficos de edad','Género'));
  const ultimo=anios.at(-1),pct=v=>typeof v==='number'&&Number.isFinite(v)?exacto(v,1)+'%':'Sin datos';
  const generoActual=T.genero.filter(r=>r.geografia===g&&r.edad===e&&r.anio===ultimo),razonActual=T.razon.find(r=>r.geografia===g&&r.edad===e&&r.anio===ultimo);
  const edadActual=T.edad.filter(r=>r.geografia===g&&r.genero===s&&r.anio===ultimo),mediana=T.mediana.find(r=>r.geografia===g&&r.genero===s&&r.anio===ultimo),grupo=[...edadActual].filter(r=>r.serie!=='Todas las edades'&&Number.isFinite(r.valor)).sort((a,b)=>b.valor-a.valor)[0];
  const mayores=edadActual.filter(r=>['55-64','65 o más'].includes(r.serie)),sumaMayores=mayores.length&&mayores.every(r=>Number.isFinite(r.valor))?mayores.reduce((a,r)=>a+r.valor,0):null;
  const resumenG=nodo('section',null,'resumen-indicadores'),resumenE=nodo('section',null,'resumen-indicadores');resumenG.setAttribute('aria-label','Resumen de género');resumenE.setAttribute('aria-label','Resumen de edad');
- izquierda.n.append(resumenG);derecha.n.append(resumenE);
+ izquierda.indicadores.append(resumenG);derecha.indicadores.append(resumenE);
  tarjetaResumen(resumenG,`Proporción de varones · ${ultimo}`,pct(generoActual.find(r=>r.serie==='Varón')?.valor),`${g} · ${e}`);
  tarjetaResumen(resumenG,`Proporción de mujeres · ${ultimo}`,pct(generoActual.find(r=>r.serie==='Mujer')?.valor),'Otras categorías permanecen en el gráfico');
  tarjetaResumen(resumenG,`Razón varones / mujeres · ${ultimo}`,exacto(razonActual?.valor,1),'Cociente de diagnósticos');
@@ -305,11 +305,13 @@ function seccionGenero(host){
  tarjetaResumen(resumenE,`Proporción de 55 años o más · ${ultimo}`,pct(sumaMayores),'Distribución por edad');
  const generar=(host,titulo,filas,opciones,tendencia=false)=>{
   const p=panel(host,titulo);p.classList.add(tendencia?'demografia-tendencia':'demografia-distribucion');grafico(p,filas,opciones);
-  const pie=nodo('div',null,'demografia-pie');for(const selector of ['.leyenda','.muestra-n','.acciones-datos']){const elemento=p.querySelector(selector);if(elemento)pie.append(elemento);}p.append(pie);
+  const cabecera=nodo('div',null,'demografia-titulo'),acciones=p.querySelector('.acciones-datos');cabecera.append(p.querySelector('h3'));
+  if(acciones){const csv=acciones.lastElementChild;csv.textContent='CSV';csv.setAttribute('aria-label','Descargar CSV');cabecera.append(acciones);}p.prepend(cabecera);
+  const pie=nodo('div',null,'demografia-pie');for(const selector of ['.leyenda','.muestra-n']){const elemento=p.querySelector(selector);if(elemento)pie.append(elemento);}p.append(pie);
  };
  generar(izquierda.n,'Proporción de diagnósticos de VIH por género',T.genero.filter(r=>r.geografia===g&&r.edad===e),{tipo:'apilado',porcentaje:true,ordenSeries:['Mujer','Varón',...uniq(T.genero.map(r=>r.serie)).filter(v=>!['Mujer','Varón'].includes(v))],coloresSeries:{'Mujer':colores[0],'Varón':colores[3],'Mujer trans':colores[1],'Otro':colores[2],'Varón trans':colores[4]}});
  generar(izquierda.n,'Razón varones / mujeres en diagnósticos de VIH',T.razon.filter(r=>r.geografia===g&&r.edad===e).map(r=>({...r,serie:'Razón varones / mujeres'})),{tipo:'puntos'},true);
- generar(derecha.n,'Distribución de diagnósticos de VIH por grupo de edad',T.edad.filter(r=>r.geografia===g&&r.genero===s),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
+ generar(derecha.n,'Distribución de diagnósticos de VIH por edad',T.edad.filter(r=>r.geografia===g&&r.genero===s),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
  generar(derecha.n,'Mediana de edad al diagnóstico de VIH',T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,serie:'Mediana de edad'})),{unidad:'años',decimales:0},true);
  $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${ultimo} · Datos actualizables por retraso de notificación`;
 }
