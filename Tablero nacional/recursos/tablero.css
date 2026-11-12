@@ -107,3 +107,19 @@ aside{overflow-y:auto;scrollbar-width:thin}
 .perfil-residencia .perfil-jurisdicciones svg text{font-size:11px}
 .perfil-residencia .perfil-jurisdicciones svg .etiqueta-valor{font-size:8px}
 @media(max-width:699px){.perfil-residencia .perfil-jurisdicciones{height:470px;max-height:470px}.dialog-tabla.perfil-jurisdicciones{height:calc(80vh - 110px)}}
+
+/* El orden es una acción alternable, diferenciada de los filtros desplegables. */
+.controles-historicos.con-orden{grid-template-columns:230px minmax(0,1fr) 220px 170px;gap:14px}
+.controles-historicos.con-orden>label{min-width:0}
+.controles-historicos.con-orden select{min-width:0;width:100%;text-overflow:ellipsis}
+.orden-historico{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px}
+.orden-historico small{font-size:9px;color:#dce7f4;line-height:1}
+.boton-orden-historico{border:1px solid #f1ac60;border-radius:18px;background:#f1ac60;color:#192744;padding:6px 14px;font:600 12px/1.2 Inter,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.boton-orden-historico:hover{background:#ffd29e}
+.boton-orden-historico[aria-pressed=true]{background:#ffcf6c;border-color:#ffcf6c}
+.boton-orden-historico:focus-visible{outline:2px solid white;outline-offset:3px}
+.cabecera-comparativo{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #829dbb;flex:none}
+.cabecera-comparativo .titulo-comparativo{flex:1;min-width:0;height:auto;min-height:40px;border-top:0}
+.cabecera-comparativo .orden-historico{flex:none;padding:4px 0}
+@media(max-width:699px){.controles-historicos.con-orden{height:auto}.orden-historico{align-self:flex-start;margin:3px 0}}
+@media(max-width:699px){.cabecera-comparativo{align-items:flex-start;flex-direction:column;gap:6px}.cabecera-comparativo .orden-historico{margin:0 0 6px}}
