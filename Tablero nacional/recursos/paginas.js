@@ -188,32 +188,40 @@
     if(duplicada){nota(host,'Hay jurisdicciones duplicadas en la fuente; no se agregaron valores.');return;}
     const filas=[...datos.values()].sort((a,b)=>(b.residencia??-1)-(a.residencia??-1)||(b.atencion??-1)-(a.atencion??-1)||compararJurisdicciones(a.jurisdiccion,b.jurisdiccion));
     if(!filas.length)return vacio(host);
-    const dibujar=cuerpo=>{
+    const dibujar=(cuerpo,completo=false)=>{
+      if(completo)cuerpo.closest('dialog').classList.add('dialogo-jurisdicciones');
       cuerpo.classList.add('perfil-jurisdicciones');
       leyenda(cuerpo,['Residencia','Atención']);
       const scroll=el('div','perfil-jurisdicciones-grafico');scroll.tabIndex=0;scroll.setAttribute('aria-label','Jurisdicciones: residencia y atención; lista desplazable');cuerpo.append(scroll);
-      const W=Math.max(280,cuerpo.clientWidth),L=W>550?225:Math.min(150,W*.43),R=55,T=24,paso=44,H=T+filas.length*paso+25,iw=W-L-R;
+      nota(cuerpo,'Porcentaje del total nacional de personas en TARV. —: sin dato en la fuente.');
+      // La ventana distribuye todas las filas en su altura útil; en escritorio
+      // pasa a dos columnas si una sola obligaría a comprimir las etiquetas.
+      const W=Math.max(280,scroll.clientWidth),T=24,disponible=scroll.clientHeight;
+      const columnas=completo&&W>=700&&(disponible-T-12)/filas.length<24?2:1,filasColumna=Math.ceil(filas.length/columnas),separacion=24;
+      const anchoColumna=(W-separacion*(columnas-1))/columnas,L=anchoColumna>550?225:Math.min(170,anchoColumna*.46),R=48;
+      const paso=completo?Math.min(26,Math.max(1,(disponible-T-12)/filasColumna)):26,H=T+filasColumna*paso+12,iw=anchoColumna-L-R,fuente=Math.min(11,paso*.54);
       const max=Math.max(10,Math.ceil(Math.max(...filas.flatMap(r=>[r.residencia??0,r.atencion??0]))/10)*10);
       const s=sv('svg',{viewBox:`0 0 ${W} ${H}`,class:'grafico-svg',role:'img','aria-label':'Porcentaje del total nacional de personas en TARV por jurisdicción de residencia y atención'});
       s.style.height=H+'px';s.style.minHeight=H+'px';
-      for(let i=0;i<=4;i++){const valor=max*i/4,x=L+iw*i/4;s.append(sv('line',{x1:x,y1:T,x2:x,y2:H-20,stroke:'#ffffff38'}),sv('text',{x,y:15,'text-anchor':'middle',fill:'white','font-size':10},f(valor,valor%1?1:0)+'%'));}
+      for(let columna=0;columna<columnas;columna++)for(let i=0;i<=4;i++){const valor=max*i/4,x=columna*(anchoColumna+separacion)+L+iw*i/4;s.append(sv('line',{x1:x,y1:T,x2:x,y2:H-10,stroke:'#ffffff38'}),sv('text',{x,y:15,'text-anchor':'middle',fill:'white','font-size':10},f(valor,valor%1?1:0)+'%'));}
       filas.forEach((r,i)=>{
-        const y=T+i*paso,label=sv('text',{x:L-8,y:y+23,'text-anchor':'end',fill:'white','font-size':11},r.jurisdiccion.length>(W>550?32:21)?r.jurisdiccion.slice(0,W>550?31:20)+'…':r.jurisdiccion);
+        const origen=Math.floor(i/filasColumna)*(anchoColumna+separacion),y=T+(i%filasColumna)*paso,limite=Math.floor((L-10)/(fuente*.53));
+        const label=sv('text',{x:origen+L-8,y:y+paso/2+fuente*.35,'text-anchor':'end',fill:'white','font-size':fuente},r.jurisdiccion.length>limite?r.jurisdiccion.slice(0,limite-1)+'…':r.jurisdiccion);
         label.append(sv('title',{},r.jurisdiccion));s.append(label);
         ['residencia','atencion'].forEach((serie,j)=>{
-          const valor=r[serie],by=y+6+j*15,color=colores[j],texto=numeric(valor)?f(valor,1)+'%':'—';
+          const valor=r[serie],by=y+(paso-13)/2+j*7.5,color=colores[j],texto=numeric(valor)?f(valor,1)+'%':'—';
           if(numeric(valor)){
-            const barra=sv('rect',{x:L,y:by,width:iw*valor/max,height:11,fill:color,class:'barra-dato','data-categoria':r.jurisdiccion,'data-serie':serie,'data-valor':valor});
+            const barra=sv('rect',{x:origen+L,y:by,width:iw*valor/max,height:5.5,fill:color,class:'barra-dato','data-categoria':r.jurisdiccion,'data-serie':serie,'data-valor':valor});
             barra.append(sv('title',{},`${r.jurisdiccion} · ${j?'Atención':'Residencia'}: ${texto}`));s.append(barra);
           }
-          s.append(sv('text',{x:L+(numeric(valor)?iw*valor/max:0)+5,y:by+10,fill:color,'font-size':10,class:'etiqueta-valor'},texto));
+          s.append(sv('text',{x:origen+L+(numeric(valor)?iw*valor/max:0)+4,y:by+6,fill:color,'font-size':Math.min(8,fuente),class:'etiqueta-valor'},texto));
         });
       });scroll.append(s);
-      nota(cuerpo,'Porcentaje del total nacional de personas en TARV. —: sin dato en la fuente.');
+      if(completo)scroll.setAttribute('aria-label','Todas las jurisdicciones: residencia y atención');
     };
     dibujar(host);
     const ver=el('button','ver-completo','Ver todas las jurisdicciones');ver.type='button';ver.setAttribute('aria-haspopup','dialog');
-    ver.onclick=()=>abrirDialogoEditorial('Jurisdicción de residencia y atención',dibujar);host.parentElement.append(ver);
+    ver.onclick=()=>abrirDialogoEditorial('Jurisdicción de residencia y atención',cuerpo=>dibujar(cuerpo,true));host.parentElement.append(ver);
   }
   function medianaEditorial(host, datos) {
     const a=datos.filter(r=>numeric(r.Mediana_edad));if(!a.length)return vacio(host);

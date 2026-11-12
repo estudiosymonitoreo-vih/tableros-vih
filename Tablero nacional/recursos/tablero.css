@@ -100,4 +100,10 @@ aside{overflow-y:auto;scrollbar-width:thin}
 .perfil-jurisdicciones-grafico:focus-visible{outline:2px solid #9ed9fa;outline-offset:-2px}
 .perfil-jurisdicciones>.nota{flex:none;font-size:10px}
 .dialog-tabla.perfil-jurisdicciones{height:calc(85vh - 100px)}
+.editorial-dialog.dialogo-jurisdicciones{width:min(1400px,96vw);max-height:96vh;padding:18px}
+.dialogo-jurisdicciones .dialog-cabecera{margin-bottom:12px}
+.dialogo-jurisdicciones .dialog-tabla.perfil-jurisdicciones{height:calc(92vh - 110px)}
+.dialogo-jurisdicciones .perfil-jurisdicciones-grafico{overflow:hidden}
+.perfil-residencia .perfil-jurisdicciones svg text{font-size:11px}
+.perfil-residencia .perfil-jurisdicciones svg .etiqueta-valor{font-size:8px}
 @media(max-width:699px){.perfil-residencia .perfil-jurisdicciones{height:470px;max-height:470px}.dialog-tabla.perfil-jurisdicciones{height:calc(80vh - 110px)}}
