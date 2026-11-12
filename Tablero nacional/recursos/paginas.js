@@ -49,10 +49,20 @@
     if(new Set(a.map(r=>JSON.stringify([r[x],serie?r[serie]:""]))).size!==a.length){nota(host,"Hay claves duplicadas en la fuente; no se agregaron valores.");return;}
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
-    const perfilMediana=!!host.closest('.perfil-mediana');
+    const perfilMediana=!!host.closest('.perfil-mediana'),comparadorTerritorial=!!host.closest('.tc-grafico');
+    // El límite cuenta barras reales (también varios períodos), no categorías.
+    // El intervalo más denso de 21 barras determina el ancho: ni siquiera al
+    // desplazar a mitad del gráfico pueden entrar más de 20 marcas a la vez.
+    const limitarBarras=historico&&!horizontal&&!linea&&a.length>20;
+    let anchoLimite=0;
+    if(limitarBarras){
+      const posiciones=a.map(r=>xs.indexOf(String(r[x]))+.1+(serie?ss.indexOf(String(r[serie])):0)*.8/ss.length).sort((a,b)=>a-b);
+      const espacio=Math.min(...posiciones.slice(20).map((p,i)=>p-posiciones[i]-.72/ss.length));
+      anchoLimite=78+xs.length*(host.clientWidth+1)/espacio;
+    }
     // Cada barra histórica conserva su valor: reservar ancho mínimo evita que
     // múltiples períodos terminen con fuentes ilegibles; móvil permite desplazar.
-    const W=Math.max(200,host.clientWidth,historico?xs.length*ss.length*12+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:historico?80:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
+    const W=Math.max(200,host.clientWidth,anchoLimite,historico?xs.length*ss.length*(comparadorTerritorial?34:12)+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva)-(historico?14:0),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:comparadorTerritorial?56:historico?80:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):comparadorTerritorial?160:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
     const bruto=Math.max(0,...a.map(r=>r[y])),pot=10**Math.floor(Math.log10(bruto/4||1)),salto=[1,2,2.5,5,10].find(z=>z*pot>=bruto/4)*pot;
     const max=pct?100:Math.ceil(bruto/(salto||1))*(salto||1),min=Math.min(0,...a.map(r=>r[y]));
     const minDato=Math.min(...a.map(r=>r[y])),estricta=log&&minDato>0&&bruto/minDato>=10,simetrica=log&&minDato<=0;
@@ -60,11 +70,21 @@
     const lo=estricta?Math.floor(Math.log10(minDato)):trans(min),hi=estricta?Math.ceil(Math.log10(max)):trans(max);
     const unit=v=>estricta&&v===0?0:(trans(v)-lo)/(hi-lo||1);
     const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"grafico-svg",role:"img","aria-label":host.parentElement.querySelector("h3")?.textContent||"Gráfico"});
-    if(historico){s.style.minWidth=W+'px';host.style.overflowX='auto';}
+    if(historico){s.style.minWidth=W+'px';host.style.overflowX=limitarBarras?'scroll':'auto';host.classList.add('comparador-desplazable');host.tabIndex=0;host.setAttribute('aria-label','Gráfico de comparación; hasta 20 barras visibles. Desplazar horizontalmente para ver las restantes.');}
     if(host.closest(".perfil-residencia")){s.style.minHeight=H+"px";s.style.flex="none";}
     const ticks=estricta?Array.from({length:Math.max(1,Math.round(hi-lo)+1)},(_,i)=>lo+i):(horizontal&&W<280?[0,2,4]:[0,1,2,3,4]).map(i=>lo+(hi-lo)*i/4);
     ticks.forEach(v=>{const q=(v-lo)/(hi-lo||1),pos=horizontal?left+iw*q:top+ih-ih*q,val=estricta?10**v:simetrica?Math.sign(v)*(10**Math.abs(v)-1):v,txt=formato?formato(val):null;const texto=txt?.endsWith('%')?txt:Math.abs(val)>=1000?f(val/1000,Math.abs(val)%1000?1:0)+" mil":txt||f(val,pct?0:Math.abs(val)<2&&val!==0?1:0)+(pct?"%":"");s.append(sv("line",horizontal?{x1:pos,y1:top,x2:pos,y2:top+ih,stroke:"#ffffff38"}:{x1:left,y1:pos,x2:W-right,y2:pos,stroke:"#ffffff38"}));s.append(sv("text",{x:horizontal?pos:left-5,y:horizontal?H-8:pos+4,"text-anchor":horizontal?"middle":"end",fill:"white","font-size":11},texto));});
-    xs.forEach((label,i)=>{if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};if(!horizontal&&xs.length>12){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=historico?10:9;}const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,''),node=sv("text",attrs,text.length>(historico?20:24)?text.slice(0,historico?19:23)+"…":text);if(!horizontal&&xs.length<=8&&text.includes(' ')){node.textContent='';const words=text.split(' '),parts=words.length>2?[words.slice(0,2).join(' '),words.slice(2).join(' ')]:words;parts.forEach((v,j)=>node.append(sv('tspan',{x,dy:j?11:0},v)));}s.append(node);});
+    xs.forEach((label,i)=>{
+      if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;
+      const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8&&!comparadorTerritorial?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={class:'etiqueta-categoria',x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};
+      if(!horizontal&&(comparadorTerritorial||xs.length>12)){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=comparadorTerritorial?9:historico?10:9;}
+      const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,'');
+      // Los nombres hospitalarios largos se distinguen por principio y final;
+      // rotarlos y reservar ancho evita que se pisen aun con ocho categorías.
+      const limite=comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
+      if(!horizontal&&!comparadorTerritorial&&xs.length<=8&&text.includes(' ')){node.textContent='';const words=text.split(' '),parts=words.length>2?[words.slice(0,2).join(' '),words.slice(2).join(' ')]:words;parts.forEach((v,j)=>node.append(sv('tspan',{x,dy:j?11:0},v)));}
+      node.append(sv('title',{},label));s.append(node);
+    });
     ss.forEach((name,j)=>{
       let path=[];
       xs.forEach((label,i)=>{const r=a.find(r=>String(r[x])===label&&(!serie||String(r[serie])===name));if(!r){if(path.length){s.append(sv("polyline",{points:path.join(" "),fill:"none",stroke:colores[j%7],"stroke-width":2}));path=[];}return;}

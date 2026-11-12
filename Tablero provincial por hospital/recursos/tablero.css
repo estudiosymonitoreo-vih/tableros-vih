@@ -118,6 +118,11 @@ aside{overflow-y:auto;scrollbar-width:thin}
 .boton-orden-historico:hover{background:#ffd29e}
 .boton-orden-historico[aria-pressed=true]{background:#ffcf6c;border-color:#ffcf6c}
 .boton-orden-historico:focus-visible{outline:2px solid white;outline-offset:3px}
+.comparador-desplazable{scrollbar-width:auto;scrollbar-color:#9ed9fa #344663}
+.comparador-desplazable::-webkit-scrollbar{height:12px}
+.comparador-desplazable::-webkit-scrollbar-track{background:#344663;border-radius:6px}
+.comparador-desplazable::-webkit-scrollbar-thumb{background:#9ed9fa;border:2px solid #344663;border-radius:6px}
+.comparador-desplazable:focus-visible{outline:2px solid #9ed9fa;outline-offset:-2px}
 .cabecera-comparativo{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #829dbb;flex:none}
 .cabecera-comparativo .titulo-comparativo{flex:1;min-width:0;height:auto;min-height:40px;border-top:0}
 .cabecera-comparativo .orden-historico{flex:none;padding:4px 0}
