@@ -123,6 +123,19 @@ aside{overflow-y:auto;scrollbar-width:thin}
 .comparador-desplazable::-webkit-scrollbar-track{background:#344663;border-radius:6px}
 .comparador-desplazable::-webkit-scrollbar-thumb{background:#9ed9fa;border:2px solid #344663;border-radius:6px}
 .comparador-desplazable:focus-visible{outline:2px solid #9ed9fa;outline-offset:-2px}
+/* Siete indicadores y cinco series del libro único de Shiny, con sus años
+   propios; insuficiencia de datos clínicos no equivale a un cero. */
+#epidemiologia.contexto-actualizado{grid-template-columns:repeat(7,minmax(0,1fr))}
+#epidemiologia.contexto-actualizado .etiqueta{height:54px;min-height:54px;font-size:11px;line-height:1.2}
+#epidemiologia.contexto-actualizado .valor-estado{font-size:14px;line-height:1.2;letter-spacing:normal;min-height:32px;white-space:normal}
+@media(min-width:700px){
+  #epidemiologia.contexto-actualizado .tarjeta{display:grid;grid-template-rows:47px 41px 18px;align-content:start}
+  #epidemiologia.contexto-actualizado .etiqueta{height:41px;min-height:41px;font-size:10.5px;line-height:1.15;padding:2px 0}
+  #epidemiologia.contexto-actualizado .spark{height:18px;align-self:start}
+  #epidemiologia.contexto-actualizado .referencia-nacional{margin-top:2px;font-size:9px;line-height:1.15}
+  #epidemiologia.contexto-actualizado .valor-estado{font-size:13px;line-height:1.15}
+}
+@media(max-width:699px){#epidemiologia.contexto-actualizado{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cabecera-comparativo{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #829dbb;flex:none}
 .cabecera-comparativo .titulo-comparativo{flex:1;min-width:0;height:auto;min-height:40px;border-top:0}
 .cabecera-comparativo .orden-historico{flex:none;padding:4px 0}

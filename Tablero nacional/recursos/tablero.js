@@ -12,7 +12,8 @@
     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     return el;
   };
-  const epidemiologia = [
+  const contexto = datos.contexto_epidemiologico;
+  const epidemiologia = contexto ? contexto.indicadores.map(c=>[c.campo,c.etiqueta,c.decimales,c.escala,c.porcentaje,c.serie,c.estado]) : [
     ["Casos_2024", "Nuevos diagnósticos de VIH 2024", 0, 1, false, "casos"],
     ["Tasa_2024", "Tasa de VIH por 100 mil · 2024", 1, 1, false, "tasa"],
     ["Dx_tardio_2023_2024", "Diagnóstico tardío de VIH · 2023/24", 1, 100, true],
@@ -20,6 +21,7 @@
     ["Mortalidad_2023", "Mortalidad por sida por 100 mil · 2023", 1, 1, false, "mortalidad"],
     ["Sifilis_2024", "Tasa de sífilis por 100 mil · 2024", 1, 1, false, "sifilis"]
   ];
+  if(contexto)$("epidemiologia").classList.add('contexto-actualizado');
   const tarjetas = [
     ["N_TARV", "Personas en TARV"], ["N_TARV_hace_1_anio", "Hace 12 meses"],
     ["Variación_TARV", "Variación interanual", 1, 1, true],
@@ -38,27 +40,30 @@
     ["Prop_caso_confirmado", "Confirmadas en SNVS", 1, 1, true]
   ];
   function tarjeta(config, fila, provincia) {
-    const [campo, titulo, dec = 0, escala = 1, porcentaje = false, serie] = config;
+    const [campo, titulo, dec = 0, escala = 1, porcentaje = false, serie, estado] = config;
     const cont = document.createElement("article");
     cont.className = "tarjeta" + (["Casos_2024", "Enf_avanz_2023_2024", "N_TARV", "N_instituciones_disp_TARV"].includes(campo) ? " destacado" : "");
     cont.dataset.campo = campo;
     const label = document.createElement("div"); label.className = "etiqueta"; const textoLabel=document.createElement("span");textoLabel.textContent=titulo;label.append(textoLabel);
     const valor = document.createElement("div"); valor.className = "valor"; valor.textContent = formato(fila[campo], campo==="Sifilis_2024"&&Number.isInteger(fila[campo])?0:dec, escala, porcentaje);
+    if(!Number.isFinite(fila[campo])&&estado&&fila[estado]){valor.textContent=fila[estado];valor.classList.add('valor-estado');}
     cont.append(label, valor);
-    const referencias = ["Tasa_2024","Dx_tardio_2023_2024","Enf_avanz_2023_2024","Mortalidad_2023","Sifilis_2024","Variación_TARV","Prop_notificados","Prop_caso_confirmado"];
+    const referencias = ["Tasa_2024","Dx_tardio_2023_2024","Enf_avanz_2023_2024","Mortalidad_2023","Sifilis_2024","Variación_TARV","Prop_notificados","Prop_caso_confirmado",...(contexto?contexto.indicadores.filter(c=>c.campo!=='Casos_VIH_2025'&&c.campo!=='Proporcion_diagnosticos_2025').map(c=>c.campo):[])];
     if (provincia !== "País" && referencias.includes(campo)) {
-      const pais = datos.general.find(x=>x.Provincia_atencion==="País"), ref = document.createElement("span");
+      const origen=contexto&&contexto.indicadores.some(c=>c.campo===campo)?contexto.filas:datos.general;
+      const pais = origen.find(x=>x.Provincia_atencion==="País"), ref = document.createElement("span");
       ref.className="referencia-nacional";ref.textContent=`${formato(pais?.[campo],1,escala,porcentaje)} nac.`;valor.append(ref);
     }
     if (serie) {
-      const puntos = (datos.series[serie] || []).filter(x => x.provincia === provincia).sort((a,b) => a.anio - b.anio);
+      const origenSeries=contexto&&contexto.indicadores.some(c=>c.campo===campo)?contexto.series:datos.series;
+      const puntos = (origenSeries[serie] || []).filter(x => x.provincia === provincia).sort((a,b) => a.anio - b.anio);
       const validos = puntos.filter(x => Number.isFinite(x.valor) && Number.isFinite(x.anio));
       const nota = document.createElement("div"); nota.className = "subtitulo";
       if (validos.length >= 2) {
         const min = Math.min(...validos.map(x => x.valor)), max = Math.max(...validos.map(x => x.valor));
         const ini = validos[0].anio, fin = validos[validos.length - 1].anio;
         const graf = svg("svg", {viewBox:"0 0 140 40",class:"spark",role:"img","aria-label":titulo + ": serie anual"});
-        const tituloSVG = svg("title", {}); tituloSVG.textContent = validos.map(x => `${x.anio}: ${formato(x.valor, dec)}`).join("; "); graf.append(tituloSVG);
+        const tituloSVG = svg("title", {}); tituloSVG.textContent = validos.map(x => `${x.anio}: ${formato(x.valor, dec, escala, porcentaje)}`).join("; "); graf.append(tituloSVG);
         // Un faltante corta la línea; no se inventan valores ni se unen huecos.
         let tramo = [];
         const agregar = () => { if (tramo.length) graf.append(svg("polyline", {points:tramo.join(" "),fill:"none",stroke:"#539aff","stroke-width":3})); tramo = []; };
@@ -127,7 +132,10 @@
   function actualizar() {
     const provincia = $("provincia").value;
     const fila = datos.general.find(x => x.Provincia_atencion === provincia)||{};
-    for (const [id, config] of [["epidemiologia",epidemiologia],["tarv",tarjetas],["detalle",detalles]]) $(id).replaceChildren(...config.map(x=>tarjeta(x,fila,provincia)));
+    for (const [id, config] of [["epidemiologia",epidemiologia],["tarv",tarjetas],["detalle",detalles]]) {
+      const origen=id==='epidemiologia'&&contexto?contexto.filas.find(r=>r.Provincia_atencion===provincia)||{}:fila;
+      $(id).replaceChildren(...config.map(x=>tarjeta(x,origen,provincia)));
+    }
     ajustarRotulos();
     dibujarMapa(provincia);
     document.dispatchEvent(new CustomEvent("territorio-tablero", {detail:provincia}));

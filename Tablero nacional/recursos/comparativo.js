@@ -1,7 +1,7 @@
 // Autor: Ariel Adaszko
 "use strict";
 // Un único contrato de unidades para mapa, tarjeta nacional y barras.
-window.SVIH_COMPARATIVO = Object.freeze([
+const configuracionComparativoSVIH = [
   ["N_TARV","N° de personas en TARV","Cantidad de personas en TARV","N_TARV","numero",1],
   ["Porc_en_TARV","% de personas en TARV por provincia de atención","% de personas en TARV por jurisdicción de atención","Porc_en_TARV","porcentaje",1],
   ["Prop_residentes","% de personas en TARV por residencia","% de personas en TARV por provincia de residencia","Prop_residentes","porcentaje",1],
@@ -20,5 +20,13 @@ window.SVIH_COMPARATIVO = Object.freeze([
   ["Mortalidad_2023","Tasa de mortalidad por sida 2023","Tasa de mortalidad por sida por 100 mil habitantes 2023","Mortalidad_2023","tasa",1],
   ["Sifilis_2024","Tasa de sífilis por 100 mil 2024","Tasa de sífilis por 100 mil habitantes en 2024","Sifilis_2024","tasa",1],
   ["PreP","Personas en PrEP","Cantidad de personas en PrEP por provincia de retiro","N_prep","numero",1]
-].map(([id,etiqueta,titulo,campo,tipo,escala]) => Object.freeze({id,etiqueta,titulo,campo,tipo,escala})));
+].map(([id,etiqueta,titulo,campo,tipo,escala]) => ({id,etiqueta,titulo,campo,tipo,escala}));
+// Solo el paquete local puede tener este contexto; el caché de Data Studio
+// conserva sus columnas históricas. No mezclar indicadores 2024 y 2025.
+const contextoComparativoSVIH = JSON.parse(document.getElementById('datos-tablero').textContent).contexto_epidemiologico;
+const anterioresContextoSVIH = ['Casos_2024','Porc_casos','Tasa_2024','Dx_tardio_2023_2024','Enf_avanz_2023_2024','Mortalidad_2023','Sifilis_2024'];
+window.SVIH_COMPARATIVO = Object.freeze((contextoComparativoSVIH ? [
+  ...configuracionComparativoSVIH.filter(c=>!anterioresContextoSVIH.includes(c.id)),
+  ...contextoComparativoSVIH.indicadores.map(c=>({id:c.campo,etiqueta:c.etiqueta,titulo:c.etiqueta+' por jurisdicción',campo:c.campo,tipo:c.tipo,escala:c.escala}))
+] : configuracionComparativoSVIH).map(c=>Object.freeze(c)));
 window.valorComparativoSVIH = (fila, indicador) => Number.isFinite(fila?.[indicador.campo]) ? fila[indicador.campo] * indicador.escala : null;
