@@ -30,3 +30,11 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   Porc_alternativo: "% de personas > 14 años con esquema alternativo",
   Porc_no_recomendado: "% de personas > 14 años con esquema no recomendado"
 });
+
+// Mismo criterio visual en Principal y Laboratorio: celeste desde 70%,
+// transición continua y naranja intenso en 40% o menos, sin cambiar el valor.
+window.colorInformacionCargaViralSVIH = valor => {
+  const avance = Number.isFinite(valor) ? Math.max(0, Math.min(1, (70 - valor) / 30)) : 0;
+  const inicio = [158, 217, 250], fin = [255, 140, 0];
+  return `rgb(${inicio.map((canal, i) => Math.round(canal + avance * (fin[i] - canal))).join(', ')})`;
+};

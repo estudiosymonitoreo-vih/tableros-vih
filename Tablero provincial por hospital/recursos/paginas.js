@@ -50,6 +50,8 @@
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
     const perfilMediana=!!host.closest('.perfil-mediana'),comparadorTerritorial=!!host.closest('.tc-grafico');
+    // Recuperar altura de trazado bajo los títulos de Evolución TARV, sin mover sus paneles.
+    const evolucionCompacta=anualTarv||!!host.closest('.evolucion-mensual');
     // El límite cuenta barras reales (también varios períodos), no categorías.
     // El intervalo más denso de 21 barras determina el ancho: ni siquiera al
     // desplazar a mitad del gráfico pueden entrar más de 20 marcas a la vez.
@@ -62,7 +64,7 @@
     }
     // Cada barra histórica conserva su valor: reservar ancho mínimo evita que
     // múltiples períodos terminen con fuentes ilegibles; móvil permite desplazar.
-    const W=Math.max(200,host.clientWidth,anchoLimite,historico?xs.length*ss.length*(comparadorTerritorial?34:12)+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva)-(historico?14:0),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:comparadorTerritorial?56:historico?80:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):comparadorTerritorial?160:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
+    const W=Math.max(200,host.clientWidth,anchoLimite,historico?xs.length*ss.length*(comparadorTerritorial?34:12)+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva)-(historico?14:0),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:comparadorTerritorial?56:historico?80:evolucionCompacta?4:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):comparadorTerritorial?160:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
     const bruto=Math.max(0,...a.map(r=>r[y])),pot=10**Math.floor(Math.log10(bruto/4||1)),salto=[1,2,2.5,5,10].find(z=>z*pot>=bruto/4)*pot;
     const max=pct?100:Math.ceil(bruto/(salto||1))*(salto||1),min=Math.min(0,...a.map(r=>r[y]));
     const minDato=Math.min(...a.map(r=>r[y])),estricta=log&&minDato>0&&bruto/minDato>=10,simetrica=log&&minDato<=0;
@@ -313,9 +315,10 @@
     const tipos=["N_VIH_seguimiento","Dispensa_TARV","Personas_en_TARV","Anio_1er_TARV"];
     const anual=filas("anual_tarv").slice().sort((a,b)=>Number(b.Anio)-Number(a.Anio)||tipos.indexOf(a.Tipo_de_metrica)-tipos.indexOf(b.Tipo_de_metrica)).map(r=>({...r,Tipo_de_metrica:nombres[r.Tipo_de_metrica]||r.Tipo_de_metrica}));
     barras(panel(g,"Evolución de las personas en TARV","evolucion-anual"),anual,"Anio","Valor","Tipo_de_metrica",{horizontal:true});
-    const resumen=el("div","evolucion-resumen");g.append(resumen);const cad=filas("tratamiento")[0]?.N_TARV_caducado;
-    tarjetasTotal(resumen,[["En TARV normal",numeric(cad)&&numeric(general().N_TARV)?general().N_TARV-cad:null],["Ya deberían haber vuelto",cad],["3 a 6 meses sin retiro",general().perdidos_90_179],["180 días o más sin retiro",general().perdidos_180_mas]]);
-    const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");resumen.children[1].append(porcentaje);
+    // Encabezado propio y cuatro categorías agrupadas; conserva los cálculos vigentes.
+    const resumen=el("section","evolucion-resumen"),tituloResumen=el("h3","evolucion-resumen-titulo","Personas en TARV y pérdida de seguimiento"),indicadores=el("div","evolucion-indicadores");resumen.append(tituloResumen,indicadores);g.append(resumen);const cad=filas("tratamiento")[0]?.N_TARV_caducado;
+    tarjetasTotal(indicadores,[["En TARV normal",numeric(cad)&&numeric(general().N_TARV)?general().N_TARV-cad:null],["Ya deberían haber vuelto",cad],["3 a 6 meses sin retiro",general().perdidos_90_179],["180 días o más sin retiro",general().perdidos_180_mas]]);
+    const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");indicadores.children[1].append(porcentaje);
     flujo(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-flujo"),filas("flujo"));
     tortaCohorte(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-cohorte"),filas("flujo"));
     const mensual=panel(g,"Personas en TARV al 30 de junio de cada año","evolucion-mensual"),datosMes=filas('mensual_tarv').filter(r=>numeric(r.Valor)).sort((a,b)=>a.Fecha.localeCompare(b.Fecha));barras(mensual,datosMes,"Fecha","Valor",null,{linea:true});
@@ -335,7 +338,7 @@
   function laboratorio(host){
     const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable","laboratorio-viral"),actual=general();
     resumen.append(el("strong","viral-valor",f(actual.Prop_indetectables,1)+"%"),el("div","viral-ic",`IC 95   ${f(actual.Prop_indetect_IC95_inf,1)}%  ${f(actual.Prop_indetect_IC95_sup,1)}%`));
-    const cobertura=el("div","viral-cobertura");cobertura.append(el("span",null,"Información sobre carga viral"),el("strong",null,f(actual.Prop_con_info_cv,1)+"%"));resumen.append(cobertura);
+    const cobertura=el("div","viral-cobertura"),valorCobertura=el("strong",null,f(actual.Prop_con_info_cv,1)+"%");valorCobertura.style.color=window.colorInformacionCargaViralSVIH(actual.Prop_con_info_cv);cobertura.append(el("span",null,"Información sobre carga viral"),valorCobertura);resumen.append(cobertura);
     const cd=panel(g,"Distribución de CD4 en personas en TARV","laboratorio-cd4"),info=el("div","cd4-cobertura");info.append(el("span",null,"Información sobre CD4"),el("strong",null,f(filas("cd4_cobertura")[0]?.Prop_con_info_cd4,1)+"%"));cd.append(info);
     const ordenCD4=["500 o más","350 a 499","200 a 349","<200"],dist=filas("cd4_distribucion").slice().sort((a,b)=>ordenCD4.indexOf(a.intervalo_cd4)-ordenCD4.indexOf(b.intervalo_cd4));if(!dist.length)vacio(cd);else{const bar=el("div","cd4-barra");dist.forEach((r,i)=>{const seg=el("span",null,f(r.porcentaje,1)+"%");seg.style.width=(numeric(r.porcentaje)?r.porcentaje:0)+"%";seg.style.background=colores[i%7];seg.title=r.intervalo_cd4+": "+f(r.n_personas)+" personas";bar.append(seg)});cd.append(bar);leyenda(cd,dist.map(r=>r.intervalo_cd4));}
     serieMixta(panel(g,"Estudios de carga viral por año","laboratorio-estudios-cv"),filas("cv"),"CV","CV_p","Promedio_CV");

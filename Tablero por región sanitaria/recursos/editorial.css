@@ -476,3 +476,26 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 /* Colores de los valores principales; se conservan los tamaños existentes. */
 .territorial .tg-kpis .tg-instituciones .numero-indicador{color:#9ed9fa!important}
 .territorial .tg-notificados .numero-indicador{color:#fff}
+
+/* Evolución TARV: separar el resumen del título de página sin desplazar los gráficos. */
+.evolucion-resumen{display:block}
+.evolucion-resumen-titulo{margin:0 0 4px;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.25px}
+.evolucion-indicadores{display:grid;grid-template-columns:1fr 1.45fr 1fr 1fr;gap:18px}
+.evolucion-resumen .mini:nth-child(1) .numero-indicador{color:#fff!important}
+.evolucion-resumen .mini:nth-child(2) .numero-indicador{color:#fff0c2!important;padding-left:0}
+:root{--tarv-sin-retiro-90:#ffd09c;--tarv-sin-retiro-180:#f6a04d}
+.evolucion-resumen .mini:nth-child(3) .numero-indicador{color:var(--tarv-sin-retiro-90)!important}
+.evolucion-resumen .mini:nth-child(4) .numero-indicador{color:var(--tarv-sin-retiro-180)!important}
+.perdida-seguimiento strong[data-campo="perdidos_90_179"],.tg-perdida strong[data-campo="perdidos_90_179"]{color:var(--tarv-sin-retiro-90)}
+.perdida-seguimiento strong[data-campo="perdidos_180_mas"],.tg-perdida strong[data-campo="perdidos_180_mas"]{color:var(--tarv-sin-retiro-180)}
+@media(min-width:700px){
+  .evolucion-resumen{margin-left:25%;margin-top:-21px;padding-bottom:8px}
+  .evolucion-resumen .rotulo{min-height:0;line-height:1.25}
+  .evolucion-anual>.rotulo,.evolucion-mensual>.rotulo{min-height:28px;padding-bottom:2px}
+  .evolucion-anual .interior,.evolucion-mensual .interior{padding-top:0}
+}
+@media(max-width:699px){
+  .evolucion-resumen{min-height:0}
+  .evolucion-indicadores .mini>.interior{min-height:0;flex:none}
+  .evolucion-indicadores{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
+}
