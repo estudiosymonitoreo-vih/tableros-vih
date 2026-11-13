@@ -89,14 +89,14 @@ function incluirPeriodoTitulo(host,filas){
  const anos=uniq(filas.map(r=>r.anio).filter(a=>Number.isInteger(a)&&a>=1900&&a<=2099)).sort((a,b)=>a-b);
  if(anos.length)titulo.textContent+=` · ${anos[0]===anos.at(-1)?anos[0]:anos[0]+'–'+anos.at(-1)}`;
 }
-function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null,separacionBarras=1}={}){
+function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null,separacionBarras=1,tooltips=true}={}){
  incluirPeriodoTitulo(host,filas);
  if(!filas.some(r=>r.valor!=null)&&!filas.some(r=>r.insuficiente)){vacio(host);detalle(host,datosDetalle||filas);return;}
  const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
  const s=svg('svg',{class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});
  s.dibujar=(w,h)=>{
  const compacto=!!host.closest('.demografia-bloques'),L=compacto?42:55,R=compacto?16:22,U=compacto?16:35,B=compacto?27:42,iw=Math.max(1,w-L-R),ih=Math.max(1,h-U-B);
- s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
+ s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();if(tooltips===true)tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
  const max=porcentaje?100:Math.max(1,...filas.map(r=>r.valor??0))*1.13;
  const x=i=>L+(i+.5)*iw/xs.length, y=v=>U+ih*(1-v/max);
  for(let j=0;j<=4;j++){const v=max*j/4,yy=y(v);s.append(svg('line',{x1:L,x2:w-R,y1:yy,y2:yy,class:'rejilla'}),svg('text',{x:L-10,y:yy+4,'text-anchor':'end'},fmt(v,v<5?1:0)+(porcentaje?'%':'')));}
@@ -104,16 +104,31 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
  const matriz=new Map(filas.map(r=>[`${r.anio}|${r.serie||'Valor'}`,r.valor]));
  series.forEach((nombre,j)=>{let segmentos=[],tramo=[];xs.forEach((a,i)=>{const v=matriz.get(`${a}|${nombre}`);if(v==null){if(tipo==='barras'&&j===0&&filas.some(r=>r.anio===a&&r.insuficiente))s.append(svg('text',{x:x(i),y:y(0)-12,'text-anchor':'middle',class:'sin-datos-suficientes'},'Sin datos suficientes'));if(tramo.length)segmentos.push(tramo);tramo=[];return;}
  const color=(tipo==='linea'||tipo==='puntos')&&series.length===1?'#73d4ef':(coloresSeries?.[nombre]||colores[j%colores.length]),etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
- if(tipo==='linea'||tipo==='puntos'){const final=i===xs.length-1;tramo.push([x(i),y(v)]);s.append(tituloSVG(svg('circle',{cx:x(i),cy:y(v),r:tipo==='puntos'?7:4,fill:final?'#ffdc8d':color,tabindex:0,'aria-label':tooltip}),tooltip));s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
+ if(tipo==='linea'||tipo==='puntos'){const final=i===xs.length-1,textoTooltip=tooltips==='categoria'?`${nombre}: ${etiqueta}`:tooltip;tramo.push([x(i),y(v),textoTooltip]);const punto=svg('circle',{cx:x(i),cy:y(v),r:tipo==='puntos'?7:4,fill:final?'#ffdc8d':color,tabindex:0,'aria-label':tooltip});s.append(tooltips?tituloSVG(punto,textoTooltip):punto);s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
  else {const ancho=iw/xs.length*.74;let base=0,xx=x(i)-ancho/2,bw=ancho;
  if(tipo==='apilado'){for(let k=0;k<j;k++)base+=matriz.get(`${a}|${series[k]}`)??0;}else{bw=ancho/series.length;xx+=j*bw;}
  const hueco=tipo==='barras'?Math.min(separacionBarras,bw*.2):1;
  s.append(tituloSVG(svg('rect',{x:xx+(tipo==='barras'?hueco/2:0),y:y(v+base),width:Math.max(1,bw-hueco),height:ih*v/max,fill:color,tabindex:0,'aria-label':tooltip}),tooltip));
  if(tipo==='barras'){const xxLabel=xx+bw/2,yyLabel=y(v+base)-8;s.append(svg('text',{x:xxLabel,y:yyLabel,'text-anchor':series.length>3?'start':'middle',class:'valor-barra',...(series.length>3?{transform:`rotate(-55 ${xxLabel} ${yyLabel})`}:{})},etiqueta));}
  if(v>8&&tipo==='apilado')s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff',class:'valor-apilado'},fmt(v)+(porcentaje?'%':'')));
- }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>s.prepend(svg('polyline',{points:tr.map(p=>p.join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8})));});
+ }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>{
+  const linea=svg('polyline',{points:tr.map(p=>p.slice(0,2).join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8});
+  // Casos/tasas: identificar la serie y el valor observado más cercano, sin el título general.
+  if(tooltips==='categoria'){
+   tituloSVG(linea,tr[0][2]);
+   linea.addEventListener('pointermove',evento=>{
+    const punto=s.createSVGPoint();punto.x=evento.clientX;punto.y=evento.clientY;
+    const posicion=punto.matrixTransform(s.getScreenCTM().inverse());
+    const cercano=tr.reduce((a,b)=>Math.abs(b[0]-posicion.x)<Math.abs(a[0]-posicion.x)?b:a);
+    linea.querySelector('title').textContent=cercano[2];
+   });
+  }
+  s.prepend(linea);
+ });});
  };s.dibujar(ancho,alto);
  host.append(s);leyenda(host,series);if(coloresSeries)host.querySelectorAll('.leyenda .muestra').forEach((m,i)=>m.style.background=coloresSeries[series[i]]||colores[i%colores.length]);if((tipo==='linea'||tipo==='puntos')&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
+ // La mediana conserva rótulos y accesibilidad, sin tooltips tampoco en su leyenda.
+ if(!tooltips)host.querySelectorAll('.leyenda [title]').forEach(n=>n.removeAttribute('title'));
 }
 const nombreMapa=n=>n==='Ciudad de Buenos Aires'?'CABA':n;
 const posicionesProvincia={
@@ -266,7 +281,7 @@ function seccionCasos(host){
   (r.genero==='Ambos sexos'||r.genero===c.genero)&&
   (r.edad==='Todas las edades'||r.edad===c.edad))).reduce((s,r)=>s+r.n,0);
  p.dataset.nTotal=String(total);
- grafico(p,filas.map(r=>({...r,anio:r.anio,serie:nombreSerie(r),valor:r.valor})),{unidad:ind==='Casos'?'casos':'por 100.000 habitantes',decimales:ind==='Casos'?0:1});
+ grafico(p,filas.map(r=>({...r,anio:r.anio,serie:nombreSerie(r),valor:r.valor})),{unidad:ind==='Casos'?'casos':'por 100.000 habitantes',decimales:ind==='Casos'?0:1,tooltips:'categoria'});
  const fijos=filtrosSeries.filter(f=>f.valores.length===1).map(f=>`${f.etiqueta}: ${f.valores[0]}`);
  const comunes=nodo('p',fijos.length?fijos.join(' · '):'Comparación por geografía, sexo y edad.','contexto-series');
  comunes.setAttribute('aria-label','Filtros comunes a todas las series');
@@ -312,7 +327,7 @@ function seccionGenero(host){
  generar(izquierda.n,'Proporción de diagnósticos de VIH por género',T.genero.filter(r=>r.geografia===g&&r.edad===e),{tipo:'apilado',porcentaje:true,ordenSeries:['Mujer','Varón',...uniq(T.genero.map(r=>r.serie)).filter(v=>!['Mujer','Varón'].includes(v))],coloresSeries:{'Mujer':colores[0],'Varón':colores[3],'Mujer trans':colores[1],'Otro':colores[2],'Varón trans':colores[4]}});
  generar(izquierda.n,'Razón varones / mujeres en diagnósticos de VIH',T.razon.filter(r=>r.geografia===g&&r.edad===e).map(r=>({...r,serie:'Razón varones / mujeres'})),{tipo:'puntos'},true);
  generar(derecha.n,'Distribución de diagnósticos de VIH por edad',T.edad.filter(r=>r.geografia===g&&r.genero===s),{tipo:'apilado',porcentaje:true,ordenSeries:edades});
- generar(derecha.n,'Mediana de edad al diagnóstico de VIH',T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,serie:'Mediana de edad'})),{unidad:'años',decimales:0},true);
+ generar(derecha.n,'Mediana de edad al diagnóstico de VIH',T.mediana.filter(r=>r.geografia===g&&r.genero===s).map(r=>({...r,serie:'Mediana de edad'})),{unidad:'años',decimales:0,tooltips:false},true);
  $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${ultimo} · Datos actualizables por retraso de notificación`;
 }
 // Torta de 2025: porciones exactas según conteos y rótulos externos sin solapamiento.
