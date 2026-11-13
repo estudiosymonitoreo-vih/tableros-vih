@@ -3,6 +3,14 @@
 (() => {
   const datos = JSON.parse(document.getElementById("datos-tablero").textContent);
   const $ = id => document.getElementById(id);
+  // Mismo criterio visual en Principal y Laboratorio: celeste desde 70%,
+  // transición continua y naranja intenso en 40% o menos, sin cambiar el valor.
+  const colorInformacionCV = valor => {
+    const avance = Number.isFinite(valor) ? Math.max(0, Math.min(1, (70 - valor) / 30)) : 0;
+    const inicio = [158, 217, 250], fin = [255, 140, 0];
+    return `rgb(${inicio.map((canal, i) => Math.round(canal + avance * (fin[i] - canal))).join(', ')})`;
+  };
+  window.colorInformacionCargaViralSVIH = colorInformacionCV;
   const formato = (v, dec = 0, escala = 1, porcentaje = false) =>
     v === null || v === undefined || !Number.isFinite(v) ? "—" :
       new Intl.NumberFormat("es-AR", {minimumFractionDigits: dec, maximumFractionDigits: dec}).format(v * escala) + (porcentaje ? "%" : "");
@@ -96,7 +104,7 @@
       const cobertura = document.createElement("div"); cobertura.className = "subtitulo cobertura";
       const disponibilidad = document.createElement("span"); disponibilidad.textContent = "Información de carga viral";
       const badge = document.createElement("strong"); badge.textContent = formato(fila.Prop_con_info_cv,1,1,true);
-      if(fila.Prop_con_info_cv<75) badge.classList.add("cobertura-parcial");
+      badge.style.color = colorInformacionCV(fila.Prop_con_info_cv);
       cobertura.append(disponibilidad,badge);
       cont.append(intervalo, cobertura);
     }

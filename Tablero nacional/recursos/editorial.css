@@ -483,8 +483,11 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .evolucion-indicadores{display:grid;grid-template-columns:1fr 1.45fr 1fr 1fr;gap:18px}
 .evolucion-resumen .mini:nth-child(1) .numero-indicador{color:#fff!important}
 .evolucion-resumen .mini:nth-child(2) .numero-indicador{color:#fff0c2!important;padding-left:0}
-.evolucion-resumen .mini:nth-child(3) .numero-indicador{color:#ffd09c!important}
-.evolucion-resumen .mini:nth-child(4) .numero-indicador{color:#f6a04d!important}
+:root{--tarv-sin-retiro-90:#ffd09c;--tarv-sin-retiro-180:#f6a04d}
+.evolucion-resumen .mini:nth-child(3) .numero-indicador{color:var(--tarv-sin-retiro-90)!important}
+.evolucion-resumen .mini:nth-child(4) .numero-indicador{color:var(--tarv-sin-retiro-180)!important}
+.perdida-seguimiento strong[data-campo="perdidos_90_179"]{color:var(--tarv-sin-retiro-90)}
+.perdida-seguimiento strong[data-campo="perdidos_180_mas"]{color:var(--tarv-sin-retiro-180)}
 @media(min-width:700px){
   .evolucion-resumen{margin-left:25%;margin-top:-21px;padding-bottom:8px}
   .evolucion-resumen .rotulo{min-height:0;line-height:1.25}
