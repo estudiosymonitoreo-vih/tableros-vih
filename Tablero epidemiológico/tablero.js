@@ -310,6 +310,8 @@ function seccionGenero(host){
  const generoActual=T.genero.filter(r=>r.geografia===g&&r.edad===e&&r.anio===ultimo),razonActual=T.razon.find(r=>r.geografia===g&&r.edad===e&&r.anio===ultimo);
  const edadActual=T.edad.filter(r=>r.geografia===g&&r.genero===s&&r.anio===ultimo),mediana=T.mediana.find(r=>r.geografia===g&&r.genero===s&&r.anio===ultimo),grupo=[...edadActual].filter(r=>r.serie!=='Todas las edades'&&Number.isFinite(r.valor)).sort((a,b)=>b.valor-a.valor)[0];
  const mayores=edadActual.filter(r=>['55-64','65 o más'].includes(r.serie)),sumaMayores=mayores.length&&mayores.every(r=>Number.isFinite(r.valor))?mayores.reduce((a,r)=>a+r.valor,0):null;
+ // 10–19 años comprende ambos grupos quinquenales; no asumir cero si falta alguno.
+ const adolescentes=['10-14','15-19'].map(serie=>edadActual.find(r=>r.serie===serie)),sumaAdolescentes=adolescentes.every(r=>Number.isFinite(r?.valor))?adolescentes.reduce((a,r)=>a+r.valor,0):null;
  const resumenG=nodo('section',null,'resumen-indicadores'),resumenE=nodo('section',null,'resumen-indicadores');resumenG.setAttribute('aria-label','Resumen de género');resumenE.setAttribute('aria-label','Resumen de edad');
  izquierda.indicadores.append(resumenG);derecha.indicadores.append(resumenE);
  tarjetaResumen(resumenG,`Proporción de varones · ${ultimo}`,pct(generoActual.find(r=>r.serie==='Varón')?.valor),`${g} · ${e}`);
@@ -317,6 +319,7 @@ function seccionGenero(host){
  tarjetaResumen(resumenG,`Razón varones / mujeres · ${ultimo}`,exacto(razonActual?.valor,1),'Cociente de diagnósticos');
  tarjetaResumen(resumenE,`Mediana de edad · ${ultimo}`,Number.isFinite(mediana?.valor)?exacto(mediana.valor,0)+' años':'Sin datos',`${g} · ${s}`);
  tarjetaResumen(resumenE,'Grupo de edad más frecuente',grupo?.serie||'Sin datos',grupo?pct(grupo.valor)+' de los diagnósticos':'Sin datos');
+ tarjetaResumen(resumenE,`Proporción de 10 a 19 años · ${ultimo}`,pct(sumaAdolescentes),'Distribución por edad');
  tarjetaResumen(resumenE,`Proporción de 55 años o más · ${ultimo}`,pct(sumaMayores),'Distribución por edad');
  const generar=(host,titulo,filas,opciones,tendencia=false)=>{
   const p=panel(host,titulo);p.classList.add(tendencia?'demografia-tendencia':'demografia-distribucion');grafico(p,filas,opciones);
