@@ -379,22 +379,36 @@ function seccionDiagnostico(host){
  const c=controles(host),g=filtro(c,T.diagnostico,'geografia','Unidad geográfica · todos los gráficos','g','Argentina',false,geos),s=filtro(c,T.diagnostico,'genero','Género · evolución y por edad','s','Todos los géneros',false,generos),e=filtro(c,T.diagnostico,'edad','Grupo de edad · evolución, por género y por vía','e','Todas las edades',false,edades);
  const rutas=(T.diagnostico_vias||[]).filter(r=>r.geografia===g&&r.edad===e&&/^(Prácticas sexuales|Uso compartido de equipo de inyección)/.test(r.via)),a=s==='Varón'&&rutas.length?filtro(c,rutas,'anio','Año · varones por vía','a',anios.at(-1)):null;
  const grid=layout(host,s==='Varón'?'diagnostico-evolucion diagnostico-con-vias':'diagnostico-evolucion');
- const izquierda=layout(grid,'diagnostico-izquierda'),derecha=layout(grid,'diagnostico-derecha');
+ const izquierda=layout(grid,'diagnostico-izquierda');
  const datos=T.diagnostico.filter(r=>r.geografia===g);
  const hist=datos.filter(r=>r.genero===s&&r.edad===e),ultimos=anios.slice(-4);
- const p=panel(izquierda,`Diagnóstico tardío de VIH y enfermedad avanzada · evolución · ${g} · ${s} · ${e}`);
- const porEdad=panel(derecha,`Diagnóstico tardío de VIH por edad · ${g} · ${s}`);
- const porGenero=panel(derecha,`Diagnóstico tardío de VIH por género · ${g} · ${e}`);
+ const periodo=`${ultimos[0]}–${ultimos.at(-1)}`;
+ const p=panel(izquierda,'Evolución anual del diagnóstico de VIH');
+ p.classList.add('diagnostico-anual');
+ p.querySelector('h3').append(nodo('small',` ${g} · ${s} · ${e} · ${periodo}`));
+ const porEdad=panel(grid,'Diagnóstico tardío de VIH por edad');
+ porEdad.querySelector('h3').append(nodo('small',` ${g} · ${s} · Bienios ${periodo}`));
+ const porGenero=panel(grid,'Diagnóstico tardío de VIH por género');
+ porGenero.classList.add('diagnostico-por-genero');
+ porGenero.querySelector('h3').append(nodo('small',` ${g} · ${e} · Bienios ${periodo}`));
  graficoDiagnosticoBienios(porEdad,datos.filter(r=>r.genero===s),'edad',edades.slice(1),ultimos);
  graficoDiagnosticoBienios(porGenero,datos.filter(r=>r.edad===e),'genero',generos.slice(1),ultimos);
  const barras=filas=>filas.flatMap(r=>[{...r,anio:r.anio,serie:'Diagnóstico tardío (incluye avanzada)',valor:r.tardio},{...r,anio:r.anio,serie:'Enfermedad avanzada',valor:r.avanzada}]);
- grafico(p,barras(hist.filter(r=>ultimos.includes(r.anio))),{tipo:'barras',porcentaje:true,alto:390,separacionBarras:6,datosDetalle:hist.filter(r=>ultimos.includes(r.anio))});
- p.insertBefore(nodo('p','Diagnóstico tardío incluye enfermedad avanzada. Las barras se comparan, no se suman. Porcentajes sobre casos con dato de oportunidad diagnóstica.','nota'),p.lastElementChild);
- if(s!=='Varón')return;
- const q=panel(izquierda,`Diagnóstico tardío de VIH en varones · por vía · ${g} · ${e} · ${a??'sin año disponible'}`),seleccion=rutas.filter(r=>r.anio===a);
- graficoDiagnosticoVias(q,seleccion);
- q.insertBefore(nodo('p','Varones. Cada vía usa sus casos con dato de oportunidad diagnóstica como denominador. DT incluye enfermedad avanzada; las barras se comparan, no se suman.','nota'),q.lastElementChild);
-
+ const anual=hist.filter(r=>ultimos.includes(r.anio));
+ grafico(p,barras(anual),{tipo:'barras',porcentaje:true,alto:390,separacionBarras:6,datosDetalle:anual});
+ const nota=nodo('span','Porcentajes sobre casos con dato de oportunidad diagnóstica.','nota');
+ if(s==='Varón'){nota.prepend(' · ');p.querySelector('.muestra-n').append(nota);}
+ pieDiagnostico(p);
+ if(s!=='Varón'){p.append(nota);return;}
+ const q=panel(izquierda,'Diagnóstico de VIH por vía de transmisión');
+ q.querySelector('h3').append(nodo('small',` ${g} · Varones · ${e} · ${a??'sin año disponible'}`));
+ graficoDiagnosticoVias(q,rutas.filter(r=>r.anio===a));
+ pieDiagnostico(q);
+ q.append(nodo('p','Porcentajes sobre casos con dato de oportunidad diagnóstica en cada vía.','nota'));
+}
+function pieDiagnostico(host){
+ const pie=layout(host,'diagnostico-pie');
+ pie.append(host.querySelector('.muestra-n'),host.querySelector('.acciones-datos'));
 }
 function graficoDiagnosticoBienios(host,datos,campo,grupos,periodo){
  const bienios=[periodo.slice(0,2),periodo.slice(2,4)].filter(b=>b.length);
@@ -409,13 +423,14 @@ function graficoDiagnosticoBienios(host,datos,campo,grupos,periodo){
   return {grupo,bienio:bienio.join('–'),n,total,insuficiente,tardio,avanzada,noAvanzado:insuficiente?null:tardio-avanzada};
  }));
  const h=host.querySelector('h3');
- h.textContent+=` · bienios ${periodo[0]}–${periodo.at(-1)}`;
  const series=['Tardío no avanzado','Enfermedad avanzada'];
  const porcentaje=v=>exacto(v,1)+'%';
  const s=svg('svg',{class:'grafico grafico-bienios',role:'img','aria-label':h.textContent});
  s.dibujar=(w,alto)=>{
   const L=w<400?138:152,R=52,U=3,B=20,ancho=Math.max(1,w-L-R),fin=alto-B;
-  const paso=(fin-U)/filas.length,barra=Math.max(0,Math.min(18,paso-2)),x=v=>L+ancho*v/100;
+  const pasoGrupo=(fin-U)/grupos.length;
+  const pasoBienio=Math.max(0,Math.min(21,(pasoGrupo-4)/bienios.length));
+  const barra=Math.max(0,Math.min(18,pasoBienio-2)),x=v=>L+ancho*v/100;
   s.setAttribute('viewBox',`0 0 ${w} ${alto}`);
   s.replaceChildren();
   for(const v of [0,25,50,75,100]){
@@ -423,12 +438,14 @@ function graficoDiagnosticoBienios(host,datos,campo,grupos,periodo){
     svg('text',{x:x(v),y:alto-4,'text-anchor':'middle'},v+'%'));
   }
   filas.forEach((f,i)=>{
-   const y=U+(i+.5)*paso,primera=i%bienios.length===0;
-   if(primera){
-    if(i)s.append(svg('line',{x1:0,x2:w,y1:y-paso/2,y2:y-paso/2,class:'rejilla'}));
-    s.append(svg('text',{x:0,y:y+(bienios.length-1)*paso/2+3,class:'grupo-bienio'},f.grupo));
+   const grupo=Math.floor(i/bienios.length),bienio=i%bienios.length;
+   const centro=U+(grupo+.5)*pasoGrupo,y=centro+(bienio-(bienios.length-1)/2)*pasoBienio;
+   if(!bienio){
+    const separador=U+grupo*pasoGrupo;
+    if(grupo)s.append(svg('line',{x1:0,x2:w,y1:separador,y2:separador,class:'rejilla'}));
+    s.append(svg('text',{x:0,y:centro+3,class:'grupo-bienio'},f.grupo));
    }
-   s.append(svg('text',{x:L-7,y:y+3,'text-anchor':'end'},f.bienio));
+   s.append(svg('text',{x:L-7,y:y+3,'text-anchor':'end',class:'periodo-bienio'},f.bienio));
    if(f.insuficiente){
     s.append(svg('text',{x:L+5,y:y+3,class:'sin-datos-suficientes'},f.total?'Sin datos suficientes':'Sin datos'));
     return;
@@ -454,6 +471,7 @@ function graficoDiagnosticoBienios(host,datos,campo,grupos,periodo){
   [campo==='edad'?'Grupo de edad':'Género']:grupo,Bienio:bienio,'n válido':n,'Casos totales':total,
   'Tardío no avanzado (%)':noAvanzado,'Enfermedad avanzada (%)':avanzada,'Diagnóstico tardío (%)':tardio
  })));
+ pieDiagnostico(host);
 }
 function graficoDiagnosticoVias(host,filas){
  if(!filas.length){vacio(host);detalle(host,filas);return;}

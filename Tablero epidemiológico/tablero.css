@@ -171,7 +171,7 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 
 /* Mortalidad: tabla, barras provinciales, mapa y dos gráficos nacionales por edad. */
 @media(min-width:701px){
- .mortalidad-columnas{grid-template-columns:minmax(0,1.12fr) minmax(0,.78fr) minmax(0,.78fr) minmax(0,1.02fr);column-gap:18px}
+ .mortalidad-columnas{grid-template-columns:minmax(0,1.08fr) minmax(0,.78fr) minmax(0,.78fr) minmax(0,1.02fr);column-gap:18px}
  .mortalidad-comparacion{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px}
  .mortalidad-edad-columna{grid-column:4;grid-row:2 / 4;display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0;min-height:0}
  .mortalidad-edad-columna .panel{min-height:0;overflow:hidden}
@@ -205,21 +205,39 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 @media(max-width:700px){.geografia-demografia{width:100%;min-width:0}.demografia-bloques{display:flex;flex-direction:column}.bloque-demografia{display:flex;flex-direction:column;min-height:0}.indicadores-demografia{border:0;border-bottom:1px solid #657e9c;padding:0 0 8px}.demografia-bloques .resumen-indicadores{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto;flex:none}.demografia-bloques .tarjeta-resumen{padding:8px 4px;min-height:0}.demografia-bloques .resumen-etiqueta{font-size:10px}.demografia-bloques .resumen-numero{font-size:20px}.demografia-bloques .resumen-contexto{font-size:9px}.demografia-bloques .demografia-distribucion{height:380px;min-height:380px}.demografia-bloques .demografia-tendencia{height:260px;min-height:260px}.demografia-bloques .grafico{height:0;flex:1;min-height:0}.demografia-titulo .acciones-datos button{font-size:10px;padding:4px}}
 @media(max-width:700px){.demografia-bloques .bloque-edad .resumen-indicadores{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}}
 
-.diagnostico-evolucion{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.diagnostico-izquierda,.diagnostico-derecha{display:grid;min-width:0;min-height:0;gap:8px}
-.diagnostico-izquierda{grid-template-rows:minmax(0,1fr)}
-.diagnostico-con-vias .diagnostico-izquierda{grid-template-rows:repeat(2,minmax(0,1fr))}
-.diagnostico-derecha{grid-template-rows:minmax(0,1.65fr) minmax(0,1fr)}
-.diagnostico-derecha .panel{gap:4px;padding-bottom:4px}
-.diagnostico-derecha .acciones-datos{margin-top:-22px;align-self:flex-end}
-.grafico-bienios text{font-size:10px}
+.diagnostico-evolucion{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.diagnostico-izquierda{display:grid;min-width:0;min-height:0;grid-template-rows:minmax(0,1fr);gap:12px}
+.diagnostico-con-vias .diagnostico-izquierda{grid-template-rows:minmax(0,1.25fr) minmax(0,1fr)}
+.diagnostico-evolucion .panel{gap:7px;padding:12px 8px 8px}
+.diagnostico-evolucion h3{font-size:17px}
+.diagnostico-evolucion h3 small{display:block;font-size:12px;font-weight:400;color:var(--suave);margin-top:4px}
+.diagnostico-evolucion:not(.diagnostico-con-vias) .diagnostico-anual>.grafico{flex:.75 1 0}
+.diagnostico-por-genero>.grafico{flex:.84 1 0}
+.diagnostico-pie{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:3px 8px}
+.diagnostico-pie .acciones-datos{margin:0 0 0 auto}
+.diagnostico-evolucion .nota{font-size:10px}
+.diagnostico-evolucion .muestra-n .nota{margin-left:8px}
+.diagnostico-evolucion .via-diagnostico{grid-template-columns:minmax(112px,25%) minmax(0,1fr);gap:6px;flex-basis:auto}
+.diagnostico-evolucion .via-metrica{grid-template-columns:minmax(0,1fr) 42px;gap:5px}
+.diagnostico-evolucion .diagnostico-vias .via-pista{height:7px}
+.diagnostico-evolucion .diagnostico-vias .via-barras{gap:2px}
+.grafico-bienios text{font-size:11px}
 .grafico-bienios .grupo-bienio,.grafico-bienios .total-bienio{font-weight:700}
-.grafico-bienios .valor-bienio{fill:#131e39;font-weight:700;pointer-events:none}
+.grafico-bienios .valor-bienio{font-size:10px;fill:#131e39;font-weight:700;pointer-events:none}
+@media(min-width:701px) and (max-height:820px){
+ .diagnostico-evolucion .panel{gap:4px;padding-block:7px 4px}
+ .diagnostico-evolucion h3{font-size:15px}
+ .diagnostico-evolucion h3 small{margin-top:2px}
+ .diagnostico-izquierda{gap:8px}
+ .diagnostico-con-vias .diagnostico-izquierda{grid-template-rows:minmax(0,1.08fr) minmax(0,1fr)}
+ .diagnostico-evolucion .diagnostico-vias{gap:2px}
+ .diagnostico-evolucion .diagnostico-vias .via-pista{height:6px}
+}
 @media(max-width:700px){
- .diagnostico-evolucion,.diagnostico-izquierda,.diagnostico-derecha{display:flex;flex-direction:column}
- .diagnostico-evolucion .grafico{flex:none;height:280px}
- .diagnostico-derecha .panel{min-height:0}
- .diagnostico-derecha .panel:first-child .grafico{height:385px}
- .diagnostico-derecha .panel:last-child .grafico{height:215px;min-height:0}
- .diagnostico-derecha .acciones-datos{margin-top:0}
+ .diagnostico-evolucion,.diagnostico-izquierda{display:flex;flex-direction:column}
+ .diagnostico-evolucion .panel{min-height:0}
+ .diagnostico-evolucion .panel>.grafico,.diagnostico-evolucion:not(.diagnostico-con-vias) .diagnostico-anual>.grafico{flex:none;height:280px}
+ .diagnostico-evolucion .panel>.grafico-bienios{height:385px}
+ .diagnostico-evolucion .diagnostico-por-genero>.grafico-bienios{height:215px;min-height:0}
+ .diagnostico-evolucion .diagnostico-vias{min-height:160px}
 }
