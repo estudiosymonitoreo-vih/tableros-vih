@@ -133,6 +133,7 @@
   window.ajustarRotulosSVIH=ajustarRotulos;
   function actualizar() {
     const provincia = $("provincia").value;
+    $("acceso-regiones").hidden = !["Provincia de Buenos Aires", "Buenos Aires"].includes(provincia);
     const fila = datos.general.find(x => x.Provincia_atencion === provincia)||{};
     for (const [id, config] of [["epidemiologia",epidemiologia],["tarv",tarjetas],["detalle",detalles]]) {
       const origen=id==='epidemiologia'&&contexto?contexto.filas.find(r=>r.Provincia_atencion===provincia)||{}:fila;
