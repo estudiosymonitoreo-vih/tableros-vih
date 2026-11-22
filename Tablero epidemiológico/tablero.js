@@ -121,7 +121,7 @@ function detalle(host,filas,{valorPorcentual=false}={}){
   campos.forEach(c=>{
    const valor=r[c];
    const texto=typeof valor==='number'&&Number.isFinite(valor)
-    ?(esAnio(c)||c==='categoria'?String(valor):fmt(valor,3))+(porcentaje(c,r)?'%':'')
+    ?(porcentaje(c,r)?exacto(valor,1)+'%':esAnio(c)||c==='categoria'?String(valor):fmt(valor,3))
     :typeof valor==='boolean'?valor?'Sí':'No':valor??'Sin datos';
    tr.append(nodo('td',texto,numericas.has(c)?'celda-numerica':null));
   });
