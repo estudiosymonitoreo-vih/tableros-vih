@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tablero epidemiológico de VIH en Argentina</title><link rel="stylesheet" href="tablero.css?v=243d98f640b65ba66c571cd8fca25bb85eb7c60444b6595fd417e39912ddc17b"><script defer src="datos.js?v=575cb11759c3d63d76d9f925428a1760f98c46b4eeaa45603ba8155f77015dc6"></script><script defer src="sifilis-local.js?v=13798e05132f6b7611e8b1a163c57ec35352f5cdd2e8dc19e48e89ecc727846a"></script><script defer src="tablero.js?v=54e83bafdda9fc28cd3b25f6fd28fb73c07589a1e4f2decec9b077c426b989e2"></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tablero epidemiológico de VIH en Argentina</title><link rel="stylesheet" href="tablero.css?v=a8efab0fff3fbbbc44e3a90443504ae834ca75bd25b68ee1940bf5c82d6e16ee"><script defer src="datos.js?v=575cb11759c3d63d76d9f925428a1760f98c46b4eeaa45603ba8155f77015dc6"></script><script defer src="sifilis-local.js?v=7b01abfbce4558e8d1beed728b810c074aea281f1947bbaa92d7d49b7a9497e4"></script><script defer src="tablero.js?v=9be053c804a9da72d28b8141e513881ad54fbd41dfde2d7fd7bebf9e13d44a17"></script></head>
 <body>
 <div class="reporte-viewport"><main>
 <header><h1>Tablero epidemiológico de VIH en Argentina</h1><div class="logo-institucional"><img src="logo-institucional.jpg?v=9d30879857f6b8a193ab15d18e3f5077c43b7bac5452ae0323095294196f23f1" alt="Dirección de Respuesta al VIH, ITS, Hepatitis Virales y Tuberculosis. Ministerio de Salud de la República Argentina."></div></header>
@@ -58,6 +58,11 @@
   <p>La positividad es el número de muestras positivas dividido por el de muestras estudiadas, multiplicado por 100. Las barras de casos separan las muestras positivas y negativas. Para calcular resultados nacionales o regionales se suman los conteos provinciales antes de dividir.</p>
   <p>El grupo de edad filtra las evoluciones. El año filtra las comparaciones por edad. «Todas las edades» incluye a menores de 10 años y muestras sin edad especificada. En gestantes, los grupos a partir de 65 años figuran en el total de todas las edades.</p>
   <p class="nota">Fuente: SNVS / SISA, reporte SNVS004, semanas epidemiológicas 1–53.</p>
+</template>
+<template id="metodologia-sifilis-coinfeccion">
+  <p>Se cuentan los registros con un diagnóstico de VIH y uno de sífilis en el mismo año calendario. La proporción divide esos registros por todos los diagnósticos de VIH del mismo grupo y año. El segmento sin coinfección registrada es la diferencia entre ambos conteos.</p>
+  <p>La comparación por edad usa la edad registrada en el archivo de coinfección, que no especifica a cuál de los diagnósticos corresponde. El total nacional incluye registros sin provincia informada. Centro incluye CABA, Buenos Aires, Córdoba, Entre Ríos y Santa Fe.</p>
+  <p>Cuando el recuento de coinfecciones supera el total de VIH del grupo, se omite la barra y la proporción de esa categoría. Los conteos quedan disponibles en «Ver datos».</p>
 </template>
 <template id="metodologia-definiciones">
   <p>Esta solapa reúne las definiciones de los indicadores, sus fórmulas y los criterios de disponibilidad. Consultá «Acerca de los datos» en cada solapa para ver cómo se aplican a sus gráficos.</p>

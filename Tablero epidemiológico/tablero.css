@@ -336,3 +336,15 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
   .mapas-sifilis-por-sexo .mapa-contenedor { height: 280px; }
 }
 .fuentes-metodologia a{color:#9ee7ff}
+#contenido:has(>.definiciones-grid){overflow-y:auto}
+.definiciones-grid{flex:0 0 auto}
+#contenido>section.fuentes-metodologia{flex:none;font-size:12px;line-height:1.4}
+#contenido>section.fuentes-metodologia p{margin:5px 0}
+.coinfeccion-columnas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.coinfeccion-columnas .grafico-coinfeccion{width:100%;height:clamp(230px,42vh,430px);flex:none}
+.coinfeccion-columnas h3{min-height:2.4em}
+.controles-con-restablecer{align-items:flex-end}
+.controles-con-restablecer .control{min-width:0;flex:1 1 0}
+.controles-con-restablecer #restablecer{flex:0 0 auto;margin-left:auto;white-space:nowrap;padding:6px 9px}
+@media(max-width:700px){.controles-con-restablecer{flex-wrap:wrap!important}.controles-con-restablecer .control{flex-basis:120px}}
+@media(max-width:950px){.coinfeccion-columnas{grid-template-columns:1fr}}
