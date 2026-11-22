@@ -873,7 +873,7 @@ function seccionCoinfeccion(host){
   filas(edades.filter(e=>!['Todas las edades','0-9','10-14'].includes(e)),e=>[anio,lugar,e]),porSexo);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por región · ${anio} · ${edad}`),
   filas(Object.keys(sifilis.regiones),g=>[anio,g,edad]),porSexo);
- host.append(nodo('p','Proporción = coinfecciones del mismo año ÷ diagnósticos de VIH. Comparación regional para todo el país.','nota'));
+ host.append(nodo('p','Se considera coinfección cuando una persona recibe los diagnósticos de VIH y sífilis en el mismo año calendario. La proporción se calcula sobre el total de diagnósticos de VIH. La comparación regional abarca todo el país.','nota'));
 }
 function seccionDefiniciones(host){
  const fuentes=nodo('section',null,'fuentes-metodologia');
