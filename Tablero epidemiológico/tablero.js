@@ -840,7 +840,7 @@ function seccionCoinfeccion(host){
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por año · ${lugar} · ${edad} · ${lapso}`),
   filas(periodo,a=>[a,lugar,edad]),porSexo);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por edad · ${lugar} · ${anio}`),
-  filas(edades.filter(e=>e!=='Todas las edades'&&e!=='0-9'),e=>[anio,lugar,e]),porSexo);
+  filas(edades.filter(e=>!['Todas las edades','0-9','10-14'].includes(e)),e=>[anio,lugar,e]),porSexo);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por región · ${anio} · ${edad}`),
   filas(Object.keys(sifilis.regiones),g=>[anio,g,edad]),porSexo);
  host.append(nodo('p','Proporción = coinfecciones del mismo año ÷ diagnósticos de VIH. Comparación regional para todo el país.','nota'));
