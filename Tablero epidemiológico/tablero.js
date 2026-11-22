@@ -104,13 +104,15 @@ function detalle(host,filas,{valorPorcentual=false}={}){
  muestra(host,filas);
  const scroll=nodo('div',null,'tabla-scroll'),table=nodo('table');
  const campos=filas.length?Object.keys(filas[0]):[],head=nodo('thead'),hr=nodo('tr');
+ const esAnio=c=>/^(?:anio|año)(?:[_ ]|$)/i.test(c.trim());
  const porcentaje=(c,r)=>c==='valor'
   ?valorPorcentual||r.indicador==='Porcentaje'
   :/^(porcentaje|positividad|tardio|avanzada|noAvanzado)$/i.test(c)||c.includes('%');
  const numericas=new Set(campos.filter(c=>filas.some(r=>typeof r[c]==='number'||porcentaje(c,r))));
  campos.forEach(c=>{
   const texto=c.replaceAll('_',' ');
-  const th=nodo('th',encabezadosDetalle[c]??(texto.charAt(0).toLocaleUpperCase('es')+texto.slice(1)));
+  const titulo=encabezadosDetalle[c]??texto.replace(/^anio\b/i,'Año');
+  const th=nodo('th',titulo.charAt(0).toLocaleUpperCase('es')+titulo.slice(1));
   th.scope='col';th.classList.toggle('celda-numerica',numericas.has(c));hr.append(th);
  });head.append(hr);table.append(head);
  const body=nodo('tbody');
@@ -119,7 +121,7 @@ function detalle(host,filas,{valorPorcentual=false}={}){
   campos.forEach(c=>{
    const valor=r[c];
    const texto=typeof valor==='number'&&Number.isFinite(valor)
-    ?(c==='anio'||c==='categoria'?String(valor):fmt(valor,3))+(porcentaje(c,r)?'%':'')
+    ?(esAnio(c)||c==='categoria'?String(valor):fmt(valor,3))+(porcentaje(c,r)?'%':'')
     :typeof valor==='boolean'?valor?'Sí':'No':valor??'Sin datos';
    tr.append(nodo('td',texto,numericas.has(c)?'celda-numerica':null));
   });
