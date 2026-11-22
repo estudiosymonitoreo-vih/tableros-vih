@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tablero epidemiológico de VIH en Argentina</title><link rel="stylesheet" href="tablero.css?v=70cde87a654b37285a3baf3cc51949b41acffa0f1851c840d203110258047d3a"><script defer src="datos.js?v=91d8e2bde9015039a9b39038e7770ff791a38bd6b6f1b03faa3192d507da8782"></script><script defer src="tablero.js?v=ff3d68e78e0cb4a5f3ab2143504aef2ab0fabbe422b387d381f2c0d0f16d6499"></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tablero epidemiológico de VIH en Argentina</title><link rel="stylesheet" href="tablero.css?v=243d98f640b65ba66c571cd8fca25bb85eb7c60444b6595fd417e39912ddc17b"><script defer src="datos.js?v=575cb11759c3d63d76d9f925428a1760f98c46b4eeaa45603ba8155f77015dc6"></script><script defer src="tablero.js?v=54e83bafdda9fc28cd3b25f6fd28fb73c07589a1e4f2decec9b077c426b989e2"></script></head>
 <body>
 <div class="reporte-viewport"><main>
 <header><h1>Tablero epidemiológico de VIH en Argentina</h1><div class="logo-institucional"><img src="logo-institucional.jpg?v=9d30879857f6b8a193ab15d18e3f5077c43b7bac5452ae0323095294196f23f1" alt="Dirección de Respuesta al VIH, ITS, Hepatitis Virales y Tuberculosis. Ministerio de Salud de la República Argentina."></div></header>
@@ -10,5 +10,70 @@
 <footer><span id="periodo">Fuente: SNVS / SISA</span><button class="acerca" id="abrir-metodologia">Acerca de los datos</button><span class="pie-derecho"><span id="fecha-exportacion"></span><small id="version-tablero" class="version-tablero" hidden></small></span></footer>
 </main></div>
 <dialog id="dialogo"><div class="dialogo-cabecera"><h2 id="dialogo-titulo"></h2><button id="cerrar-dialogo" aria-label="Cerrar">Cerrar ×</button></div><div id="dialogo-contenido"></div></dialog>
-<template id="metodologia"><p>Los filtros seleccionan agregados ya calculados por el procesamiento SNVS. Las tasas se expresan por 100.000 habitantes. En el primer gráfico se comparan series: seleccionar Argentina y provincias no suma sus valores. El indicador permite elegir casos o tasas; los otros tres filtros de ese gráfico admiten selección múltiple.</p><p>Los porcentajes usan los denominadores de cada fuente. Diagnóstico tardío incluye enfermedad avanzada, que es su subconjunto: no se deben sumar. El denominador son los casos con información de oportunidad diagnóstica. Sin denominador válido se muestra «Sin datos», sin convertirlo en cero. Los mapas comparan las 24 jurisdicciones. Las tarjetas de la primera página resumen la selección de la evolución; las de los mapas de diagnóstico tardío resumen Argentina o la región seleccionada para el género, la edad y el año elegidos. No se calculan variaciones interanuales porque los datos pueden actualizarse por retrasos de notificación.</p><p>Sexo, utilizado para tasas poblacionales, y género, utilizado para caracterización, son dimensiones diferentes. Las medianas provienen de edades individuales; no se promedian medianas de subgrupos. La fecha al pie corresponde a la exportación de la base, cuando está identificada en sus metadatos o en la fuente del análisis, y no a la hora de generar el HTML.</p><p>Cada gráfico muestra n = casos válidos de los filtros y del período representados. En comparaciones múltiples se informa un único n total: la unión de los casos representados, sin duplicarlos por selecciones superpuestas. Las leyendas solo repiten las dimensiones que cambian entre series. En DT/EA se publican porcentajes solo con al menos 55% de casos válidos en mapas provinciales y regionales, y 60% en evolución y vías, sobre el total, sin redondear la cobertura antes de comparar; por debajo se indica «Sin datos suficientes». El n del gráfico corresponde a las selecciones efectivamente representadas; los conteos originales se conservan en la tabla.</p><p>El selector regional de mapas amplía las divisiones de la región elegida. GBA incluye CABA y los 24 partidos; Centro incluye el resto de Buenos Aires, Córdoba, Santa Fe y Entre Ríos. Tarjetas y referencia corresponden a la región seleccionada.</p><p>Cartografía: Natural Earth, dominio público; partidos de Buenos Aires: IGN / GeoRef, CC BY 4.0. <a href="FUENTES.md">Fuentes cartográficas</a> · <a href="LICENCIA.md">Licencia</a>.</p></template>
+<template id="metodologia-casos">
+  <p>La evolución compara diagnósticos de VIH por año de diagnóstico. Podés elegir casos o tasas y combinar varias geografías, sexos y edades. Cada serie conserva su propio valor. El n total cuenta una sola vez los casos incluidos en selecciones superpuestas.</p>
+  <p>Las tasas dividen los diagnósticos por la población del mismo año, territorio, sexo y grupo etario, y se expresan por 100.000 habitantes. El mapa y el ranking provincial tienen sus propios filtros y muestran el año seleccionado.</p>
+  <p class="nota">Fuente de casos: SNVS / SISA. Los conteos pueden actualizarse por retrasos de notificación.</p>
+</template>
+<template id="metodologia-geografia">
+  <p>Las barras apiladas muestran cómo se distribuyen los diagnósticos de VIH entre regiones en cada año. El mapa y el ranking muestran el porcentaje correspondiente a cada provincia en el año seleccionado, sobre los diagnósticos con provincia de residencia conocida.</p>
+  <p>Los filtros de género y grupo de edad se aplican a ambas vistas. El selector de año se aplica al mapa y al ranking. En esta distribución, GBA comprende CABA y 24 partidos bonaerenses. Centro comprende el resto de Buenos Aires, Córdoba, Santa Fe y Entre Ríos.</p>
+  <p class="nota">Fuente: SNVS / SISA.</p>
+</template>
+<template id="metodologia-genero">
+  <p>La solapa muestra la distribución de diagnósticos de VIH por género y edad y su evolución. La geografía se comparte. El grupo de edad filtra los gráficos de género, y el género filtra los gráficos de edad.</p>
+  <p>La razón varones/mujeres divide los diagnósticos de varones por los de mujeres. La mediana se calcula a partir de las edades individuales y representa el punto que divide los diagnósticos con edad informada en dos mitades.</p>
+  <p class="nota">Fuente: SNVS / SISA. El género registrado en esta solapa es una variable distinta del sexo usado para las tasas poblacionales.</p>
+</template>
+<template id="metodologia-vias">
+  <p>El gráfico circular muestra la distribución de las vías de transmisión informadas en los diagnósticos de VIH de 2025, según la geografía, el género y la edad elegidos.</p>
+  <p>Al seleccionar varones, aparece la comparación por grupo de edad. Cada barra representa el 100 % de las vías informadas en ese grupo para el año seleccionado. El n indica los diagnósticos incluidos en el cálculo.</p>
+  <p class="nota">Fuente: SNVS / SISA.</p>
+</template>
+<template id="metodologia-diagnostico">
+  <p>Los porcentajes de diagnóstico tardío y enfermedad avanzada se calculan sobre los casos con dato de oportunidad diagnóstica. La enfermedad avanzada está incluida en el diagnóstico tardío.</p>
+  <p>La solapa presenta la evolución anual y comparaciones por edad y género para los dos últimos bienios. Cada bienio suma los casos y los denominadores antes de calcular el porcentaje. Al seleccionar varones se habilita también la comparación por vía de transmisión.</p>
+  <p>Se muestra el porcentaje cuando al menos el 60 % de los casos del grupo tiene dato de oportunidad diagnóstica. El n indica cuántos casos tienen ese dato.</p>
+  <p class="nota">Fuente: SNVS / SISA.</p>
+</template>
+<template id="metodologia-mapas-diagnostico">
+  <p>Los dos mapas muestran diagnóstico tardío y enfermedad avanzada por jurisdicción para el año, género y grupo de edad seleccionados. La enfermedad avanzada es parte del diagnóstico tardío. Ambos porcentajes se calculan sobre casos con dato de oportunidad diagnóstica.</p>
+  <p>Se muestra el valor cuando al menos el 55 % de los casos del grupo tiene dato. Las jurisdicciones por debajo del umbral se indican en gris.</p>
+  <p>Al elegir una región se amplía el detalle territorial. GBA comprende CABA y 24 partidos bonaerenses. Centro incluye el resto de Buenos Aires, Córdoba, Santa Fe y Entre Ríos.</p>
+  <p class="nota">Fuente: SNVS / SISA.</p>
+</template>
+<template id="metodologia-mortalidad">
+  <p>La solapa reúne las defunciones por sida y las tasas de mortalidad por 100.000 habitantes. La tasa bruta divide las defunciones por la población correspondiente. La tasa ajustada por edad combina las tasas específicas usando una población estándar.</p>
+  <p>La tabla resume 2020–2024. El mapa y la comparación provincial muestran 2024. Los gráficos por edad muestran las tasas y qué proporción de las defunciones corresponde a cada grupo.</p>
+  <p class="nota">Fuente: DEIS / Ministerio de Salud de la Nación. Boletín N.º 43 de Respuesta al VIH y las ITS en Argentina y tablas de defunciones del tablero.</p>
+</template>
+<template id="metodologia-sifilis">
+  <p>La evolución, el mapa provincial y las comparaciones muestran diagnósticos notificados de sífilis. Las tasas dividen los casos por las proyecciones de población del INDEC para el año, la geografía, el sexo y la edad correspondientes, y se expresan por 100.000 habitantes.</p>
+  <p>La evolución recorre todos los años. El mapa y la comparación regional usan el año y el grupo de edad seleccionados y siempre muestran el país completo. La comparación por edad muestra todos los grupos visibles del año elegido. La dona muestra la distribución por sexo registrado.</p>
+  <p>Para «Todas las edades» se incluyen casos y población desde los 10 años. Las barras de edad individuales empiezan en 15–19. Centro reúne CABA, Buenos Aires, Córdoba, Entre Ríos y Santa Fe. El total de Argentina incluye casos sin jurisdicción informada.</p>
+  <p class="nota">Fuente de casos: SNVS. Las tasas de sífilis empiezan en 2022 y usan la serie poblacional del INDEC basada en el Censo 2022.</p>
+</template>
+<template id="metodologia-sifilis-territorio">
+  <p>Se muestran muestras de tamizaje de sífilis en población general y en personas gestantes. Para gestantes se suman las muestras del primer control y de controles sin especificar antes de calcular los indicadores.</p>
+  <p>La positividad es el número de muestras positivas dividido por el de muestras estudiadas, multiplicado por 100. Las barras de casos separan las muestras positivas y negativas. Para calcular resultados nacionales o regionales se suman los conteos provinciales antes de dividir.</p>
+  <p>El grupo de edad filtra las evoluciones. El año filtra las comparaciones por edad. «Todas las edades» incluye a menores de 10 años y muestras sin edad especificada. En gestantes, los grupos a partir de 65 años figuran en el total de todas las edades.</p>
+  <p class="nota">Fuente: SNVS / SISA, reporte SNVS004, semanas epidemiológicas 1–53.</p>
+</template>
+<template id="metodologia-definiciones">
+  <p>Esta solapa reúne las definiciones de los indicadores, sus fórmulas y los criterios de disponibilidad. Consultá «Acerca de los datos» en cada solapa para ver cómo se aplican a sus gráficos.</p>
+  <p>La fecha de exportación al pie de cada solapa corresponde a la base utilizada cuando la fecha está informada.</p>
+</template>
+<template id="metodologia-enlaces">
+  <p class="fuentes-metodologia">Portales oficiales · <a href="https://sisa.msal.gov.ar/sisa/" target="_blank" rel="noopener">SISA</a> · <a href="https://www.indec.gob.ar/indec/web/Nivel3-Tema-2-24" target="_blank" rel="noopener">INDEC · Proyecciones y estimaciones de población</a></p>
+</template>
+<template id="metodologia-empalme">
+  <p>El empalme poblacional se hace entre 2021 y 2022. Hasta 2021 se usan las proyecciones basadas en el Censo 2010. Desde 2022 se usan las estimaciones y proyecciones basadas en el Censo 2022. Cada tasa usa el denominador de su año. El cambio de base poblacional puede influir en la variación de la tasa entre esos dos años.</p>
+  <p class="fuentes-metodologia"><a href="https://www.indec.gob.ar/ftp/cuadros/publicaciones/proyecciones_prov_2010_2040.pdf" target="_blank" rel="noopener">INDEC · Proyecciones provinciales de población por sexo y grupo de edad, 2010–2040 (Censo 2010)</a></p>
+</template>
+<template id="metodologia-poblacion-2022">
+  <p class="fuentes-metodologia"><a href="https://www.indec.gob.ar/ftp/cuadros/publicaciones/proyecciones_jurisdicciones_2022_2040.pdf" target="_blank" rel="noopener">INDEC · Estimaciones y proyecciones de población por sexo y grupos de edad, jurisdicciones, 2022–2040 (Censo 2022)</a></p>
+</template>
+<template id="metodologia-cartografia">
+  <p class="nota">Cartografía: Natural Earth y, para partidos bonaerenses, IGN / GeoRef. <a href="FUENTES.md">Fuentes cartográficas</a> · <a href="LICENCIA.md">Licencia</a>.</p>
+</template>
 <script src="https://metricas-tableros.estudiosymonitoreo.workers.dev/medir.js" data-pagina="epidemiologico" defer referrerpolicy="no-referrer"></script></body></html>

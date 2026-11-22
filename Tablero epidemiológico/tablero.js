@@ -5,6 +5,7 @@
 const D = window.SNVS_DATOS;
 if (!D) { document.getElementById('contenido').textContent='No se pudieron cargar los datos del tablero.'; return; }
 const T=D.tablas, $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
+const sifilis=window.SNVS_SIFILIS_LOCAL;
 const porcentajesDT=new WeakMap();
 // El umbral usa los conteos de la selección, antes de redondear porcentajes.
 for(const nombre of ['diagnostico','diagnostico_vias','diagnostico_regional'])if(T[nombre])T[nombre]=T[nombre].map(r=>{
@@ -13,7 +14,9 @@ for(const nombre of ['diagnostico','diagnostico_vias','diagnostico_regional'])if
 });
 function paraMapaDT(r){if(!r)return r;const insuficiente=!(r.total>0&&r.validos/r.total>=.55),original=porcentajesDT.get(r)||r;return {...r,insuficiente,tardio:insuficiente?null:original.tardio,avanzada:insuficiente?null:original.avanzada};}
 const colores=['#4c94f1','#efa056','#b38ae5','#b7ca6b','#32b6c9','#e7c63c','#e078b2','#807cce','#d9b886'];
-const paginas=[['casos','Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','Género y edad','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['vias','Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['mortalidad','Mortalidad por sida','M3 19V5m0 14h18M6 8l5 3 4-2 6 7'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
+const paginas=[['casos','VIH · Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','VIH · Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','VIH · Género y edad','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['vias','VIH · Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','VIH · Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','VIH · Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['mortalidad','Mortalidad por sida','M3 19V5m0 14h18M6 8l5 3 4-2 6 7'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
+const iconoSifilis='M3 19V5m0 14h18M7 16v-4m5 4V8m5 8V5';
+if(sifilis)paginas.splice(-1,0,['sifilis','ITS · Sífilis',iconoSifilis],['sifilis-territorio','ITS · Tamizaje de sífilis',iconoSifilis]);
 const edades=['Todas las edades','0-9','10-14','15-19','20-24','25-34','35-44','45-54','55-64','65 o más'];
 const generos=['Todos los géneros','Varón','Mujer','Mujer trans','Varón trans'];
 const regiones=['GBA','Centro','Cuyo','NEA','NOA','Patagonia'];
@@ -26,11 +29,27 @@ if(destinoInicial==='genero'&&location.hash!=='#genero')history.replaceState(nul
 const estados={};
 const exacto=(v,d=1)=>v==null||!Number.isFinite(v)?'Sin datos':v.toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
 function abrirDialogo(titulo,contenido){$('dialogo-titulo').textContent=titulo;$('dialogo-contenido').replaceChildren(contenido);if(!$('dialogo').open)$('dialogo').showModal();}
+function abrirMetodologia(){
+ const [,nombre]=paginas.find(([id])=>id===pagina);
+ const contenido=nodo('div',null,'metodologia-solapa');
+ contenido.append($(`metodologia-${pagina}`).content.cloneNode(true));
+ if(['casos','geografia','mapas-diagnostico','mortalidad','sifilis'].includes(pagina)){
+  contenido.append($('metodologia-cartografia').content.cloneNode(true));
+ }
+ if(['casos','mortalidad','definiciones'].includes(pagina)){
+  contenido.append($('metodologia-empalme').content.cloneNode(true));
+ }
+ if(['casos','mortalidad','sifilis','definiciones'].includes(pagina)){
+  contenido.append($('metodologia-poblacion-2022').content.cloneNode(true));
+ }
+ contenido.append($('metodologia-enlaces').content.cloneNode(true));
+ abrirDialogo(`Acerca de los datos · ${nombre}`,contenido);
+}
 function ajustarPantalla(){
  // Redibujar las coordenadas con el espacio real, sin escalar texto ni mapas.
- document.querySelectorAll(innerWidth<=700?'.demografia-bloques svg.grafico, .diagnostico-evolucion svg.grafico':'svg.grafico').forEach(s=>{
+ document.querySelectorAll(innerWidth<=700?'.demografia-bloques svg.grafico, .diagnostico-evolucion svg.grafico, .pagina-sifilis svg.grafico':'svg.grafico').forEach(s=>{
   const ancho=s.clientWidth,alto=s.clientHeight;
-  if(ancho>0&&alto>0)s.dibujar(ancho,alto);
+  if(ancho>0&&alto>0)s.dibujar?.(ancho,alto);
  });
 }
 
@@ -79,7 +98,7 @@ function detalle(host,filas){
  const body=nodo('tbody');filas.forEach(r=>{const tr=nodo('tr');campos.forEach(c=>tr.append(nodo('td',typeof r[c]==='number'?fmt(r[c],3):r[c]??'Sin datos')));body.append(tr);});table.append(body);scroll.append(table);
  const acciones=nodo('div',null,'acciones-datos'),ver=nodo('button','Ver datos'),b=nodo('button','Descargar CSV');
  ver.onclick=()=>abrirDialogo(host.dataset.tituloDatos||host.querySelector('h3')?.textContent||'Datos del gráfico',scroll);
- b.disabled=!filas.length;b.onclick=()=>{const csv=[campos,...filas.map(r=>campos.map(c=>r[c]??''))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=nodo('a');a.href=url;a.download=`vih-${pagina}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};acciones.append(ver,b);host.append(acciones);
+ b.disabled=!filas.length;b.onclick=()=>{const csv=[campos,...filas.map(r=>campos.map(c=>r[c]??''))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=nodo('a');a.href=url;a.download=pagina.startsWith('sifilis')?`${pagina}.csv`:`vih-${pagina}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};acciones.append(ver,b);host.append(acciones);
 }
 function vacio(host){host.append(nodo('p','Sin datos para esta selección.','vacio'));}
 function abreviarVia(v){return ({'Prácticas sexuales con mujeres sin protección':'Sexual con mujeres (sin protección)','Prácticas sexuales con varones sin protección':'Sexual con varones (sin protección)','Prácticas sexuales con trans sin protección':'Sexual con personas trans (sin protección)','Uso compartido de equipo de inyección en los últimos 10 años':'Equipo de inyección compartido'})[v]||v;}
@@ -89,28 +108,33 @@ function incluirPeriodoTitulo(host,filas){
  const anos=uniq(filas.map(r=>r.anio).filter(a=>Number.isInteger(a)&&a>=1900&&a<=2099)).sort((a,b)=>a-b);
  if(anos.length)titulo.textContent+=` · ${anos[0]===anos.at(-1)?anos[0]:anos[0]+'–'+anos.at(-1)}`;
 }
-function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null,separacionBarras=1,tooltips=true}={}){
+function grafico(host,filas,{tipo='linea',porcentaje=false,maximoPorcentaje=100,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null,separacionBarras=1,tooltips=true,rotularTotales=false,proporcionFija=false}={}){
  incluirPeriodoTitulo(host,filas);
  if(!filas.some(r=>r.valor!=null)&&!filas.some(r=>r.insuficiente)){vacio(host);detalle(host,datosDetalle||filas);return;}
  const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
+ const totales=new Map();
+ if(tipo==='apilado')for(const {anio,valor} of filas){
+  if(valor!=null)totales.set(anio,(totales.get(anio)??0)+valor);
+ }
  const s=svg('svg',{class:'grafico',role:'img','aria-label':host.querySelector('h3').textContent});
- s.dibujar=(w,h)=>{
+ const dibujar=(w,h)=>{
  const diagnosticoCompacto=!!host.closest('.diagnostico-con-vias'),compacto=diagnosticoCompacto||!!host.closest('.demografia-bloques'),L=compacto?42:55,R=compacto?16:22,U=compacto?16:35,B=diagnosticoCompacto?31:compacto?27:42,iw=Math.max(1,w-L-R),ih=Math.max(1,h-U-B);
  s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();if(tooltips===true)tituloSVG(s,host.querySelector('h3').textContent+'. Los valores están disponibles en la tabla debajo del gráfico.');
- const max=porcentaje?100:Math.max(1,...filas.map(r=>r.valor??0))*1.13;
+ const max=porcentaje&&maximoPorcentaje!=null?maximoPorcentaje:Math.max(1,...(tipo==='apilado'?totales.values():filas.map(r=>r.valor??0)))*1.13;
  const x=i=>L+(i+.5)*iw/xs.length, y=v=>U+ih*(1-v/max);
  for(let j=0;j<=4;j++){const v=max*j/4,yy=y(v);s.append(svg('line',{x1:L,x2:w-R,y1:yy,y2:yy,class:'rejilla'}),svg('text',{x:L-10,y:yy+4,'text-anchor':'end'},fmt(v,v<5?1:0)+(porcentaje?'%':'')));}
  xs.forEach((a,i)=>s.append(svg('text',{x:x(i),y:h-17,'text-anchor':'middle'},a)));
  const matriz=new Map(filas.map(r=>[`${r.anio}|${r.serie||'Valor'}`,r.valor]));
+ const coloresBarras=new Map(filas.filter(r=>r.color).map(r=>[`${r.anio}|${r.serie||'Valor'}`,r.color]));
  series.forEach((nombre,j)=>{let segmentos=[],tramo=[];xs.forEach((a,i)=>{const v=matriz.get(`${a}|${nombre}`);if(v==null){if(tipo==='barras'&&j===0&&filas.some(r=>r.anio===a&&r.insuficiente))s.append(svg('text',{x:x(i),y:y(0)-12,'text-anchor':'middle',class:'sin-datos-suficientes'},'Sin datos suficientes'));if(tramo.length)segmentos.push(tramo);tramo=[];return;}
- const color=(tipo==='linea'||tipo==='puntos')&&series.length===1?'#73d4ef':(coloresSeries?.[nombre]||colores[j%colores.length]),etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
+ const color=(tipo==='linea'||tipo==='puntos')&&series.length===1?'#73d4ef':(coloresBarras.get(`${a}|${nombre}`)||coloresSeries?.[nombre]||colores[j%colores.length]),etiqueta=exacto(v,porcentaje?1:decimales)+(porcentaje?'%':''),tooltip=`${a==='Todas'?'Todas las edades':a} · ${nombre}: ${fmt(v)}${porcentaje?'%':unidad?' '+unidad:''}`;
  if(tipo==='linea'||tipo==='puntos'){const final=i===xs.length-1,textoTooltip=tooltips==='categoria'?`${nombre}: ${etiqueta}`:tooltip;tramo.push([x(i),y(v),textoTooltip]);const punto=svg('circle',{cx:x(i),cy:y(v),r:tipo==='puntos'?7:4,fill:final?'#ffdc8d':color,tabindex:0,'aria-label':tooltip});s.append(tooltips?tituloSVG(punto,textoTooltip):punto);s.append(svg('text',{x:x(i),y:y(v)-12-(j%3)*12,'text-anchor':'middle',class:'valor-punto'},etiqueta));}
  else {const ancho=iw/xs.length*.74;let base=0,xx=x(i)-ancho/2,bw=ancho;
  if(tipo==='apilado'){for(let k=0;k<j;k++)base+=matriz.get(`${a}|${series[k]}`)??0;}else{bw=ancho/series.length;xx+=j*bw;}
  const hueco=tipo==='barras'?Math.min(separacionBarras,bw*.2):1;
  s.append(tituloSVG(svg('rect',{x:xx+(tipo==='barras'?hueco/2:0),y:y(v+base),width:Math.max(1,bw-hueco),height:ih*v/max,fill:color,tabindex:0,'aria-label':tooltip}),tooltip));
  if(tipo==='barras'){const xxLabel=xx+bw/2,yyLabel=y(v+base)-8;s.append(svg('text',{x:xxLabel,y:yyLabel,'text-anchor':series.length>3?'start':'middle',class:'valor-barra',...(series.length>3?{transform:`rotate(-55 ${xxLabel} ${yyLabel})`}:{})},etiqueta));}
- if(v>8&&tipo==='apilado')s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff',class:'valor-apilado'},fmt(v)+(porcentaje?'%':'')));
+ if(tipo==='apilado'&&v>(rotularTotales?0:8))s.append(svg('text',{x:xx+bw/2,y:y(base+v/2)+4,'text-anchor':'middle',fill:'#fff',class:'valor-apilado'},rotularTotales?etiqueta:fmt(v)+(porcentaje?'%':'')));
  }});if(tramo.length)segmentos.push(tramo);if(tipo==='linea')segmentos.forEach(tr=>{
   const linea=svg('polyline',{points:tr.map(p=>p.slice(0,2).join(',')).join(' '),fill:'none',stroke:series.length===1?'#73d4ef':colores[j%colores.length],'stroke-width':2.8});
   // Casos/tasas: identificar la serie y el valor observado más cercano, sin el título general.
@@ -125,7 +149,13 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,unidad='',ordenSeries
   }
   s.prepend(linea);
  });});
- };s.dibujar(ancho,alto);
+ if(rotularTotales)xs.forEach((anio,i)=>{
+  const total=totales.get(anio);
+  if(total!=null)s.append(svg('text',{x:x(i),y:y(total)-12,'text-anchor':'middle',class:'valor-barra'},exacto(total,decimales)));
+ });
+ };
+ if(!proporcionFija)s.dibujar=dibujar;
+ dibujar(ancho,alto);
  host.append(s);leyenda(host,series);if(coloresSeries)host.querySelectorAll('.leyenda .muestra').forEach((m,i)=>m.style.background=coloresSeries[series[i]]||colores[i%colores.length]);if((tipo==='linea'||tipo==='puntos')&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
  // La mediana conserva rótulos y accesibilidad, sin tooltips tampoco en su leyenda.
  if(!tooltips)host.querySelectorAll('.leyenda [title]').forEach(n=>n.removeAttribute('title'));
@@ -139,19 +169,23 @@ const posicionesProvincia={
  'San Juan':[-68.9,-30.8],'San Luis':[-66,-33.8],'Santa Cruz':[-69.3,-49.3],'Santa Fe':[-60.8,-30.3],
  'Santiago del Estero':[-63.1,-28.2],'Tierra del Fuego':[-67.7,-54.5],'Tucumán':[-65.4,-26.8]
 };
-function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argentina'){
+function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argentina',{soloMapa=false,maximo=null}={}){
  incluirPeriodoTitulo(host,filas.length?filas:[{anio:pagina==='casos'?estados[pagina]?.am:estados[pagina]?.a}]);
  const regional=region!=='Argentina',features=regional?D.mapa.territorios.features.filter(f=>f.properties.region===region):D.mapa.provincias.features;
  filas=features.map(f=>filas.find(r=>r.geografia===nombreMapa(f.id))||{geografia:nombreMapa(f.id),n:0,validos:0,total:0,insuficiente:campo!=='valor'});
  const insuficientes=new Set(filas.filter(r=>r.insuficiente).map(r=>r.geografia));
  const valores=new Map(filas.map(r=>[r.geografia,valorSeguro(r,campo)]));
  const validos=[...valores.values()].filter(v=>v!=null&&Number.isFinite(v));
- const max=Math.max(1,...validos),division=nodo('div',null,'mapa-y-ranking'),columna=nodo('div',null,'mapa-columna'),wrap=nodo('div',null,'mapa-contenedor');
+ const max=maximo??Math.max(1,...validos),division=nodo('div',null,'mapa-y-ranking'),columna=nodo('div',null,'mapa-columna'),wrap=nodo('div',null,'mapa-contenedor');
  const s=svg('svg',{viewBox:'0 0 330 420',class:'mapa',role:'group','aria-label':`Mapa de ${region} por jurisdicción`}),g=svg('g');s.append(g);
  const proy=([lon,lat])=>[60+(lon+76)*Math.PI/180*500,10+(Math.log(Math.tan(Math.PI/4-21*Math.PI/360))-Math.log(Math.tan(Math.PI/4+lat*Math.PI/360)))*500];
  const anillo=ring=>ring.map((p,i)=>(i?'L':'M')+proy(p).map(v=>v.toFixed(2)).join(',')).join('')+'Z';
  const path=geom=>{const polys=geom.type==='Polygon'?[geom.coordinates]:geom.type==='MultiPolygon'?geom.coordinates:[];return polys.map(p=>p.map(anillo).join('')).join('');};
- D.mapa.paises.features.forEach(f=>g.append(svg('path',{d:path(f.geometry),fill:'#e3e9ec',stroke:'#a3b4ba'})));
+ D.mapa.paises.features.forEach(f=>{
+  const malvinas=soloMapa&&f.id==='Islas Malvinas';
+  const forma=svg('path',{d:path(f.geometry),fill:malvinas?'#929baa':'#e3e9ec',stroke:'#a3b4ba'});
+  g.append(malvinas?tituloSVG(forma,'Islas Malvinas'):forma);
+ });
  const info=nodo('div','Pasá sobre una jurisdicción o seleccionála para ver el valor.','mapa-info');info.setAttribute('aria-live','polite');
  features.forEach(f=>{const nombre=nombreMapa(f.id),v=valores.get(nombre),txt=`${nombre}: ${insuficientes.has(nombre)?'Sin datos suficientes':fmt(v)}${v==null?'':unidad}`;
  const p=tituloSVG(svg('path',{d:path(f.geometry),fill:v==null?'#929baa':color,'fill-opacity':v==null?1:.18+.82*v/max,'data-nombre':nombre,tabindex:0,'aria-label':txt}),txt);
@@ -181,6 +215,7 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
  let marco={x:0,y:0,ancho:330,alto:420};
  if(!regional){
   const puntos=[];const recorrer=v=>{if(typeof v[0]==='number')puntos.push(proy(v));else v.forEach(recorrer);};features.forEach(f=>recorrer(f.geometry.coordinates));
+  if(soloMapa)D.mapa.paises.features.filter(f=>f.id==='Islas Malvinas').forEach(f=>recorrer(f.geometry.coordinates));
   const caba=proy([-53.2,-35.8]);puntos.push([caba[0]+20,caba[1]-14],[caba[0]+20,caba[1]+14]);
   const xs=puntos.map(p=>p[0]),ys=puntos.map(p=>p[1]);
   marco={x:Math.min(...xs)-8,y:Math.min(...ys)-8,ancho:Math.max(...xs)-Math.min(...xs)+16,alto:Math.max(...ys)-Math.min(...ys)+16};
@@ -191,6 +226,7 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
  const botones=nodo('div',null,'zoom');[['+','Acercar',()=>z=Math.min(6,z*1.4)],['−','Alejar',()=>z=Math.max(1,z/1.4)],['↺','Restablecer mapa',()=>{z=1;dx=0;dy=0;}]].forEach(([txt,label,fn])=>{const b=nodo('button',txt);b.setAttribute('aria-label',label);b.onclick=()=>{fn();transforma();};botones.append(b);});
  let inicio=null;s.onpointerdown=e=>{inicio=[e.clientX,e.clientY,dx,dy];s.setPointerCapture(e.pointerId);};s.onpointermove=e=>{if(inicio){const rect=s.getBoundingClientRect();dx=inicio[2]+(e.clientX-inicio[0])*marco.ancho/rect.width;dy=inicio[3]+(e.clientY-inicio[1])*marco.alto/rect.height;transforma();}};s.onpointerup=s.onpointercancel=()=>{inicio=null;};
  wrap.append(s,botones);columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,${color}33,${color})`;escala.append(nodo('span',unidad==='%'?'0%':'0'),grad,nodo('span',fmt(max)+unidad),nodo('span',campo==='valor'?'Gris: sin datos':'Gris: sin datos suficientes (<55% válidos)'));if(!validos.length)escala.replaceChildren(nodo('span',campo==='valor'?'Sin datos para esta selección.':'Sin jurisdicciones con datos suficientes.'));columna.append(escala);
+ if(soloMapa){host.append(columna);return;}
  const ranking=nodo('div',null,'ranking');ranking.dataset.maximo=String(max);ranking.style.setProperty('--color-mapa',color);[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;if(v==null||!Number.isFinite(v))row.classList.add('sin-dato');bar.append(i);if(insuficientes.has(n)){row.classList.add('insuficiente');row.append(nodo('span',n),nodo('span','Sin datos suficientes','aviso-insuficiente'));}else row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)+(unidad==='%'?'%':'')));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
  if(pagina!=='mortalidad'){division.classList.add('mapa-extendido');division.append(host.querySelector('.muestra-n'),host.querySelector('.acciones-datos'));}
 }
@@ -486,7 +522,245 @@ function seccionMapasDiagnostico(host){
  const fuente=r==='Argentina'?T.diagnostico:(T.diagnostico_regional||[]).filter(x=>x.region===r),grid=layout(host),prov=fuente.filter(x=>x.genero===s&&x.edad===e&&x.anio===a).map(paraMapaDT);
  mapa(panel(grid,`Diagnóstico tardío de VIH por jurisdicción · ${r}`),prov,'tardio','%',colorMapa(s),r);mapa(panel(grid,`Enfermedad avanzada al diagnóstico de VIH por jurisdicción · ${r}`),prov,'avanzada','%',colorMapa(s,true),r);
 }
+const sexosSifilis=['Varones','Mujeres','Sin clasificación en F/M'];
+const coloresSifilis={'Ambos sexos':'#446bb6',Varones:'#4c94f1',Mujeres:'#24b5aa','Sin clasificación en F/M':'#a7b1c2'};
+function selectorSifilis(c,campo,opciones,etiqueta,inicial){
+ return filtro(c,opciones.map(valor=>({[campo]:valor})),campo,etiqueta,campo,inicial,false,opciones);
+}
+function pieSifilis(p,n,lugar,nota){
+ const partes=[`n = ${exacto(n,0)}`,'Fuente: SNVS',`Exportación: ${sifilis.exportacion}`];
+ p.append(nodo('p',partes.join(' · '),'nota pie-sifilis'));
+ if(sifilis.regiones[lugar])p.append(nodo('p',`Jurisdicciones: ${sifilis.regiones[lugar].join(', ')}`,'nota'));
+ if(nota)p.append(nodo('p',nota,'nota'));
+}
+function etiquetaEdadSifilis(edad){
+ if(edad==='Todas las edades')return '10 años o más';
+ if(edad==='65 o más')return '65 años o más';
+ return edad+' años';
+}
+function resumenSifilis(host,fila){
+ const resumen=nodo('section',null,'resumen-indicadores resumen-sifilis');
+ resumen.setAttribute('aria-label','Indicadores principales de sífilis');
+ const contexto=`${fila.geografia} · ${fila.anio} · ${fila.sexo} · ${etiquetaEdadSifilis(fila.edad)}`;
+ tarjetaResumen(resumen,'Tasa de sífilis por 100.000 habitantes',exacto(fila.tasa,1),contexto);
+ tarjetaResumen(resumen,'Casos de sífilis notificados',exacto(fila.casos,0),contexto);
+ host.prepend(resumen);
+}
+function evolucionSifilis(host,{medida,sexo,lugar,edad}){
+ const p=panel(host,'');
+ p.classList.add('panel-evolucion-sifilis');
+ const tasa=medida==='Tasas',series=sexo==='Por sexo'?sexosSifilis.slice(0,2):[sexo];
+ const filas=sifilis.datos.filter(r=>r.geografia===lugar&&r.edad===edad&&series.includes(r.sexo));
+ p.querySelector('h3').textContent=`${tasa?'Evolución de la tasa de sífilis por 100.000 habitantes':'Evolución de los casos de sífilis'} · ${lugar} · ${sexo.toLowerCase()} · ${etiquetaEdadSifilis(edad)} · ${sifilis.anios[0]}–${sifilis.anios.at(-1)}`;
+ p.dataset.nTotal=filas.reduce((n,r)=>n+r.casos,0);
+ grafico(p,filas.map(r=>({anio:r.anio,serie:r.sexo,valor:tasa?r.tasa:r.casos})),{
+  tipo:'barras',unidad:tasa?'por 100.000 habitantes':'casos',decimales:tasa?1:0,
+  ordenSeries:series,coloresSeries:coloresSifilis,datosDetalle:filas
+ });
+ p.querySelector('.muestra-n').remove();
+ alinearAccionesGrafico(p);
+ pieSifilis(p,Number(p.dataset.nTotal),lugar,tasa&&sexo==='Por sexo'?'Las tasas por sexo usan los casos y la población de mujeres y varones.':'');
+}
+function distribucionSifilis(host,{anio,lugar}){
+ const p=panel(host,'');
+ const filas=sexosSifilis.map(s=>sifilis.datos.find(r=>r.geografia===lugar&&r.anio===anio&&r.edad==='Todas las edades'&&r.sexo===s));
+ const total=filas.reduce((n,r)=>n+r.casos,0);
+ const titulo=`Porcentaje de casos de sífilis según sexo registrado · ${lugar} · ${anio} · 10 años o más`;
+ p.querySelector('h3').textContent=titulo;
+ if(!total){vacio(p);pieSifilis(p,0,lugar);return;}
+ const contenido=nodo('div',null,'distribucion-sifilis');
+ const s=svg('svg',{viewBox:'-12 -12 264 264',role:'img','aria-label':titulo});
+ const leyenda=nodo('ul',null,'leyenda-sifilis');
+ const rotulos=[];
+ let avance=0,pequenos=0;
+ for(const filaSexo of filas){
+  const porcentaje=filaSexo.casos/total*100,color=coloresSifilis[filaSexo.sexo];
+  const valor=`${exacto(porcentaje,1)}%`,etiqueta=`${filaSexo.sexo} · ${valor} · ${exacto(filaSexo.casos,0)} casos`;
+  if(porcentaje>0){
+   s.append(tituloSVG(svg('circle',{cx:120,cy:120,r:83,fill:'none',stroke:color,'stroke-width':48,
+    pathLength:100,'stroke-dasharray':`${porcentaje} ${100-porcentaje}`,
+    'stroke-dashoffset':-avance,transform:'rotate(-90 120 120)'}),etiqueta));
+   const angulo=(avance+porcentaje/2)*Math.PI/50-Math.PI/2;
+   const punto=r=>[120+r*Math.cos(angulo),120+r*Math.sin(angulo)];
+   let [x,y]=punto(83);
+   if(porcentaje<8){
+    const [inicioX,inicioY]=punto(108),[codoX,codoY]=punto(116);
+    const lado=pequenos++%2===0?1:-1;
+    x=Math.max(18,Math.min(222,codoX+lado*32));y=Math.max(0,Math.min(240,codoY));
+    rotulos.push(svg('polyline',{points:`${inicioX},${inicioY} ${codoX},${codoY} ${x},${y}`,fill:'none',stroke:color,'stroke-width':1.2}));
+    y-=5;
+   }
+   rotulos.push(svg('text',{x,y:y+4,'text-anchor':'middle',class:'porcentaje-sifilis'},valor));
+  }
+  avance+=porcentaje;
+  const fila=nodo('li'),marca=nodo('i');marca.style.background=color;
+  fila.append(marca,document.createTextNode(filaSexo.sexo));leyenda.append(fila);
+ }
+ s.append(...rotulos);
+ contenido.append(s,leyenda);p.append(contenido);
+ pieSifilis(p,total,lugar);
+}
+function alinearAccionesGrafico(p){
+ const leyenda=p.querySelector('.leyenda'),acciones=p.querySelector('.acciones-datos');
+ if(!acciones)return;
+ const pie=layout(p,'pie-grafico');
+ if(leyenda)pie.append(leyenda);
+ pie.append(acciones);
+}
+function regionesSifilis(host,{medida,anio,sexo,edad}){
+ const tasa=medida==='Tasas',porSexo=sexo==='Por sexo';
+ const series=porSexo?sexosSifilis.slice(0,2):['Ambos sexos'];
+ const coloresRegion={Centro:'#4c94f1',Cuyo:'#a187e4',NEA:'#2fa998',NOA:'#d86286',Patagonia:'#679846',Argentina:'#bf782d'};
+ const lugares=Object.keys(coloresRegion);
+ const filas=sifilis.datos.filter(r=>r.anio===anio&&r.edad===edad&&lugares.includes(r.geografia)&&series.includes(r.sexo));
+ const p=panel(host,`${tasa?'Tasas de sífilis por 100.000 habitantes':'Casos de sífilis'} por región · ${anio} · ${etiquetaEdadSifilis(edad)} · ${sexo.toLowerCase()}`);
+ const barras=filas.map(r=>({anio:r.geografia,serie:r.sexo,valor:tasa?r.tasa:r.casos,
+  color:r.sexo==='Mujeres'?`color-mix(in srgb, ${coloresRegion[r.geografia]}, white 48%)`:coloresRegion[r.geografia]}));
+ const datosDetalle=filas.map(({geografia,sexo,casos,tasa:valor,poblacion})=>
+  tasa?{geografia,sexo,tasa:valor,poblacion}:{geografia,sexo,casos});
+ grafico(p,barras,{tipo:'barras',unidad:tasa?'por 100.000 habitantes':'casos',decimales:tasa?1:0,
+  ordenX:lugares,ordenSeries:series,coloresSeries:{Varones:'#73849d',Mujeres:'#bfccd9'},datosDetalle});
+ if(!porSexo)p.querySelector('.leyenda')?.remove();
+ p.querySelector('.muestra-n').remove();
+ alinearAccionesGrafico(p);
+ const total=filas.filter(r=>r.geografia==='Argentina').reduce((n,r)=>n+r.casos,0);
+ pieSifilis(p,total,'Argentina');
+}
+function edadSifilis(host,{medida,anio,lugar,sexo}){
+ const p=panel(host,'');
+ p.classList.add('panel-edad-sifilis');
+ const tasa=medida==='Tasas',porSexo=sexo==='Por sexo';
+ const series=porSexo?sexosSifilis.slice(0,2):['Ambos sexos'];
+ const grupos=[...sifilis.edades.filter(e=>e!=='10-14'),'Todas las edades'];
+ const datos=sifilis.datos.filter(r=>r.geografia===lugar&&r.anio===anio&&series.includes(r.sexo));
+ const filas=grupos.flatMap(edad=>series.map(sexo=>datos.find(r=>r.edad===edad&&r.sexo===sexo)));
+ p.querySelector('h3').textContent=`${tasa?'Tasas de sífilis por 100.000 habitantes':'Casos de sífilis'} por edad · ${lugar} · ${anio} · ${sexo.toLowerCase()}`;
+ const etiquetaGrupo=edad=>edad==='Todas las edades'?'Todas':edad==='65 o más'?'65+':edad;
+ const barras=filas.map(r=>({anio:etiquetaGrupo(r.edad),serie:r.sexo,valor:tasa?r.tasa:r.casos,
+  color:r.edad==='Todas las edades'?(r.sexo==='Mujeres'?'#ffcb71':'#bf782d'):null}));
+ const datosDetalle=filas.map(({edad,sexo,tasa:valor,poblacion,casos})=>
+  tasa?{edad,sexo,tasa:valor,poblacion}:{edad,sexo,casos});
+ grafico(p,barras,{tipo:'barras',unidad:tasa?'por 100.000 habitantes':'casos',decimales:tasa?1:0,
+  ordenX:grupos.map(etiquetaGrupo),ordenSeries:series,coloresSeries:coloresSifilis,datosDetalle});
+ p.querySelector('.muestra-n').remove();
+ alinearAccionesGrafico(p);
+ const total=datos.filter(r=>r.edad==='Todas las edades').reduce((n,r)=>n+r.casos,0);
+ pieSifilis(p,total,lugar,porSexo?'El total incluye a mujeres y varones desde los 10 años.':'El total incluye el grupo de 10–14 años.');
+}
+function mapaSifilis(host,{medida,sexo,anio,edad}){
+ const tasa=medida==='Tasas',series=sexo==='Por sexo'?sexosSifilis.slice(0,2):['Ambos sexos'];
+ const datos=sifilis.datos.filter(r=>sifilis.provincias.includes(r.geografia)&&r.anio===anio&&
+  r.edad===edad&&series.includes(r.sexo));
+ const maximo=Math.max(1,...datos.map(r=>tasa?r.tasa:r.casos));
+ const coloresEdad=['#237bd1','#8d57b8','#158f84','#ce6c2d','#69862c','#c5507b','#7765d4','#a95843'];
+ const coloresEdadMujeres=['#168c7a','#c95d48','#a74d9b','#357ecb','#a458a3','#648734','#bd772d','#3187a5'];
+ const ordenEdad=['Todas las edades',...sifilis.edades.filter(e=>e!=='10-14')];
+ const indiceEdad=Math.max(0,ordenEdad.indexOf(edad));
+ const p=panel(host,`${tasa?'Tasas de sífilis por 100.000 habitantes':'Casos de sífilis'} por jurisdicción · ${anio} · ${etiquetaEdadSifilis(edad)} · ${sexo.toLowerCase()}`);
+ p.classList.add('panel-mapa-sifilis');
+ const mapas=layout(p,'mapas-sifilis');
+ if(series.length>1)mapas.classList.add('mapas-sifilis-por-sexo');
+ for(const serie of series){
+  const marco=nodo('div',null,'mapa-sifilis');
+  mapas.append(marco);
+  if(series.length>1)marco.append(nodo('h4',serie));
+  const color=(serie==='Mujeres'?coloresEdadMujeres:coloresEdad)[indiceEdad];
+  const filas=datos.filter(r=>r.sexo===serie).map(r=>({geografia:r.geografia,anio,valor:tasa?r.tasa:r.casos}));
+  mapa(marco,filas,'valor',tasa?' por 100.000 habitantes':'',color,'Argentina',{soloMapa:true,maximo});
+ }
+}
+function seccionSifilis(host){
+ const banda=layout(host,'banda-filtros'),c=controles(banda);
+ const medida=selectorSifilis(c,'indicador',['Tasas','Casos'],'Indicador','Tasas');
+ const sexo=selectorSifilis(c,'genero',['Ambos sexos','Por sexo'],'Sexo','Ambos sexos');
+ const anio=selectorSifilis(c,'anio',sifilis.anios,'Año',sifilis.anios.at(-1));
+ const lugar=selectorSifilis(c,'geografia',['Argentina',...Object.keys(sifilis.regiones),...sifilis.provincias],'Ámbito geográfico','Argentina');
+ const edadesSeleccionables=sifilis.edades.filter(e=>e!=='10-14');
+ const edad=selectorSifilis(c,'edad',['Todas las edades',...edadesSeleccionables],'Grupo de edad','Todas las edades');
+ resumenSifilis(host,sifilis.datos.find(r=>r.geografia===lugar&&r.edad===edad&&
+  r.anio===anio&&r.sexo==='Ambos sexos'));
+ const grilla=layout(host,'sifilis-columnas'),seleccion={medida,sexo,anio,lugar,edad};
+ const izquierda=layout(grilla,'sifilis-izquierda');
+ evolucionSifilis(izquierda,seleccion);distribucionSifilis(izquierda,seleccion);
+ const centro=layout(grilla,'sifilis-centro');
+ regionesSifilis(centro,seleccion);edadSifilis(centro,seleccion);
+ mapaSifilis(grilla,seleccion);
+}
+function graficarTamizaje(p,filas,tasa,evolucion,ordenX){
+ const datosDetalle=filas.map(({anio,grupo_edad,estudiadas,positivas,positividad})=>
+  ({anio,grupo_edad,estudiadas,negativas:estudiadas==null||positivas>estudiadas?null:estudiadas-positivas,positivas,positividad}));
+ const categoria=r=>evolucion?r.anio:r.grupo_edad==='Todas las edades'?'Todas':rotuloEdadTamizaje(r.grupo_edad);
+ const totalEdad=r=>!evolucion&&r.grupo_edad==='Todas las edades';
+ const valores=tasa?filas.map(r=>({anio:categoria(r),serie:'Positividad',valor:r.positividad,color:totalEdad(r)?'#bf782d':null})):
+  datosDetalle.flatMap(r=>[{anio:categoria(r),serie:'Negativas',valor:r.negativas,color:totalEdad(r)?'#bf782d':null},
+   {anio:categoria(r),serie:'Positivas',valor:r.negativas==null?null:r.positivas,color:totalEdad(r)?'#ffcb71':null}]);
+ const lineaFija=tasa&&evolucion;
+ grafico(p,valores,{
+  tipo:tasa?(evolucion?'linea':'barras'):'apilado',porcentaje:tasa,maximoPorcentaje:null,unidad:tasa?'':'pruebas',
+  decimales:tasa?1:0,ordenX,ordenSeries:tasa?null:['Negativas','Positivas'],
+  coloresSeries:{Positividad:'#73d4ef',Negativas:'#446bb6',Positivas:'#168e85'},datosDetalle,rotularTotales:!tasa,
+  proporcionFija:lineaFija,ancho:lineaFija?520:780,alto:lineaFija?260:390
+ });
+ const linea=lineaFija&&p.querySelector('svg.grafico');
+ if(linea){
+  linea.setAttribute('preserveAspectRatio','xMidYMid meet');
+  const marco=nodo('div',null,'marco-positividad');
+  linea.before(marco);
+  marco.append(linea);
+ }
+ p.querySelector('.muestra-n').remove();
+ alinearAccionesGrafico(p);
+}
+function rotuloEdadTamizaje(edad){
+ return edad==='>= a 75'?'75+':edad.replace(' a ','–');
+}
+function evolucionTamizaje(host,tamizaje,poblacion,{tasa,lugar,edad}){
+ const columna=layout(host,'tamizaje-poblacion');
+ columna.append(nodo('h3',poblacion,'tamizaje-poblacion-titulo'));
+ if(!tamizaje){vacio(columna);return;}
+ const periodo=`${tamizaje.anios[0]}–${tamizaje.anios.at(-1)}`;
+ const p=panel(columna,`Evolución de ${tasa?'la positividad en las':'las'} pruebas de tamizaje de sífilis · ${lugar} · ${rotuloEdadTamizaje(edad)} · ${periodo}`);
+ p.classList.add('panel-tamizaje-sifilis','tamizaje-evolucion');
+ const filas=tamizaje.datos.filter(r=>r.geografia===lugar&&(r.grupo_edad||'Todas las edades')===edad);
+ graficarTamizaje(p,filas,tasa,true,tamizaje.anios);
+}
+function compararEdadTamizaje(host,tamizaje,{tasa,lugar,anio},gestantes=false){
+ if(!tamizaje?.grupos?.length)return;
+ const grupos=tamizaje.grupos.filter(g=>!gestantes||!['65 a 74','>= a 75'].includes(g));
+ const p=panel(host,`${tasa?'Positividad en pruebas':'Pruebas'} de tamizaje de sífilis por grupo de edad · ${lugar} · ${anio}`);
+ p.classList.add('panel-tamizaje-sifilis','tamizaje-comparacion-edad');
+ const filas=tamizaje.datos.filter(r=>r.geografia===lugar&&r.anio===anio&&
+  (r.grupo_edad==='Todas las edades'||grupos.includes(r.grupo_edad)));
+ graficarTamizaje(p,filas,tasa,false,[...grupos.map(rotuloEdadTamizaje),'Todas']);
+}
+function seccionTamizajeSifilis(host){
+ const tamizaje=sifilis.tamizaje;
+ if(!tamizaje){vacio(host);return;}
+ const c=controles(layout(host,'banda-filtros'));
+ const indicador=selectorSifilis(c,'indicador_tamizaje',['Tasas','Casos'],'Indicador','Tasas');
+ const lugar=selectorSifilis(c,'geografia',['Argentina',...Object.keys(sifilis.regiones),...sifilis.provincias],'Ámbito geográfico','Argentina');
+ const grupos=tamizaje.grupos||[],tasa=indicador==='Tasas';
+ const edad=grupos.length?selectorSifilis(c,'edad',['Todas las edades',...grupos],'Grupo de edad','Todas las edades'):'Todas las edades';
+ const evoluciones=layout(host,'tamizaje-columnas'),gestantes=sifilis.tamizaje_gestantes;
+ evolucionTamizaje(evoluciones,tamizaje,'Población general',{tasa,lugar,edad});
+ evolucionTamizaje(evoluciones,gestantes,'Personas gestantes',{tasa,lugar,edad});
+ if(grupos.length){
+  const bandaEdad=layout(host,'banda-filtros filtro-anio-tamizaje');
+  const anio=selectorSifilis(controles(bandaEdad),'anio',tamizaje.anios,'Año de las comparaciones por edad',tamizaje.anios.at(-1));
+  const comparaciones=layout(host,'tamizaje-columnas'),filtros={tasa,lugar,anio};
+  compararEdadTamizaje(comparaciones,tamizaje,filtros);
+  compararEdadTamizaje(comparaciones,gestantes,filtros,true);
+ }
+ if(tasa)host.append(nodo('p','Positividad = pruebas positivas ÷ pruebas estudiadas × 100.','nota'));
+ if(sifilis.regiones[lugar])host.append(nodo('p',`Jurisdicciones: ${sifilis.regiones[lugar].join(', ')}. El total regional suma los registros disponibles de cada año.`,'nota'));
+}
 function seccionDefiniciones(host){
+ const fuentes=nodo('section',null,'fuentes-metodologia');
+ fuentes.append(nodo('h3','Fuentes y denominadores de VIH y mortalidad por sida'),
+  $('metodologia-empalme').content.cloneNode(true),
+  $('metodologia-poblacion-2022').content.cloneNode(true),
+  $('metodologia-enlaces').content.cloneNode(true));
+ host.append(fuentes);
  const grid=layout(host,'definiciones-grid');
  const definiciones=[
   ['Tasa de mortalidad por sida','Mide las defunciones por causas asociadas al VIH en un año y territorio, por cada 100.000 habitantes. La tasa bruta divide las defunciones por la población del mismo año, territorio y sexo seleccionado. La tasa ajustada por edad combina las tasas específicas por edad usando una población estándar para facilitar comparaciones entre poblaciones con distintas estructuras etarias.','Tasa bruta = defunciones por causas asociadas al VIH / población × 100.000. Tasa ajustada = suma de tasas específicas por edad ponderadas por la población estándar.','Fuente: Boletín N°43 Respuesta al VIH y las ITS en Argentina, tablas 2–7, páginas 70–75; DEIS / Ministerio de Salud de la Nación. Se muestran las tasas publicadas: tabla 2020–2024 y tarjeta nacional, barras y mapa de 2024. La tasa ajustada no representa un conteo de defunciones.'],
@@ -513,7 +787,7 @@ function crearBandaFiltros(control,titulo,alcance){
  h.append(icono,document.createTextNode(titulo),nodo('span',alcance,'filtro-alcance'));banda.append(h,control);return banda;
 }
 function presentarResumen(){
- if(pagina==='definiciones'||pagina==='mortalidad'||pagina==='genero')return;
+ if(pagina==='definiciones'||pagina==='mortalidad'||pagina==='genero'||pagina.startsWith('sifilis'))return;
  const host=$('contenido'),e=estados[pagina],ultimo=anios.at(-1),tarjetas=[];
  const esNumero=v=>typeof v==='number'&&Number.isFinite(v);
  const porcentaje=v=>esNumero(v)?exacto(v,1)+'%':'Sin datos';
@@ -583,13 +857,18 @@ function presentarResumen(){
 
 function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find(p=>p[0]===pagina);$('titulo').textContent=page[1];
  const version=pagina==='casos'?'V 2.0':pagina==='definiciones'?'V 2.0 AA':'';$('version-tablero').textContent=version;$('version-tablero').hidden=!version;
+ const esSifilis=pagina.startsWith('sifilis');
+ const tamizaje=pagina==='sifilis-territorio'?sifilis.tamizaje:null;
+ $('contenido').classList.toggle('pagina-sifilis',esSifilis);
+ $('periodo').textContent=tamizaje?`Fuente: SNVS · Tamizaje ${tamizaje.anios[0]}–${tamizaje.anios.at(-1)}`:esSifilis?`Fuente: SNVS · Diagnósticos ${sifilis.anios[0]}–${sifilis.anios.at(-1)}`:`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${anios.at(-1)}`;
+ $('fecha-exportacion').textContent=`Fecha de exportación de la base: ${tamizaje?.exportacion||(esSifilis?sifilis.exportacion:D.meta.fecha_exportacion||'no informada')}`;
  $('contenido').replaceChildren();document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.pagina===pagina?'page':'false'));
- ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico,mortalidad:seccionMortalidad,definiciones:seccionDefiniciones})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
- paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4'],mortalidad:['#237bd1','#e8f0fd'],definiciones:['#7561bb','#f0ecfa']}[id];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
+ ({casos:seccionCasos,geografia:seccionGeografia,genero:seccionGenero,vias:seccionVias,diagnostico:seccionDiagnostico,'mapas-diagnostico':seccionMapasDiagnostico,mortalidad:seccionMortalidad,sifilis:seccionSifilis,'sifilis-territorio':seccionTamizajeSifilis,definiciones:seccionDefiniciones})[pagina]($('contenido'));presentarResumen();ajustarPantalla();}
+ paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4'],mortalidad:['#237bd1','#e8f0fd'],definiciones:['#7561bb','#f0ecfa']}[id]||['#168e9b','#e8f5f5'];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
  $('navegacion').append($('restablecer'));
- $('periodo').textContent=`Fuente: SNVS / SISA · Diagnósticos ${anios[0]}–${anios.at(-1)}`;$('fecha-exportacion').textContent=`Fecha de exportación de la base: ${D.meta.fecha_exportacion||'no informada'}`;$('demo').hidden=!D.meta.demostracion;
+ $('demo').hidden=!D.meta.demostracion;
  $('restablecer').onclick=()=>{estados[pagina]={};render();};window.addEventListener('hashchange',()=>{if(paginas.some(p=>p[0]===location.hash.slice(1))){pagina=location.hash.slice(1);render();}});
  document.addEventListener('click',e=>document.querySelectorAll('.control details[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.control details[open]').forEach(d=>{d.open=false;d.querySelector('summary').focus();});});
- $('abrir-metodologia').onclick=()=>abrirDialogo('Acerca de los datos',$('metodologia').content.cloneNode(true));$('cerrar-dialogo').onclick=()=>$('dialogo').close();let vistaMovil=innerWidth<=700;window.addEventListener('resize',()=>{const nueva=innerWidth<=700;if(nueva!==vistaMovil){vistaMovil=nueva;render();}else ajustarPantalla();});
+ $('abrir-metodologia').onclick=abrirMetodologia;$('cerrar-dialogo').onclick=()=>$('dialogo').close();let vistaMovil=innerWidth<=700;window.addEventListener('resize',()=>{const nueva=innerWidth<=700;if(nueva!==vistaMovil){vistaMovil=nueva;render();}else ajustarPantalla();});
  render();
 })();

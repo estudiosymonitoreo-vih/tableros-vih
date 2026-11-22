@@ -35,6 +35,12 @@ main{background:#242c50}header{height:68px}h1{font-size:26px}.titulo-vista{heigh
 #navegacion button{flex:1;width:auto;min-width:0;justify-content:center;text-align:center;gap:5px;padding:5px 6px;border-radius:0;font-size:12px;font-weight:600;color:#f5f5f8;line-height:1.15;border-bottom:3px solid transparent}
 #navegacion button[aria-current=page]{background:#3f587b;border-bottom-color:#8bd9f5;color:#fff}
 #navegacion button:hover{background:#344867}
+#navegacion button[data-pagina]{--fondo-solapa:#23365e;background:var(--fondo-solapa)}
+#navegacion button[data-pagina^="sifilis"]{--fondo-solapa:#14606b}
+#navegacion button:is([data-pagina="diagnostico"],[data-pagina="mapas-diagnostico"],[data-pagina="mortalidad"]){--fondo-solapa:#2a527e}
+#navegacion button[data-pagina="definiciones"]{--fondo-solapa:#473d77}
+#navegacion button[data-pagina]:hover{background:color-mix(in srgb,var(--fondo-solapa),white 9%)}
+#navegacion button[data-pagina][aria-current=page]{background:color-mix(in srgb,var(--fondo-solapa),white 16%)}
 #navegacion .nav-icon{width:22px;height:22px;flex-basis:22px;padding:3px;border-radius:5px}
 footer .acerca{margin:0;padding:3px 7px;font-size:10px;white-space:nowrap;background:transparent;color:#c9d7ec;border:1px solid #536c91;display:block}
 @media(max-width:700px){#navegacion{height:auto;overflow-x:auto;min-height:50px}#navegacion button{flex:0 0 155px}#navegacion button span{max-width:120px}}
@@ -241,3 +247,92 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
  .diagnostico-evolucion .diagnostico-por-genero>.grafico-bienios{height:215px;min-height:0}
  .diagnostico-evolucion .diagnostico-vias{min-height:160px}
 }
+
+.sifilis-columnas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.sifilis-columnas .panel { min-width: 0; }
+.metodologia-solapa { display: grid; gap: 10px; }
+.metodologia-solapa p { margin: 0; }
+.sifilis-columnas .grafico { height: 285px; min-height: 285px; flex: none; }
+.sifilis-izquierda, .sifilis-centro { display: grid; align-content: start; gap: 5px; min-width: 0; }
+.sifilis-izquierda .panel, .sifilis-centro .panel { padding-bottom: 5px; }
+.sifilis-izquierda .pie-sifilis, .sifilis-centro .pie-sifilis { margin-top: 3px; }
+.sifilis-izquierda .panel-evolucion-sifilis .grafico { height: 252px; min-height: 252px; }
+.sifilis-centro .grafico { height: 188px; min-height: 188px; }
+.sifilis-izquierda .distribucion-sifilis { min-height: 0; }
+.sifilis-izquierda .distribucion-sifilis svg { width: min(43%, 132px); }
+.sifilis-centro .grafico text { font-size: 10px; }
+.mapas-sifilis { display: grid; gap: 10px; }
+.mapas-sifilis-por-sexo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mapa-sifilis { min-width: 0; }
+.mapa-sifilis h4 { margin: 0 0 4px; font-size: 12px; }
+.mapa-sifilis .mapa-contenedor { height: 410px; flex: none; }
+.mapas-sifilis-por-sexo .mapa-contenedor { height: 335px; }
+.tamizaje-columnas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.tamizaje-poblacion { display: grid; align-content: start; min-width: 0; gap: 4px; }
+.tamizaje-poblacion-titulo { margin: 3px 0 0; }
+.panel-tamizaje-sifilis .grafico { height: 206px; min-height: 206px; flex: none; }
+.tamizaje-evolucion .grafico { height: 206px; min-height: 206px; }
+.tamizaje-comparacion-edad .grafico { width: 94%; margin-inline: auto; }
+.pie-grafico { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pie-grafico .acciones-datos { margin: 0 0 0 auto; }
+.filtro-anio-tamizaje .control { max-width: 260px; }
+.marco-positividad {
+  flex: none;
+  overflow-x: auto;
+}
+.panel-tamizaje-sifilis .marco-positividad .grafico {
+  width: 100%;
+  min-width: 325px;
+  max-width: 440px;
+  height: auto;
+  min-height: 0;
+  margin-inline: auto;
+  aspect-ratio: 2 / 1;
+}
+.panel-tamizaje-sifilis .valor-apilado {
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #242c50;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+}
+.pagina-sifilis .resumen-sifilis { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); margin: 0; }
+.sifilis-columnas h3 { min-height: 2.7em; }
+.pie-sifilis { margin-top: 14px; }
+.distribucion-sifilis {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: 285px;
+  gap: 12px;
+}
+.distribucion-sifilis svg { width: min(100%, 205px); }
+.porcentaje-sifilis {
+  fill: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: #242c50;
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+.leyenda-sifilis { list-style: none; padding: 0; margin: 0; }
+.leyenda-sifilis li { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 11px; }
+.leyenda-sifilis i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+@media (min-width: 701px) {
+  #contenido.pagina-sifilis { overflow-y: auto; }
+}
+@media (max-width: 700px) {
+  .sifilis-columnas { grid-template-columns: minmax(0, 1fr); margin-top: 14px; }
+  .tamizaje-columnas { grid-template-columns: minmax(0, 1fr); }
+  .sifilis-columnas h3 { min-height: 0; }
+  .sifilis-izquierda .panel, .sifilis-centro .panel { min-height: 0; }
+  .pagina-sifilis .resumen-sifilis { height: auto; margin-bottom: 12px; }
+  .mapas-sifilis-por-sexo .mapa-contenedor { height: 280px; }
+}
+.fuentes-metodologia a{color:#9ee7ff}
