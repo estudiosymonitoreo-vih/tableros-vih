@@ -336,6 +336,7 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
   .mapas-sifilis-por-sexo .mapa-contenedor { height: 280px; }
 }
 .fuentes-metodologia a{color:#9ee7ff}
+.tabla-scroll .celda-numerica{text-align:right;font-variant-numeric:tabular-nums}
 #contenido:has(>.definiciones-grid){overflow-y:auto}
 .definiciones-grid{flex:0 0 auto}
 #contenido>section.fuentes-metodologia{flex:none;font-size:12px;line-height:1.4}

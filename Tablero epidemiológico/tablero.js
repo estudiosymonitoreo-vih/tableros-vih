@@ -92,12 +92,39 @@ function muestra(host,filas){
  const texto=`n = ${fmt(total,0)}`;
  const n=nodo('p',texto,'muestra-n');n.title='Casos válidos utilizados en el gráfico para los filtros y el período mostrados. En DT/EA se aplica un mínimo de cobertura del 55% en mapas y del 60% en evolución y vías.';host.append(n);
 }
-function detalle(host,filas){
+const encabezadosDetalle={
+ anio:'Año',categoria:'Categoría',grupo_edad:'Grupo de edad',geografia:'Ámbito geográfico',
+ region:'Región',genero:'Género',via:'Vía de transmisión',total_vih:'Total VIH',
+ sin_coinfeccion:'Sin coinfección registrada',porcentaje:'Porcentaje',positividad:'Positividad',
+ tardio:'Diagnóstico tardío',avanzada:'Enfermedad avanzada',validos:'Casos con dato',
+ casos_tardio:'Casos de diagnóstico tardío',casos_avanzada:'Casos de enfermedad avanzada',
+ insuficiente:'Datos insuficientes',n:'N'
+};
+function detalle(host,filas,{valorPorcentual=false}={}){
  muestra(host,filas);
  const scroll=nodo('div',null,'tabla-scroll'),table=nodo('table');
  const campos=filas.length?Object.keys(filas[0]):[],head=nodo('thead'),hr=nodo('tr');
- campos.forEach(c=>{const th=nodo('th',c);th.scope='col';hr.append(th);});head.append(hr);table.append(head);
- const body=nodo('tbody');filas.forEach(r=>{const tr=nodo('tr');campos.forEach(c=>tr.append(nodo('td',typeof r[c]==='number'?fmt(r[c],3):r[c]??'Sin datos')));body.append(tr);});table.append(body);scroll.append(table);
+ const porcentaje=(c,r)=>c==='valor'
+  ?valorPorcentual||r.indicador==='Porcentaje'
+  :/^(porcentaje|positividad|tardio|avanzada|noAvanzado)$/i.test(c)||c.includes('%');
+ const numericas=new Set(campos.filter(c=>filas.some(r=>typeof r[c]==='number'||porcentaje(c,r))));
+ campos.forEach(c=>{
+  const texto=c.replaceAll('_',' ');
+  const th=nodo('th',encabezadosDetalle[c]??(texto.charAt(0).toLocaleUpperCase('es')+texto.slice(1)));
+  th.scope='col';th.classList.toggle('celda-numerica',numericas.has(c));hr.append(th);
+ });head.append(hr);table.append(head);
+ const body=nodo('tbody');
+ filas.forEach(r=>{
+  const tr=nodo('tr');
+  campos.forEach(c=>{
+   const valor=r[c];
+   const texto=typeof valor==='number'&&Number.isFinite(valor)
+    ?(c==='anio'||c==='categoria'?String(valor):fmt(valor,3))+(porcentaje(c,r)?'%':'')
+    :typeof valor==='boolean'?valor?'Sí':'No':valor??'Sin datos';
+   tr.append(nodo('td',texto,numericas.has(c)?'celda-numerica':null));
+  });
+  body.append(tr);
+ });table.append(body);scroll.append(table);
  const acciones=nodo('div',null,'acciones-datos'),ver=nodo('button','Ver datos'),b=nodo('button','Descargar CSV');
  ver.onclick=()=>abrirDialogo(host.dataset.tituloDatos||host.querySelector('h3')?.textContent||'Datos del gráfico',scroll);
  b.disabled=!filas.length;b.onclick=()=>{const csv=[campos,...filas.map(r=>campos.map(c=>r[c]??''))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=nodo('a');a.href=url;a.download=pagina.startsWith('sifilis')?`${pagina}.csv`:`vih-${pagina}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};acciones.append(ver,b);host.append(acciones);
@@ -112,7 +139,8 @@ function incluirPeriodoTitulo(host,filas){
 }
 function grafico(host,filas,{tipo='linea',porcentaje=false,maximoPorcentaje=100,unidad='',ordenSeries=null,decimales=1,datosDetalle=null,ancho=720,alto=390,ordenX=null,coloresSeries=null,separacionBarras=1,tooltips=true,rotularTotales=false,proporcionFija=false}={}){
  incluirPeriodoTitulo(host,filas);
- if(!filas.some(r=>r.valor!=null)&&!filas.some(r=>r.insuficiente)){vacio(host);detalle(host,datosDetalle||filas);return;}
+ const formatoDetalle={valorPorcentual:porcentaje&&!datosDetalle};
+ if(!filas.some(r=>r.valor!=null)&&!filas.some(r=>r.insuficiente)){vacio(host);detalle(host,datosDetalle||filas,formatoDetalle);return;}
  const xs=ordenX?ordenX.filter(x=>filas.some(r=>r.anio===x)):uniq(filas.map(r=>r.anio)).sort((a,b)=>a-b),series=ordenSeries?ordenSeries.filter(s=>filas.some(r=>r.serie===s)):uniq(filas.map(r=>r.serie||'Valor'));
  const totales=new Map();
  if(tipo==='apilado')for(const {anio,valor} of filas){
@@ -158,7 +186,7 @@ function grafico(host,filas,{tipo='linea',porcentaje=false,maximoPorcentaje=100,
  };
  if(!proporcionFija)s.dibujar=dibujar;
  dibujar(ancho,alto);
- host.append(s);leyenda(host,series);if(coloresSeries)host.querySelectorAll('.leyenda .muestra').forEach((m,i)=>m.style.background=coloresSeries[series[i]]||colores[i%colores.length]);if((tipo==='linea'||tipo==='puntos')&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas);
+ host.append(s);leyenda(host,series);if(coloresSeries)host.querySelectorAll('.leyenda .muestra').forEach((m,i)=>m.style.background=coloresSeries[series[i]]||colores[i%colores.length]);if((tipo==='linea'||tipo==='puntos')&&series.length===1)host.querySelector('.leyenda .muestra').style.background='#73d4ef';detalle(host,datosDetalle||filas,formatoDetalle);
  // La mediana conserva rótulos y accesibilidad, sin tooltips tampoco en su leyenda.
  if(!tooltips)host.querySelectorAll('.leyenda [title]').forEach(n=>n.removeAttribute('title'));
 }
@@ -374,7 +402,7 @@ function seccionGenero(host){
 // Torta de 2025: porciones exactas según conteos y rótulos externos sin solapamiento.
 function graficoViasTorta(host,filas){
  const total=filas.reduce((s,r)=>s+(r.n||0),0);
- if(!filas.length||!total){vacio(host);detalle(host,filas);return;}
+ if(!filas.length||!total){vacio(host);detalle(host,filas,{valorPorcentual:true});return;}
  const s=svg('svg',{class:'grafico torta',role:'img','aria-label':host.querySelector('h3').textContent});
  s.dibujar=(w,h)=>{
   s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.replaceChildren();tituloSVG(s,host.querySelector('h3').textContent);
@@ -401,7 +429,7 @@ function graficoViasTorta(host,filas){
   }
 
  };
- s.dibujar(720,390);host.append(s);detalle(host,filas);
+ s.dibujar(720,390);host.append(s);detalle(host,filas,{valorPorcentual:true});
 }
 function seccionVias(host){
  const c=controles(host),g=filtro(c,T.vias,'geografia','Unidad geográfica','g','Argentina',false,geos),s=filtro(c,T.vias,'genero','Género · torta 2025','s','Varón',false,generos),e=filtro(c,T.vias,'edad','Grupo de edad · torta 2025','e','Todas las edades',false,edades);
