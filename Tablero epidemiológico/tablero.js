@@ -787,7 +787,7 @@ function seccionTamizajeSifilis(host){
  if(tasa)host.append(nodo('p','Positividad = pruebas positivas ÷ pruebas estudiadas × 100.','nota'));
  if(sifilis.regiones[lugar])host.append(nodo('p',`Jurisdicciones: ${sifilis.regiones[lugar].join(', ')}. El total regional suma los registros disponibles de cada año.`,'nota'));
 }
-function graficoCoinfeccion(p,filas,porSexo,medidas){
+function graficoCoinfeccion(p,filas,porSexo,medidas,evolucion=false){
  const personas=medidas.includes('Personas'),proporciones=medidas.includes('Proporciones');
  const grupos=uniq(filas.map(r=>r.categoria)),series=uniq(filas.map(r=>r.sexo));
  const base='#416ab0',cruce='#efa056',lineas=porSexo?['#8ed2ff','#ff9fcf']:['#ffdc79'];
@@ -851,6 +851,30 @@ function graficoCoinfeccion(p,filas,porSexo,medidas){
  p.dataset.nTotal=filas.reduce((n,r)=>n+r.total_vih,0);
  detalle(p,filas);
  if(filas.some(r=>r.sin_coinfeccion==null))p.append(nodo('p','Sin barra cuando las coinfecciones superan el total de VIH.','nota'));
+ const resumen=layout(p,'resumen-coinfeccion');
+ const campos=[];
+ if(personas)campos.push(['coinfecciones','Personas con coinfección',v=>fmt(v,0)]);
+ if(proporciones)campos.push(['porcentaje','Proporción de coinfección',v=>exacto(v,1)+'%']);
+ for(const sexo of series){
+  const datos=validas.filter(r=>r.sexo===sexo);
+  for(const [campo,etiqueta,formato] of campos){
+   const disponibles=datos.filter(r=>Number.isFinite(r[campo]));
+   const titulo=porSexo?`${sexo} · ${etiqueta}`:etiqueta;
+   const fila=nodo('p');fila.append(nodo('strong',titulo));
+   if(disponibles.length){
+    const extremo=(comparar)=>disponibles.reduce((a,b)=>comparar(b[campo],a[campo])?b:a);
+    const max=extremo((a,b)=>a>b),min=extremo((a,b)=>a<b);
+    fila.append(document.createTextNode(` · Máx. ${formato(max[campo])} (${max.categoria}) · Mín. ${formato(min[campo])} (${min.categoria})`));
+   }else fila.append(document.createTextNode(' · Sin datos'));
+   if(evolucion){
+    const inicio=disponibles.find(r=>r.categoria===2022)?.[campo],fin=disponibles.find(r=>r.categoria===2025)?.[campo];
+    const cambio=inicio>0&&Number.isFinite(fin)?100*(fin-inicio)/inicio:null;
+    fila.append(nodo('span',cambio===null?'Variación 2022–2025 · Sin datos comparables':
+      `Variación 2022–2025 · ${cambio>0?'+':''}${exacto(cambio,1)}%`));
+   }
+   resumen.append(fila);
+  }
+ }
 }
 function seccionCoinfeccion(host){
  const banda=layout(host,'banda-filtros'),c=controles(banda);
@@ -877,12 +901,12 @@ function seccionCoinfeccion(host){
  const grilla=layout(host,'coinfeccion-columnas');
  const lapso=periodo.length>1?`${periodo[0]}–${periodo.at(-1)}`:periodo[0];
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por año · ${lugar} · ${edad} · ${lapso}`),
-  filas(periodo,a=>[a,lugar,edad]),porSexo,medidas);
+  filas(periodo,a=>[a,lugar,edad]),porSexo,medidas,true);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por edad · ${lugar} · ${anio}`),
   filas(edades.filter(e=>!['Todas las edades','0-9','10-14'].includes(e)),e=>[anio,lugar,e]),porSexo,medidas);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por región · ${anio} · ${edad}`),
   filas(Object.keys(sifilis.regiones),g=>[anio,g,edad]),porSexo,medidas);
- host.append(nodo('p','Se considera coinfección cuando una persona recibe los diagnósticos de VIH y sífilis en el mismo año calendario. La proporción se calcula sobre el total de diagnósticos de VIH. La comparación regional abarca todo el país.','nota'));
+ host.append(nodo('p','Se considera coinfección cuando una persona recibe los diagnósticos de VIH y sífilis en el mismo año calendario. La proporción se calcula sobre el total de diagnósticos de VIH. La comparación regional abarca todo el país.','nota nota-coinfeccion'));
 }
 function seccionDefiniciones(host){
  const fuentes=nodo('section',null,'fuentes-metodologia');
