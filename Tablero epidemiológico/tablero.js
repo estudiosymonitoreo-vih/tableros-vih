@@ -1023,7 +1023,11 @@ function seccionResumen(host){
  const izq=layout(izquierda,'portada-indicadores');
  const mapaPanel=panel(grilla,'Mapa por jurisdicción');
  mapaPanel.classList.add('portada-mapa');
- const opcionesMapa=[...indicadores,...medianas,...sexual];
+ const opcionesMapa=[
+  ...indicadores,
+  ...medianas.map(m=>({...m,titulo:m.titulo.replace('Mediana · ','Mediana de edad al diagnóstico de VIH · ')})),
+  ...sexual.map(m=>({...m,titulo:`VIH · ${m.titulo}`}))
+ ];
  const filtroMapa=nodo('div',null,'banda-filtros portada-filtro-mapa');
  mapaPanel.prepend(filtroMapa);
  const elegido=selectorSifilis(controles(filtroMapa),'indicador_mapa',opcionesMapa.map(x=>x.titulo),'Indicador del mapa','Tasa de VIH');
