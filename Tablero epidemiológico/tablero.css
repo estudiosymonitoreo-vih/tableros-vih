@@ -348,9 +348,23 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .controles-con-restablecer .control{min-width:0;flex:1 1 0}
 .controles-con-restablecer #restablecer{flex:0 0 auto;margin-left:auto;white-space:nowrap;padding:6px 9px}
 .controles-coinfeccion .control[data-tipo=anio]{flex-grow:.65}
-.resumen-coinfeccion{display:grid;gap:4px;padding:6px 8px;background:#2c3c5b;border-radius:5px;font-size:10px;line-height:1.35}
-.resumen-coinfeccion p{margin:0}
-.resumen-coinfeccion span{display:block;color:#d6e7ff}
+.resumen-coinfeccion,.indicadores-tamizaje{display:grid;gap:8px;align-content:start}
+.resumen-coinfeccion{grid-template-columns:repeat(2,minmax(0,1fr))}
+.resumen-coinfeccion-evolucion{grid-template-columns:repeat(3,minmax(0,1fr))}
+.indicadores-tamizaje{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.resumen-coinfeccion .resumen-numero,.indicadores-tamizaje .resumen-numero{color:#79d8ed;font-size:clamp(18px,2vw,28px);white-space:normal}
+.resumen-coinfeccion .resumen-icono{display:none}
+@media(min-width:951px){
+ .coinfeccion-columnas{row-gap:6px}
+ .coinfeccion-columnas>.panel{display:grid;grid-template-rows:subgrid;grid-row:span 7}
+ .coinfeccion-columnas>.panel>h3{grid-row:1}
+ .coinfeccion-columnas .grafico-coinfeccion{grid-row:2}
+ .coinfeccion-columnas>.panel>.leyenda{grid-row:3}
+ .coinfeccion-columnas>.panel>.muestra-n{grid-row:4}
+ .coinfeccion-columnas>.panel>.acciones-datos{grid-row:5;margin-top:0;align-self:start}
+ .coinfeccion-columnas .resumen-coinfeccion{grid-row:6}
+ .coinfeccion-columnas>.panel>:is(.nota,.vacio){grid-row:7}
+}
 .nota-coinfeccion{margin-top:auto;padding-top:8px}
 @media(max-width:700px){.controles-con-restablecer{flex-wrap:wrap!important}.controles-con-restablecer .control{flex-basis:120px}}
 @media(max-width:950px){.coinfeccion-columnas{grid-template-columns:1fr}}

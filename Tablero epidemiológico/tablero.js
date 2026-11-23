@@ -774,12 +774,22 @@ function seccionTamizajeSifilis(host){
  const lugar=selectorSifilis(c,'geografia',['Argentina',...Object.keys(sifilis.regiones),...sifilis.provincias],'Ámbito geográfico','Argentina');
  const grupos=tamizaje.grupos||[],tasa=indicador==='Tasas';
  const edad=grupos.length?selectorSifilis(c,'edad',['Todas las edades',...grupos],'Grupo de edad','Todas las edades'):'Todas las edades';
- const evoluciones=layout(host,'tamizaje-columnas'),gestantes=sifilis.tamizaje_gestantes;
+ const gestantes=sifilis.tamizaje_gestantes;
+ const bandaEdad=grupos.length?nodo('div',null,'banda-filtros filtro-anio-tamizaje'):null;
+ const anio=bandaEdad?selectorSifilis(controles(bandaEdad),'anio',tamizaje.anios,'Año de las comparaciones por edad',tamizaje.anios.at(-1)):tamizaje.anios.at(-1);
+ const registro=serie=>serie?.datos.find(r=>r.geografia===lugar&&r.anio===anio&&(r.grupo_edad||'Todas las edades')===edad);
+ const general=registro(tamizaje),embarazo=registro(gestantes);
+ const indicadores=layout(host,'indicadores-tamizaje');
+ const contexto=`${lugar} · ${anio} · ${rotuloEdadTamizaje(edad)}`;
+ const positividad=r=>Number.isFinite(r?.positividad)?exacto(r.positividad,1)+'%':'Sin datos';
+ tarjetaResumen(indicadores,'Pruebas estudiadas · Población general',fmt(general?.estudiadas,0),contexto);
+ tarjetaResumen(indicadores,'Positividad · Población general',positividad(general),contexto);
+ if(gestantes)tarjetaResumen(indicadores,'Positividad · Personas gestantes',positividad(embarazo),contexto);
+ const evoluciones=layout(host,'tamizaje-columnas');
  evolucionTamizaje(evoluciones,tamizaje,'Población general',{tasa,lugar,edad});
  evolucionTamizaje(evoluciones,gestantes,'Personas gestantes',{tasa,lugar,edad});
- if(grupos.length){
-  const bandaEdad=layout(host,'banda-filtros filtro-anio-tamizaje');
-  const anio=selectorSifilis(controles(bandaEdad),'anio',tamizaje.anios,'Año de las comparaciones por edad',tamizaje.anios.at(-1));
+ if(bandaEdad){
+  host.append(bandaEdad);
   const comparaciones=layout(host,'tamizaje-columnas'),filtros={tasa,lugar,anio};
   compararEdadTamizaje(comparaciones,tamizaje,filtros);
   compararEdadTamizaje(comparaciones,gestantes,filtros,true);
@@ -850,31 +860,23 @@ function graficoCoinfeccion(p,filas,porSexo,medidas,evolucion=false){
  };
  p.dataset.nTotal=filas.reduce((n,r)=>n+r.total_vih,0);
  detalle(p,filas);
- if(filas.some(r=>r.sin_coinfeccion==null))p.append(nodo('p','Sin barra cuando las coinfecciones superan el total de VIH.','nota'));
  const resumen=layout(p,'resumen-coinfeccion');
- const campos=[];
- if(personas)campos.push(['coinfecciones','Personas con coinfección',v=>fmt(v,0)]);
- if(proporciones)campos.push(['porcentaje','Proporción de coinfección',v=>exacto(v,1)+'%']);
+ if(evolucion)resumen.classList.add('resumen-coinfeccion-evolucion');
  for(const sexo of series){
-  const datos=validas.filter(r=>r.sexo===sexo);
-  for(const [campo,etiqueta,formato] of campos){
-   const disponibles=datos.filter(r=>Number.isFinite(r[campo]));
-   const titulo=porSexo?`${sexo} · ${etiqueta}`:etiqueta;
-   const fila=nodo('p');fila.append(nodo('strong',titulo));
-   if(disponibles.length){
-    const extremo=(comparar)=>disponibles.reduce((a,b)=>comparar(b[campo],a[campo])?b:a);
-    const max=extremo((a,b)=>a>b),min=extremo((a,b)=>a<b);
-    fila.append(document.createTextNode(` · Máx. ${formato(max[campo])} (${max.categoria}) · Mín. ${formato(min[campo])} (${min.categoria})`));
-   }else fila.append(document.createTextNode(' · Sin datos'));
-   if(evolucion){
-    const inicio=disponibles.find(r=>r.categoria===2022)?.[campo],fin=disponibles.find(r=>r.categoria===2025)?.[campo];
-    const cambio=inicio>0&&Number.isFinite(fin)?100*(fin-inicio)/inicio:null;
-    fila.append(nodo('span',cambio===null?'Variación 2022–2025 · Sin datos comparables':
-      `Variación 2022–2025 · ${cambio>0?'+':''}${exacto(cambio,1)}%`));
-   }
-   resumen.append(fila);
+  const disponibles=validas.filter(r=>r.sexo===sexo&&Number.isFinite(r.porcentaje));
+  const extremo=comparar=>disponibles.reduce((a,b)=>!a||comparar(b.porcentaje,a.porcentaje)?b:a,null);
+  const contexto=r=>[porSexo?sexo:null,r?.categoria].filter(v=>v!=null).join(' · ');
+  for(const [titulo,r] of [['Proporción máxima',extremo((a,b)=>a>b)],['Proporción mínima',extremo((a,b)=>a<b)]]){
+   tarjetaResumen(resumen,titulo,r?exacto(r.porcentaje,1)+'%':'Sin datos',contexto(r));
+  }
+  if(evolucion){
+   const inicio=disponibles.find(r=>r.categoria===2022)?.porcentaje,fin=disponibles.find(r=>r.categoria===2025)?.porcentaje;
+   const cambio=inicio>0&&Number.isFinite(fin)?100*(fin-inicio)/inicio:null;
+   tarjetaResumen(resumen,'Variación relativa',cambio===null?'Sin datos':`${cambio>0?'+':''}${exacto(cambio,1)}%`,
+    [porSexo?sexo:null,'2022–2025'].filter(Boolean).join(' · '));
   }
  }
+ if(filas.some(r=>r.sin_coinfeccion==null))p.append(nodo('p','Sin barra cuando las coinfecciones superan el total de VIH.','nota'));
 }
 function seccionCoinfeccion(host){
  const banda=layout(host,'banda-filtros'),c=controles(banda);
