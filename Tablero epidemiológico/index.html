@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tablero epidemiológico de VIH en Argentina</title><link rel="stylesheet" href="tablero.css?v=95fee4fecd984b8697aa23cb2edd9a61aae536fa91809ec768a042aec5740b13"><script defer src="datos.js?v=575cb11759c3d63d76d9f925428a1760f98c46b4eeaa45603ba8155f77015dc6"></script><script defer src="sifilis-local.js?v=584b6174d6b947f92b52921176f9d06e037dd4306ce001d3ba303ad544d686c8"></script><script defer src="tablero.js?v=5363f4cda6e1277d2c6a7f32bfd2107aaa50e0849132894763ce41c85aa25582"></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tablero epidemiológico de VIH en Argentina</title><link rel="stylesheet" href="tablero.css?v=8fff564c9f8dcdb97f27dce60c00b317623cc267675f152036832df3681fcbc0"><script defer src="datos.js?v=7e4aae62ffb9ddd9d0ae4f065f346ffc47cb7372c068c880790cdf75e0372121"></script><script defer src="sifilis-local.js?v=eb937ed7e696e6b89b0c40c499ac1662954489f617b2821fdbd44c3e2dfa8a61"></script><script defer src="tablero.js?v=45c4a3611d359b6c3935a4c39f15f524c586ac1d27be5e10016afd9454c43c5e"></script></head>
 <body>
 <div class="reporte-viewport"><main>
 <header><h1>Tablero epidemiológico de VIH en Argentina</h1><div class="logo-institucional"><img src="logo-institucional.jpg?v=9d30879857f6b8a193ab15d18e3f5077c43b7bac5452ae0323095294196f23f1" alt="Dirección de Respuesta al VIH, ITS, Hepatitis Virales y Tuberculosis. Ministerio de Salud de la República Argentina."></div></header>
@@ -32,12 +32,12 @@
 </template>
 <template id="metodologia-diagnostico">
   <p>Los porcentajes de diagnóstico tardío y enfermedad avanzada se calculan sobre los casos con dato de oportunidad diagnóstica. La enfermedad avanzada está incluida en el diagnóstico tardío.</p>
-  <p>La solapa presenta la evolución anual y comparaciones por edad y género para los dos últimos bienios. Cada bienio suma los casos y los denominadores antes de calcular el porcentaje. Al seleccionar varones se habilita también la comparación por vía de transmisión.</p>
+  <p>La evolución y las comparaciones por edad, género y vía de transmisión usan los bienios 2022–2023 y 2024–2025. Los porcentajes se calculan después de sumar los casos y denominadores de cada bienio.</p>
   <p>Se muestra el porcentaje cuando al menos el 60 % de los casos del grupo tiene dato de oportunidad diagnóstica. El n indica cuántos casos tienen ese dato.</p>
   <p class="nota">Fuente: SNVS / SISA.</p>
 </template>
 <template id="metodologia-mapas-diagnostico">
-  <p>Los dos mapas muestran diagnóstico tardío y enfermedad avanzada por jurisdicción para el año, género y grupo de edad seleccionados. La enfermedad avanzada es parte del diagnóstico tardío. Ambos porcentajes se calculan sobre casos con dato de oportunidad diagnóstica.</p>
+  <p>Los dos mapas muestran diagnóstico tardío y enfermedad avanzada por jurisdicción para el bienio, género y grupo de edad seleccionados. La enfermedad avanzada es parte del diagnóstico tardío. Ambos porcentajes se calculan sobre los casos con dato de oportunidad diagnóstica de todo el bienio.</p>
   <p>Se muestra el valor cuando al menos el 55 % de los casos del grupo tiene dato. Las jurisdicciones por debajo del umbral se indican en gris.</p>
   <p>Al elegir una región se amplía el detalle territorial. GBA comprende CABA y 24 partidos bonaerenses. Centro incluye el resto de Buenos Aires, Córdoba, Santa Fe y Entre Ríos.</p>
   <p class="nota">Fuente: SNVS / SISA.</p>
@@ -64,6 +64,10 @@
   <p>La comparación por edad usa la edad registrada en el archivo de coinfección, que no especifica a cuál de los diagnósticos corresponde. El total nacional incluye registros sin provincia informada. Centro incluye CABA, Buenos Aires, Córdoba, Entre Ríos y Santa Fe.</p>
   <p>«Todas las edades» y «Ambos sexos» incluyen respectivamente los registros sin edad o sin sexo informado.</p>
   <p>Cuando el recuento de coinfecciones supera el total de VIH del grupo, se omite la barra y la proporción de esa categoría. Los conteos quedan disponibles en «Ver datos».</p>
+</template>
+<template id="metodologia-resumen">
+  <p>Las tarjetas muestran 2025 o, cuando falta ese dato, 2024. Diagnóstico tardío y enfermedad avanzada usan 2024–2025, con 2022–2023 como bienio de comparación. Las líneas anuales muestran hasta cinco años. La referencia nacional corresponde al mismo período que el valor territorial.</p>
+  <p>El mapa muestra valores por provincia. Las vías de transmisión se calculan a partir de los conteos por género disponibles en el tablero e incluyen las vías desconocidas en el denominador.</p>
 </template>
 <template id="metodologia-definiciones">
   <p>Esta solapa reúne las definiciones de los indicadores, sus fórmulas y los criterios de disponibilidad. Consultá «Acerca de los datos» en cada solapa para ver cómo se aplican a sus gráficos.</p>

@@ -368,3 +368,44 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .nota-coinfeccion{margin-top:auto;padding-top:8px}
 @media(max-width:700px){.controles-con-restablecer{flex-wrap:wrap!important}.controles-con-restablecer .control{flex-basis:120px}}
 @media(max-width:950px){.coinfeccion-columnas{grid-template-columns:1fr}}
+.tablero-portada header{height:90px}
+.tablero-portada .logo-institucional{width:min(480px,50vw);height:92px}
+.tablero-portada .titulo-vista{height:auto;overflow:visible;position:static;width:auto;clip-path:none;padding:6px 0}
+.tablero-portada .titulo-vista h2{font-size:clamp(19px,2vw,30px);font-weight:700}
+#navegacion button[data-pagina=resumen]{--fondo-solapa:#284a70;font-weight:700}
+.tablero-portada #contenido{overflow-y:auto}
+.portada-resumen{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
+.portada-indicadores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;container-type:inline-size}
+.portada-tarjeta,.portada-genero{background:#2c3c5b;border:1px solid var(--borde-geografia,#536e91);border-radius:7px;min-width:0;padding:7px 9px}
+.portada-tarjeta h3,.portada-genero h3{font-size:14px;font-weight:600;color:#dce9f7}
+.portada-cifra{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px}
+.portada-cifra strong{font-size:clamp(18px,2vw,29px);color:#88deef;line-height:1.12}
+.portada-cifra span,.portada-referencia{font-size:10px}
+.portada-referencia{color:#ffdc92;margin:2px 0}
+.portada-izquierda{display:grid;gap:8px;min-width:0}
+.portada-geografia .control{max-width:37.5%}
+.portada-geografia #restablecer{margin-left:0}
+.portada-cuerpo{display:flex;justify-content:space-between;gap:6px}
+.portada-principal{min-width:0}
+.portada-desglose{display:grid;align-content:start;gap:3px;padding-left:6px;border-left:1px solid var(--borde-geografia,#536e91);font-size:20px;line-height:1.1;color:#cbdaf0}
+.portada-desglose-fila{display:flex;justify-content:space-between;gap:6px}
+.portada-desglose-fila span{font-size:calc(2em / 3)}
+.portada-desglose-fila strong{color:#a9e6f4;white-space:nowrap}
+.portada-tarjeta .portada-sin-datos{font-size:50%}
+.portada-cifra:has(.portada-sin-datos){font-size:clamp(18px,2vw,29px)}
+.portada-genero-series .portada-cifra:has(.portada-sin-datos){font-size:18px}
+.portada-mini{width:8.333cqw;max-width:100%;height:15px;display:block;margin-top:2px}
+.portada-genero-series{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:4px}
+.portada-medianas{grid-template-columns:repeat(3,minmax(0,1fr))}
+.portada-genero-series .portada-tarjeta{padding:3px 5px;border:0;border-radius:0;background:transparent}
+.portada-genero-series .portada-tarjeta h3{font-size:calc(14px * 2 / 3)}
+.portada-genero-series .portada-cifra strong{font-size:18px}
+.portada-genero-series .portada-cifra .portada-sin-datos{font-size:50%}
+.portada-genero-series .portada-mini{width:4.167cqw;height:12px}
+.portada-mapa{padding-top:0;border-top:0}
+.portada-mapa .mapa-contenedor{height:clamp(360px,54vh,630px);flex:none}
+.portada-mapa .mapa{height:100%;width:100%}
+@media(max-width:800px){.portada-resumen{grid-template-columns:1fr}.tablero-portada header{height:auto}.tablero-portada .logo-institucional{width:min(480px,100%);height:80px}}
+@media(max-width:600px){.portada-geografia .control{max-width:none}.portada-desglose-fila{flex-wrap:wrap;gap:2px}}
+@media(max-width:600px){.portada-indicadores{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:360px){.portada-indicadores{grid-template-columns:1fr}}
