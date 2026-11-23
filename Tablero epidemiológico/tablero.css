@@ -347,5 +347,6 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .controles-con-restablecer{align-items:flex-end}
 .controles-con-restablecer .control{min-width:0;flex:1 1 0}
 .controles-con-restablecer #restablecer{flex:0 0 auto;margin-left:auto;white-space:nowrap;padding:6px 9px}
+.controles-coinfeccion .control[data-tipo=anio]{flex-grow:.65}
 @media(max-width:700px){.controles-con-restablecer{flex-wrap:wrap!important}.controles-con-restablecer .control{flex-basis:120px}}
 @media(max-width:950px){.coinfeccion-columnas{grid-template-columns:1fr}}

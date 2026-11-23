@@ -64,7 +64,7 @@ function valorSeguro(r,campo){return r[campo]==null?null:Number(r[campo]);}
 function conjunto(datos,campo,orden){const opciones=uniq(datos.map(r=>r[campo]).filter(v=>v!=null));return orden?[...orden.filter(v=>opciones.includes(v)),...opciones.filter(v=>!orden.includes(v)).sort()]:opciones.sort((a,b)=>typeof a==='number'?a-b:String(a).localeCompare(String(b),'es'));}
 function filtro(host,datos,campo,etiqueta,clave,inicial,multiple=false,orden){
  const opciones=conjunto(datos,campo,orden).filter(v=>campo!=='geografia'||!/^desconocid[oa]s?$|^SD$|^sin dato/i.test(String(v).trim())), estado=estados[pagina];
- if(!(clave in estado))estado[clave]=multiple?[inicial??opciones[0]]:(inicial??opciones[0]);
+ if(!(clave in estado))estado[clave]=multiple?[].concat(inicial??opciones[0]):(inicial??opciones[0]);
  let actual=multiple?estado[clave].filter(v=>opciones.includes(v)):estado[clave];
  if(multiple&&!actual.length)actual=[opciones[0]];
  if(!multiple&&!opciones.includes(actual))actual=opciones[0];
@@ -787,13 +787,16 @@ function seccionTamizajeSifilis(host){
  if(tasa)host.append(nodo('p','Positividad = pruebas positivas ÷ pruebas estudiadas × 100.','nota'));
  if(sifilis.regiones[lugar])host.append(nodo('p',`Jurisdicciones: ${sifilis.regiones[lugar].join(', ')}. El total regional suma los registros disponibles de cada año.`,'nota'));
 }
-function graficoCoinfeccion(p,filas,porSexo){
+function graficoCoinfeccion(p,filas,porSexo,medidas){
+ const personas=medidas.includes('Personas'),proporciones=medidas.includes('Proporciones');
  const grupos=uniq(filas.map(r=>r.categoria)),series=uniq(filas.map(r=>r.sexo));
  const base='#416ab0',cruce='#efa056',lineas=porSexo?['#8ed2ff','#60e0cb']:['#ffdc79'];
  const dibujo=svg('svg',{class:'grafico grafico-coinfeccion',role:'img','aria-label':p.querySelector('h3').textContent});
  p.append(dibujo);
  const ley=nodo('div',null,'leyenda');
- [['VIH sin coinfección registrada',base],['Coinfección',cruce],...series.map((s,i)=>[porSexo?'Porcentaje · '+s:'Porcentaje de coinfección',lineas[i]])].forEach(([texto,color])=>{
+ const items=personas?[['VIH sin coinfección registrada',base],['Coinfección',cruce]]:[];
+ if(proporciones)items.push(...series.map((s,i)=>[porSexo?'Porcentaje · '+s:'Porcentaje de coinfección',lineas[i]]));
+ items.forEach(([texto,color])=>{
   const item=nodo('span'),marca=nodo('i',null,'muestra');marca.style.background=color;
   item.append(marca,document.createTextNode(texto));ley.append(item);
  });
@@ -813,7 +816,7 @@ function graficoCoinfeccion(p,filas,porSexo){
   for(let i=0;i<=4;i++){
    const yy=y(i*maxN/4);
    dibujo.append(svg('line',{x1:izq,y1:yy,x2:der,y2:yy,stroke:'#7188ab','stroke-opacity':.28}));
-   texto(fmt(i*maxN/4,0),izq-5,yy+4,{'text-anchor':'end'});
+   texto(personas?fmt(i*maxN/4,0):fmt(i*maxP/4,1)+'%',izq-5,yy+4,{'text-anchor':'end'});
   }
   grupos.forEach((g,i)=>{
    texto(g,izq+paso*(i+.5),piso+19,{'font-size':grupos.length>7?9:11});
@@ -822,23 +825,25 @@ function graficoCoinfeccion(p,filas,porSexo){
   filas.forEach(r=>{
    const j=series.indexOf(r.sexo),xx=x(grupos.indexOf(r.categoria),j);
    if(r.sin_coinfeccion==null){texto('—',xx,piso-6);puntos[j].push(null);return;}
-   if(r.total_vih===0){texto('0',xx,piso-6);puntos[j].push(null);return;}
+   if(r.total_vih===0){if(personas)texto('0',xx,piso-6);puntos[j].push(null);return;}
+   if(personas){
    const grupo=svg('g');
    const ayuda=svg('title');ayuda.textContent=`${r.categoria} · ${r.sexo}: ${fmt(r.coinfecciones,0)} de ${fmt(r.total_vih,0)} (${fmt(r.porcentaje,1)} %)`;
    grupo.append(ayuda,svg('rect',{x:xx-barra*.46,y:y(r.sin_coinfeccion),width:barra*.92,height:piso-y(r.sin_coinfeccion),fill:base}),
     svg('rect',{x:xx-barra*.46,y:y(r.total_vih),width:barra*.92,height:y(r.sin_coinfeccion)-y(r.total_vih),fill:cruce}));
    dibujo.append(grupo);texto(fmt(r.total_vih,0),xx,y(r.total_vih)-7,{'font-size':porSexo?9:11,'font-weight':700});
    if(y(r.sin_coinfeccion)-y(r.total_vih)>=14)texto(fmt(r.coinfecciones,0),xx,(y(r.total_vih)+y(r.sin_coinfeccion))/2+4,{fill:'#222a4a','font-size':10,'font-weight':700,'pointer-events':'none'});
-   puntos[j].push({x:xx,y:yp(r.porcentaje),r});
+   }
+   if(proporciones)puntos[j].push({x:personas?xx:x(grupos.indexOf(r.categoria),(series.length-1)/2),y:yp(r.porcentaje),r});
   });
-  puntos.forEach((serie,j)=>{
+  if(proporciones)puntos.forEach((serie,j)=>{
    const color=lineas[j];
    const ruta=serie.map((pt,i)=>pt?`${i&&serie[i-1]?'L':'M'}${pt.x},${pt.y}`:'').join(' ');
    dibujo.append(svg('path',{d:ruta,fill:'none',stroke:color,'stroke-width':2}));
    serie.filter(Boolean).forEach(pt=>{
     dibujo.append(svg('circle',{cx:pt.x,cy:pt.y,r:3.6,fill:color}));
     const yy=pt.y-9;
-    texto(exacto(pt.r.porcentaje,1)+'%',pt.x,Math.abs(yy-(y(pt.r.total_vih)-7))<13?pt.y+15:yy,
+    texto(exacto(pt.r.porcentaje,1)+'%',pt.x,personas&&Math.abs(yy-(y(pt.r.total_vih)-7))<13?pt.y+15:yy,
      {fill:color,'font-size':porSexo?9:11,'font-weight':700,stroke:'#222a4a','stroke-width':2,'paint-order':'stroke'});
    });
   });
@@ -849,8 +854,11 @@ function graficoCoinfeccion(p,filas,porSexo){
 }
 function seccionCoinfeccion(host){
  const banda=layout(host,'banda-filtros'),c=controles(banda);
+ c.classList.add('controles-coinfeccion');
  const periodo=sifilis.anios;
  const anio=selectorSifilis(c,'anio',periodo,'Año de las comparaciones',periodo.at(-1));
+ const opciones=['Personas','Proporciones'];
+ const medidas=filtro(c,opciones.map(indicador=>({indicador})),'indicador','Mostrar','medidas',opciones,true,opciones);
  const modo=selectorSifilis(c,'genero',['Ambos sexos','Por sexo'],'Sexo','Ambos sexos');
  const lugar=selectorSifilis(c,'geografia',['Argentina',...Object.keys(sifilis.regiones),...sifilis.provincias],'Ámbito geográfico','Argentina');
  const edad=selectorSifilis(c,'edad',edades,'Grupo de edad','Todas las edades');
@@ -869,11 +877,11 @@ function seccionCoinfeccion(host){
  const grilla=layout(host,'coinfeccion-columnas');
  const lapso=periodo.length>1?`${periodo[0]}–${periodo.at(-1)}`:periodo[0];
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por año · ${lugar} · ${edad} · ${lapso}`),
-  filas(periodo,a=>[a,lugar,edad]),porSexo);
+  filas(periodo,a=>[a,lugar,edad]),porSexo,medidas);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por edad · ${lugar} · ${anio}`),
-  filas(edades.filter(e=>!['Todas las edades','0-9','10-14'].includes(e)),e=>[anio,lugar,e]),porSexo);
+  filas(edades.filter(e=>!['Todas las edades','0-9','10-14'].includes(e)),e=>[anio,lugar,e]),porSexo,medidas);
  graficoCoinfeccion(panel(grilla,`Coinfección VIH–sífilis por región · ${anio} · ${edad}`),
-  filas(Object.keys(sifilis.regiones),g=>[anio,g,edad]),porSexo);
+  filas(Object.keys(sifilis.regiones),g=>[anio,g,edad]),porSexo,medidas);
  host.append(nodo('p','Se considera coinfección cuando una persona recibe los diagnósticos de VIH y sífilis en el mismo año calendario. La proporción se calcula sobre el total de diagnósticos de VIH. La comparación regional abarca todo el país.','nota'));
 }
 function seccionDefiniciones(host){
