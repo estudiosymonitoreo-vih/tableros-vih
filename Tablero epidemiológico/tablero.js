@@ -790,7 +790,7 @@ function seccionTamizajeSifilis(host){
 function graficoCoinfeccion(p,filas,porSexo,medidas){
  const personas=medidas.includes('Personas'),proporciones=medidas.includes('Proporciones');
  const grupos=uniq(filas.map(r=>r.categoria)),series=uniq(filas.map(r=>r.sexo));
- const base='#416ab0',cruce='#efa056',lineas=porSexo?['#8ed2ff','#60e0cb']:['#ffdc79'];
+ const base='#416ab0',cruce='#efa056',lineas=porSexo?['#8ed2ff','#ff9fcf']:['#ffdc79'];
  const dibujo=svg('svg',{class:'grafico grafico-coinfeccion',role:'img','aria-label':p.querySelector('h3').textContent});
  p.append(dibujo);
  const ley=nodo('div',null,'leyenda');
