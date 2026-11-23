@@ -62,7 +62,7 @@ function svg(tag,attrs={},texto){const n=document.createElementNS(NS,tag);for(co
 function tituloSVG(n,txt){n.append(svg('title',{},txt));return n;}
 function valorSeguro(r,campo){return r[campo]==null?null:Number(r[campo]);}
 function conjunto(datos,campo,orden){const opciones=uniq(datos.map(r=>r[campo]).filter(v=>v!=null));return orden?[...orden.filter(v=>opciones.includes(v)),...opciones.filter(v=>!orden.includes(v)).sort()]:opciones.sort((a,b)=>typeof a==='number'?a-b:String(a).localeCompare(String(b),'es'));}
-function filtro(host,datos,campo,etiqueta,clave,inicial,multiple=false,orden){
+function filtro(host,datos,campo,etiqueta,clave,inicial,multiple=false,orden,resumenMultiple){
  const opciones=conjunto(datos,campo,orden).filter(v=>campo!=='geografia'||!/^desconocid[oa]s?$|^SD$|^sin dato/i.test(String(v).trim())), estado=estados[pagina];
  if(!(clave in estado))estado[clave]=multiple?[].concat(inicial??opciones[0]):(inicial??opciones[0]);
  let actual=multiple?estado[clave].filter(v=>opciones.includes(v)):estado[clave];
@@ -73,7 +73,7 @@ function filtro(host,datos,campo,etiqueta,clave,inicial,multiple=false,orden){
  if(!multiple){const s=nodo('select');s.setAttribute('aria-label',etiqueta);s.dataset.clave=clave;
  opciones.forEach(v=>{const o=nodo('option',campo==='indicador'&&String(v).startsWith('Tasa')?'Tasas por 100.000':String(v));o.value=String(v);o.selected=v===actual;s.append(o);});
  s.onchange=()=>{estado[clave]=opciones.find(v=>String(v)===s.value);render();};etiquetaN.append(s);
- }else{const d=nodo('details'),res=nodo('summary',actual.length===1?String(actual[0]):`${actual.length} selecciones`);d.dataset.clave=clave;d.append(res);
+ }else{const d=nodo('details'),res=nodo('summary',actual.length===1?String(actual[0]):resumenMultiple??`${actual.length} selecciones`);d.dataset.clave=clave;d.append(res);
  const lista=nodo('div',null,'opciones'),busca=nodo('input');busca.type='search';busca.placeholder='Buscar';busca.setAttribute('aria-label',`Buscar ${etiqueta.toLowerCase()}`);const grupo=nodo('div',null,'lista-opciones');
  opciones.forEach(v=>{const l=nodo('label'),i=nodo('input');i.type='checkbox';i.checked=actual.includes(v);i.value=String(v);l.append(i,nodo('span',String(v)));
  i.onchange=()=>{const nuevos=i.checked?[...estado[clave],v]:estado[clave].filter(x=>x!==v);if(!nuevos.length){i.checked=true;return;}estado[clave]=nuevos;render();const abierto=document.querySelector(`details[data-clave="${clave}"]`);abierto.open=true;const foco=[...abierto.querySelectorAll('input[type=checkbox]')].find(n=>n.value===String(v));if(foco)foco.focus();};grupo.append(l);});
@@ -858,7 +858,7 @@ function seccionCoinfeccion(host){
  const periodo=sifilis.anios;
  const anio=selectorSifilis(c,'anio',periodo,'Año de las comparaciones',periodo.at(-1));
  const opciones=['Personas','Proporciones'];
- const medidas=filtro(c,opciones.map(indicador=>({indicador})),'indicador','Mostrar','medidas',opciones,true,opciones);
+ const medidas=filtro(c,opciones.map(indicador=>({indicador})),'indicador','Mostrar','medidas',opciones,true,opciones,'Personas y Proporciones');
  const modo=selectorSifilis(c,'genero',['Ambos sexos','Por sexo'],'Sexo','Ambos sexos');
  const lugar=selectorSifilis(c,'geografia',['Argentina',...Object.keys(sifilis.regiones),...sifilis.provincias],'Ámbito geográfico','Argentina');
  const edad=selectorSifilis(c,'edad',edades,'Grupo de edad','Todas las edades');
