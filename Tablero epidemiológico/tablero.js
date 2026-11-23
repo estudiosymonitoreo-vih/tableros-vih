@@ -880,12 +880,12 @@ function seccionCoinfeccion(host){
  const banda=layout(host,'banda-filtros'),c=controles(banda);
  c.classList.add('controles-coinfeccion');
  const periodo=sifilis.anios;
- const anio=selectorSifilis(c,'anio',periodo,'Año de las comparaciones',periodo.at(-1));
  const opciones=['Personas','Proporciones'];
  const medidas=filtro(c,opciones.map(indicador=>({indicador})),'indicador','Mostrar','medidas',opciones,true,opciones,'Personas y Proporciones');
  const modo=selectorSifilis(c,'genero',['Ambos sexos','Por sexo'],'Sexo','Ambos sexos');
  const lugar=selectorSifilis(c,'geografia',['Argentina',...Object.keys(sifilis.regiones),...sifilis.provincias],'Ámbito geográfico','Argentina');
  const edad=selectorSifilis(c,'edad',edades,'Grupo de edad','Todas las edades');
+ const anio=selectorSifilis(c,'anio',periodo,'Año de las comparaciones',periodo.at(-1));
  const porSexo=modo==='Por sexo',sexos=porSexo?['Varones','Mujeres']:['Ambos sexos'];
  const totales=new Map(T.casos.filter(r=>r.indicador==='Casos').map(r=>[[r.anio,r.geografia,r.genero,r.edad].join('|'),r.valor]));
  function filas(categorias,campos){
