@@ -17,7 +17,8 @@ function paraMapaDT(r){if(!r)return r;const insuficiente=!(r.total>0&&r.validos/
 const colores=['#4c94f1','#efa056','#b38ae5','#b7ca6b','#32b6c9','#e7c63c','#e078b2','#807cce','#d9b886'];
 const paginas=[['casos','VIH · Casos y tasas','M3 19V5m0 14h18M6 15l5-6 4 3 6-8'],['geografia','VIH · Distribución geográfica','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['genero','VIH · Género y edad','M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 2a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m3-7a5 5 0 0 1 5 5v2'],['vias','VIH · Vías de transmisión','M4 5h7l6 6h4M4 19h7l6-6h4M17 7l4 4-4 4'],['diagnostico','VIH · Diagnóstico tardío · evolución','M3 12h4l3-8 4 16 3-8h4'],['mapas-diagnostico','VIH · Diagnóstico tardío · mapas','M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16'],['mortalidad','Mortalidad por sida','M3 19V5m0 14h18M6 8l5 3 4-2 6 7'],['definiciones','Definiciones','M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3V4zm9 2v16M6 8h3m-3 4h3m6-4h3m-3 4h3']];
 const iconoSifilis='M3 19V5m0 14h18M7 16v-4m5 4V8m5 8V5';
-if(sifilis?.datos)paginas.splice(-1,0,['sifilis','ITS · Sífilis',iconoSifilis],['sifilis-territorio','ITS · Tamizaje de sífilis',iconoSifilis]);
+// La solapa de diagnósticos de sífilis queda oculta hasta verificar la variable de provincia.
+if(sifilis?.tamizaje||sifilis?.tamizaje_gestantes)paginas.splice(-1,0,['sifilis-territorio','ITS · Tamizaje de sífilis',iconoSifilis]);
 if(sifilis?.coinfeccion?.length)paginas.splice(-1,0,['sifilis-coinfeccion','ITS · Coinfección VIH–Sífilis',iconoSifilis]);
 const edades=['Todas las edades','0-9','10-14','15-19','20-24','25-34','35-44','45-54','55-64','65 o más'];
 const generos=['Todos los géneros','Varón','Mujer','Mujer trans','Varón trans'];
