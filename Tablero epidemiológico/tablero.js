@@ -296,6 +296,33 @@ function qrTablero(){
  qr.append(svg('path',{d:trazos,fill:'#000','shape-rendering':'crispEdges'}));
  return qr;
 }
+function prepararLeyendasPng(copia){
+ const leyendas=[];
+ for(const original of copia.querySelectorAll('.leyenda')){
+  original.remove();
+  if(original.hidden||original.style.display==='none'||!original.childElementCount)continue;
+  // El PNG necesita una leyenda de altura libre, independiente de la grilla y el scroll de pantalla.
+  const leyenda=nodo('div',null,'leyenda-png');
+  leyenda.style.cssText='display:flex;flex-wrap:wrap;align-items:flex-start;gap:5px 14px;padding:4px 0;color:#e6eef9;font:11px/1.4 sans-serif';
+  for(const serie of original.children){
+   const item=nodo('span');
+   item.style.cssText='display:flex;align-items:baseline;gap:6px;flex:0 1 auto;min-width:0;max-width:100%';
+   const muestra=serie.querySelector('.muestra');
+   if(muestra){
+    const marca=nodo('i');
+    marca.style.cssText='display:inline-block;flex:none;width:9px;height:9px;border-radius:2px';
+    marca.style.background=muestra.style.background;
+    item.append(marca);
+   }
+   const texto=nodo('span',serie.textContent);
+   texto.style.cssText='min-width:0;overflow-wrap:anywhere';
+   item.append(texto);
+   leyenda.append(item);
+  }
+  leyendas.push(leyenda);
+ }
+ return leyendas;
+}
 async function descargarPanel(panel,titulo,escala){
  const medidas=panel.getBoundingClientRect();
  const copia=panel.cloneNode(true);
@@ -338,6 +365,7 @@ async function descargarPanel(panel,titulo,escala){
  encabezado.style.height='auto';
  encabezado.style.whiteSpace='normal';
  encabezado.style.overflowWrap='anywhere';
+ const leyendas=prepararLeyendasPng(copia);
  const pie=[$('periodo').textContent,$('fecha-exportacion').textContent].filter(Boolean).join(' · ');
  const marco=nodo('div');
  marco.style.cssText=`padding:12px;color:#e6eef9;background:${getComputedStyle(document.querySelector('main')).backgroundColor};font:12px/16px sans-serif`;
@@ -349,7 +377,7 @@ async function descargarPanel(panel,titulo,escala){
  textoPie.style.minWidth='0';
  textoPie.append(fuente,credito);
  pieImagen.append(textoPie,qrTablero());
- marco.append(copia,pieImagen);
+ marco.append(copia,...leyendas,pieImagen);
  marco.style.width=`${medidas.width}px`;
  marco.style.boxSizing='content-box';
  marco.style.position='fixed';
