@@ -183,8 +183,10 @@ window.crearMapaSVIH = (() => {
         boton.disabled = true;
         estado.textContent = "";
         try {
-          const {mapa, leyenda, rango} = crearImagen();
-          await exportarMapa(mapa, titulo, leyenda, escala, rango);
+          const {mapa, leyenda, rango, instituciones} = crearImagen();
+          const tituloPng = instituciones === undefined ? titulo :
+            `${titulo} · ${fmt(instituciones)} ${instituciones === 1 ? "institución" : "instituciones"}`;
+          await exportarMapa(mapa, tituloPng, leyenda, escala, rango);
           menu.open = false;
         } catch {
           estado.textContent = "No se pudo descargar la imagen.";
@@ -223,7 +225,7 @@ window.crearMapaSVIH = (() => {
     return mapa;
   }
 
-  function mapaJurisdiccionExportado(geometria, filas, territorio, codigoRegion) {
+  function mapaJurisdiccionExportado(geometria, filas, territorio, codigoRegion, cantidad) {
     const jurisdiccion = normalizar(territorio);
     // El perímetro y las divisiones internas salen de la misma capa del IGN.
     const contorno = contornosExportacion.find(f => codigoRegion ?
@@ -234,23 +236,49 @@ window.crearMapaSVIH = (() => {
     const xs = vertices.map(p => p[0]), ys = vertices.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const ancho = Math.max(maxX - minX, 0.005), alto = Math.max(maxY - minY, 0.005);
-    const mapa = svg("svg", {viewBox:`${minX - ancho * .05} ${minY - alto * .05} ${ancho * 1.1} ${alto * 1.1}`});
+    const unidad = Math.max(ancho / 550, alto / 470);
+    const origenX = (minX + maxX - 600 * unidad) / 2;
+    const origenY = (minY + maxY - 520 * unidad) / 2;
+    const mapa = svg("svg", {viewBox:`${origenX} ${origenY} ${600 * unidad} ${520 * unidad}`});
     mapa.append(svg("path", {d:path(geometria), fill:"#f5f5ee", stroke:"#52677e",
       "stroke-width":"1.2", "vector-effect":"non-scaling-stroke", "fill-rule":"evenodd"}));
     const divisiones = departamentos.filter(f => codigoRegion ?
       normalizar(f.properties.region) === codigoRegion :
       normalizar(f.properties.provincia) === jurisdiccion);
     dibujarLimitesExportados(mapa,divisiones,{recorte:geometria});
-    const radio = Math.max(ancho / 600, alto / 520) * 4.4;
-    for (const fila of filas) {
-      const coordenada = [fila.Longitud, fila.Latitud];
-      if (!contienePunto(geometria, coordenada)) continue;
-      const [cx, cy] = project(coordenada);
-      mapa.append(svg("circle", {cx, cy, r:radio, fill:"#1961c9", stroke:"#fff",
-        "stroke-width":".7", "vector-effect":"non-scaling-stroke"}));
+    const puntos = filas.filter(fila => contienePunto(geometria,[fila.Longitud,fila.Latitud]));
+    const marcas = puntos.map(fila => {
+      const [cx, cy] = project([fila.Longitud, fila.Latitud]);
+      return {x:(cx-origenX)/unidad, y:(cy-origenY)/unidad, texto:fmt(fila[cantidad]), cx, cy};
+    });
+    const ocupados = marcas.map(({x,y}) => ({x:x-5,y:y-5,w:10,h:10}));
+    const cruza = (a,b) => a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
+    for (const marca of marcas) {
+      const {x,y,texto,cx,cy} = marca;
+      const w = texto.length * 7 + 4, h = 14;
+      let caja;
+      for (let distancia=7;distancia<=105&&!caja;distancia+=7) {
+        const candidatos = [[x+distancia,y-h/2],[x-distancia-w,y-h/2],[x-w/2,y-distancia-h],[x-w/2,y+distancia],
+          [x+distancia,y+distancia],[x-distancia-w,y+distancia],[x+distancia,y-distancia-h],[x-distancia-w,y-distancia-h]];
+        caja = candidatos.map(([x,y])=>({x,y,w,h})).find(c=>c.x>=2&&c.y>=2&&c.x+w<=598&&c.y+h<=518&&
+          !ocupados.some(o=>cruza(c,o)));
+      }
+      caja ||= {x:Math.min(598-w,x+7),y:Math.max(2,y-h/2),w,h};
+      ocupados.push(caja);
+      marca.etiqueta = svg("text",{x:origenX+(caja.x+2)*unidad,y:origenY+(caja.y+11)*unidad,
+        "font-family":"Arial","font-size":12*unidad,"font-weight":"700",fill:"#172b40",
+        stroke:"#fff","stroke-width":2.4*unidad,"paint-order":"stroke","stroke-linejoin":"round"},texto);
+      const xLinea = Math.max(caja.x,Math.min(x,caja.x+w)), yLinea = Math.max(caja.y,Math.min(y,caja.y+h));
+      if (Math.hypot(xLinea-x,yLinea-y)>10)
+        mapa.append(svg("line",{x1:cx,y1:cy,x2:origenX+xLinea*unidad,y2:origenY+yLinea*unidad,
+          stroke:"#63788c","stroke-width":".7","vector-effect":"non-scaling-stroke"}));
     }
-    const leyenda = [mapa.querySelector("circle") ?
-      "● Institución con ubicación registrada · puntos de igual tamaño" :
+    for (const {cx,cy} of marcas)
+      mapa.append(svg("circle", {cx, cy, r:4.4*unidad, fill:"#1961c9", stroke:"#fff",
+        "stroke-width":".7", "vector-effect":"non-scaling-stroke"}));
+    for (const {etiqueta} of marcas) mapa.append(etiqueta);
+    const leyenda = [marcas.length ?
+      "● Institución · la etiqueta indica la cantidad de personas" :
       "Sin instituciones con ubicación válida en la jurisdicción.",
       "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"];
     if (divisiones.length) {
@@ -258,7 +286,7 @@ window.crearMapaSVIH = (() => {
         (codigoRegion || jurisdiccion === "buenos aires" ? "partidos" : "departamentos");
       leyenda.splice(1,0,"Límites internos: " + tipo);
     }
-    return {mapa, leyenda};
+    return {mapa, leyenda, instituciones:marcas.length};
   }
 
   const zoomMaximo = 1024;
@@ -478,7 +506,14 @@ window.crearMapaSVIH = (() => {
       codigoRegion && normalizar(f.properties.region) === codigoRegion);
     if(tituloExportacion && territorio)
       controlExportacion(host,tituloExportacion,() =>
-        mapaJurisdiccionExportado(territorio.geometry,validos,seleccion,codigoRegion),[3]);
+        mapaJurisdiccionExportado(territorio.geometry,validos,seleccion,codigoRegion,cantidad),[3]);
+    else if (tituloExportacion && normalizar(seleccion)==="pais") {
+      host.classList.add("mapa-con-descarga");
+      const ayuda = document.createElement("p");
+      ayuda.className = "mapa-exportacion-ayuda";
+      ayuda.textContent = "Para descargar la imagen, elegí una provincia en Jurisdicción.";
+      host.append(ayuda);
+    }
     if (!validos.length) {const mensaje = document.createElement("span"); mensaje.className = "mapa-sin-puntos"; mensaje.textContent = "Sin instituciones con coordenadas y cantidad válidas."; frame.append(mensaje);}
     pintar();
     return {registros: validos.length, excluidos: datos.length - validos.length};

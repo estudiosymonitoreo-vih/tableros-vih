@@ -158,3 +158,4 @@ aside{overflow-y:auto;scrollbar-width:thin}
 .acceso-regiones[hidden]{display:none}
 @media(min-width:700px){.territorial .filtros-territoriales:has(.acceso-regiones:not([hidden])){right:28px;grid-template-columns:340px minmax(0,1fr) auto}}
 .territorial .filtros-territoriales:has(.acceso-regiones:not([hidden])){flex-wrap:wrap}
+.mapa-exportacion-ayuda{flex:none;margin:5px 0 0;color:#d6e5f8;font-size:11px;line-height:1.3}
