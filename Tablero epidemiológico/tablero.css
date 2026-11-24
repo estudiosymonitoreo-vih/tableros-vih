@@ -413,3 +413,4 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .descarga-mapa{position:absolute;top:5px;right:5px;max-width:calc(100% - 10px);background:#fff;color:#253657;border:1px solid #829bb5;border-radius:4px;font-size:11px}
 .descarga-mapa summary{cursor:pointer;padding:4px 7px}
 .descarga-mapa button{display:block;width:100%;background:#fff;color:#253657;border-color:#829bb5;padding:4px 7px;font-size:11px}
+.descarga-mapa-conjunta{position:static;align-self:flex-end;flex:none}

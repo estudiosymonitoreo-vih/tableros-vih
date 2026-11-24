@@ -234,7 +234,11 @@ const posicionesProvincia={
  'Santiago del Estero':[-63.1,-28.2],'Tierra del Fuego':[-67.7,-54.5],'Tucumán':[-65.4,-26.8]
 };
 function tituloMapaExportado(indicador,periodo,{territorio='Argentina',grupo,edad}={}){
- const desgloses=[grupo,edad].filter(Boolean).map(v=>v.toLocaleLowerCase('es'));
+ const edadTitulo=edad?.trim().toLocaleLowerCase('es')
+  .replace(/^todas las edades$/,'')
+  .replace(/^(\d+)\s*[-–]\s*(\d+)(?: años)?$/,'$1–$2 años')
+  .replace(/^(\d+) (?:o|y) más$/,'$1 años o más');
+ const desgloses=[grupo?.toLocaleLowerCase('es'),edadTitulo].filter(Boolean);
  const alcance=territorio==='Argentina'?territorio:`${territorio}, Argentina`;
  return `${indicador} según jurisdicción, ${alcance}${desgloses.length?' · '+desgloses.join(' · '):''}${periodo?` (${periodo})`:''}`;
 }
@@ -280,8 +284,8 @@ const modulosQrTablero=[
  '1111111011101001010011101001010101111'
 ];
 function qrTablero(){
- const margen=4,lado=modulosQrTablero.length+2*margen,pixeles=2*lado;
- const qr=svg('svg',{width:pixeles,height:pixeles,viewBox:`0 0 ${lado} ${lado}`,
+ const margen=4,lado=modulosQrTablero.length+2*margen;
+ const qr=svg('svg',{width:lado,height:lado,viewBox:`0 0 ${lado} ${lado}`,
   role:'img','aria-label':'Código QR del tablero epidemiológico público'});
  qr.style.cssText='display:block;flex:none;margin-left:auto';
  qr.append(svg('rect',{width:lado,height:lado,fill:'#fff'}));
@@ -290,7 +294,7 @@ function qrTablero(){
  qr.append(svg('path',{d:trazos,fill:'#000','shape-rendering':'crispEdges'}));
  return qr;
 }
-async function descargarMapa(panel,host,titulo,escala){
+async function descargarMapa(panel,titulo,escala){
  const medidas=panel.getBoundingClientRect();
  const copia=panel.cloneNode(true);
  const originales=[panel,...panel.querySelectorAll('*')];
@@ -311,19 +315,7 @@ async function descargarMapa(panel,host,titulo,escala){
    destino.append(marca);
   }
  });
- copia.querySelectorAll('.descarga-mapa,.zoom,.acciones-datos,.banda-filtros,.controles,.mapa-sifilis h4').forEach(n=>n.remove());
- const mapasSifilis=[...panel.querySelectorAll('.mapa-sifilis')];
- let anchoPanel=medidas.width;
- if(mapasSifilis.length>1){
-  const indice=mapasSifilis.indexOf(host);
-  const mapasCopia=copia.querySelectorAll('.mapa-sifilis');
-  mapasCopia.forEach((mapa,i)=>{if(i!==indice)mapa.remove();});
-  const grilla=copia.querySelector('.mapas-sifilis');
-  anchoPanel=host.getBoundingClientRect().width;
-  grilla.style.width=`${anchoPanel}px`;
-  grilla.style.gridTemplateColumns='minmax(0,1fr)';
-  copia.style.width=`${anchoPanel}px`;
- }
+ copia.querySelectorAll('.descarga-mapa,.zoom,.acciones-datos,.banda-filtros,.controles').forEach(n=>n.remove());
  copia.style.margin='0';
  copia.style.height='auto';
  copia.style.minHeight='0';
@@ -349,7 +341,7 @@ async function descargarMapa(panel,host,titulo,escala){
  textoPie.append(fuente,credito);
  pieImagen.append(textoPie,qrTablero());
  marco.append(copia,pieImagen);
- marco.style.width=`${anchoPanel}px`;
+ marco.style.width=`${medidas.width}px`;
  marco.style.boxSizing='content-box';
  marco.style.position='fixed';
  marco.style.visibility='hidden';
@@ -379,6 +371,23 @@ async function descargarMapa(panel,host,titulo,escala){
   .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+`-${escala}x.png`;
  enlace.click();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function menuDescargaMapa(panel,tituloImagen,info){
+ const descarga=nodo('details',null,'descarga-mapa');
+ const etiquetaDescarga=nodo('summary','Descargar imagen');
+ etiquetaDescarga.setAttribute('aria-label',`Descargar imagen de ${tituloImagen}`);
+ descarga.append(etiquetaDescarga);
+ for(const [calidad,escala] of [['Estándar (1×)',1],['Alta (3×)',3]]){
+  const opcion=nodo('button',calidad);
+  opcion.type='button';
+  opcion.onclick=async()=>{
+   descarga.open=false;
+   try{await descargarMapa(panel,tituloImagen,escala);}
+   catch{info.textContent='No se pudo descargar la imagen del mapa. Volvé a intentarlo.';}
+  };
+  descarga.append(opcion);
+ }
+ return descarga;
 }
 function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argentina',{soloMapa=false,maximo=null,resaltar=[],decimales=unidad?1:0,tituloImagen}={}){
  incluirPeriodoTitulo(host,filas.length?filas:[{anio:pagina==='casos'?estados[pagina]?.am:estados[pagina]?.a}]);
@@ -435,23 +444,10 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
  const centroX=marco.x+marco.ancho/2,centroY=marco.y+marco.alto/2;
  let z=1,dx=0,dy=0;const transforma=()=>g.setAttribute('transform',`translate(${dx},${dy}) translate(${centroX},${centroY}) scale(${z}) translate(${-centroX},${-centroY})`);
  const botones=nodo('div',null,'zoom');[['+','Acercar',()=>z=Math.min(6,z*1.4)],['−','Alejar',()=>z=Math.max(1,z/1.4)],['↺','Restablecer mapa',()=>{z=1;dx=0;dy=0;}]].forEach(([txt,label,fn])=>{const b=nodo('button',txt);b.setAttribute('aria-label',label);b.onclick=()=>{fn();transforma();};botones.append(b);});
- const descarga=nodo('details',null,'descarga-mapa');
- const etiquetaDescarga=nodo('summary','Descargar imagen');
- const panelMapa=host.closest('.panel')||host;
- etiquetaDescarga.setAttribute('aria-label',`Descargar imagen de ${tituloImagen}`);
- descarga.append(etiquetaDescarga);
- for(const [calidad,escala] of [['Estándar (1×)',1],['Alta (3×)',3]]){
-  const opcion=nodo('button',calidad);
-  opcion.type='button';
-  opcion.onclick=async()=>{
-   descarga.open=false;
-   try{await descargarMapa(panelMapa,host,tituloImagen,escala);}
-   catch{info.textContent='No se pudo descargar la imagen del mapa. Volvé a intentarlo.';}
-  };
-  descarga.append(opcion);
- }
  let inicio=null;s.onpointerdown=e=>{inicio=[e.clientX,e.clientY,dx,dy];s.setPointerCapture(e.pointerId);};s.onpointermove=e=>{if(inicio){const rect=s.getBoundingClientRect();dx=inicio[2]+(e.clientX-inicio[0])*marco.ancho/rect.width;dy=inicio[3]+(e.clientY-inicio[1])*marco.alto/rect.height;transforma();}};s.onpointerup=s.onpointercancel=()=>{inicio=null;};
- wrap.append(s,descarga,botones);columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,${color}33,${color})`;escala.append(nodo('span',unidad==='%'?'0%':'0'),grad,nodo('span',fmt(max)+unidad),nodo('span',campo==='valor'?'Gris: sin datos':'Gris: sin datos suficientes (<55% válidos)'));if(!validos.length)escala.replaceChildren(nodo('span',campo==='valor'?'Sin datos para esta selección.':'Sin jurisdicciones con datos suficientes.'));columna.append(escala);
+ wrap.append(s,botones);
+ if(tituloImagen)wrap.append(menuDescargaMapa(host.closest('.panel')||host,tituloImagen,info));
+ columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,${color}33,${color})`;escala.append(nodo('span',unidad==='%'?'0%':'0'),grad,nodo('span',fmt(max)+unidad),nodo('span',campo==='valor'?'Gris: sin datos':'Gris: sin datos suficientes (<55% válidos)'));if(!validos.length)escala.replaceChildren(nodo('span',campo==='valor'?'Sin datos para esta selección.':'Sin jurisdicciones con datos suficientes.'));columna.append(escala);
  if(soloMapa){host.append(columna);return;}
  const ranking=nodo('div',null,'ranking');ranking.dataset.maximo=String(max);ranking.style.setProperty('--color-mapa',color);[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;if(v==null||!Number.isFinite(v))row.classList.add('sin-dato');bar.append(i);if(insuficientes.has(n)){row.classList.add('insuficiente');row.append(nodo('span',n),nodo('span','Sin datos suficientes','aviso-insuficiente'));}else row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)+(unidad==='%'?'%':'')));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
  if(pagina!=='mortalidad'){division.classList.add('mapa-extendido');division.append(host.querySelector('.muestra-n'),host.querySelector('.acciones-datos'));}
@@ -905,9 +901,16 @@ function mapaSifilis(host,{medida,sexo,anio,edad}){
   const color=(serie==='Mujeres'?coloresEdadMujeres:coloresEdad)[indiceEdad];
   const filas=datos.filter(r=>r.sexo===serie).map(r=>({geografia:r.geografia,anio,valor:tasa?r.tasa:r.casos}));
   mapa(marco,filas,'valor',tasa?' por 100.000 habitantes':'',color,'Argentina',{soloMapa:true,maximo,
-   tituloImagen:tituloMapaExportado(tasa?'Tasa de sífilis por 100.000 habitantes':'Casos de sífilis',anio,
-    {grupo:serie,edad:etiquetaEdadSifilis(edad)})
+   tituloImagen:series.length===1?tituloMapaExportado(tasa?'Tasa de sífilis por 100.000 habitantes':'Casos de sífilis',anio,
+    {grupo:serie,edad}):undefined
   });
+ }
+ if(series.length>1){
+  const titulo=tituloMapaExportado(tasa?'Tasa de sífilis por 100.000 habitantes':'Casos de sífilis',anio,
+   {grupo:'Por sexo',edad});
+  const menu=menuDescargaMapa(p,titulo,mapas.querySelector('.mapa-info'));
+  menu.classList.add('descarga-mapa-conjunta');
+  mapas.before(menu);
  }
 }
 function seccionSifilis(host){
