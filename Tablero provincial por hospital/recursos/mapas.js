@@ -199,10 +199,11 @@ window.crearMapaSVIH = (() => {
   }
 
   const departamentos = base.departamentos?.features || [];
+  const contornosExportacion = base.jurisdicciones_exportacion?.features || [];
   function dibujarLimitesExportados(mapa, divisiones, {antes = null, recorte, grosor = .85} = {}) {
     if (!divisiones.length) return;
     const atributos = {class:"limites-exportados", d:divisiones.map(f => path(f.geometry)).join(""),
-      fill:"none", stroke:"#4d6178", "stroke-width":grosor, "stroke-opacity":.78,
+      fill:"none", stroke:"#9ca7b2", "stroke-width":grosor,
       "vector-effect":"non-scaling-stroke"};
     if (recorte) {
       const mascara = svg("clipPath",{id:"recorte-limites"});
@@ -223,6 +224,12 @@ window.crearMapaSVIH = (() => {
   }
 
   function mapaJurisdiccionExportado(geometria, filas, territorio, codigoRegion) {
+    const jurisdiccion = normalizar(territorio);
+    // El perímetro y las divisiones internas salen de la misma capa del IGN.
+    const contorno = contornosExportacion.find(f => codigoRegion ?
+      normalizar(f.properties.region) === codigoRegion :
+      normalizar(f.properties.provincia) === jurisdiccion);
+    geometria = contorno?.geometry || geometria;
     const vertices = coordenadas(geometria).map(project);
     const xs = vertices.map(p => p[0]), ys = vertices.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -230,7 +237,6 @@ window.crearMapaSVIH = (() => {
     const mapa = svg("svg", {viewBox:`${minX - ancho * .05} ${minY - alto * .05} ${ancho * 1.1} ${alto * 1.1}`});
     mapa.append(svg("path", {d:path(geometria), fill:"#f5f5ee", stroke:"#52677e",
       "stroke-width":"1.2", "vector-effect":"non-scaling-stroke", "fill-rule":"evenodd"}));
-    const jurisdiccion = normalizar(territorio);
     const divisiones = departamentos.filter(f => codigoRegion ?
       normalizar(f.properties.region) === codigoRegion :
       normalizar(f.properties.provincia) === jurisdiccion);

@@ -45,3 +45,7 @@ fb9f2dbcbf3c09f023f5ecf600f4829d4a28686e0641a367066da4e7ae2b6246  departamentos.
 ```
 
 La capa de polígonos oficiales de localidades bonaerenses está pendiente. No se usan polígonos de barrios fuera de CABA ni se convierten centroides de localidades en supuestos límites. El lector admite `localidades-ba.geojson` cuando se incorpore una capa verificada de Polygon/MultiPolygon; rechaza capas de puntos. Las fuentes Georef e IDEBA no fueron accesibles por la política de red del entorno de desarrollo; se guardó una propuesta de acceso para revisión/publicación del entorno.
+
+## Perímetros de los mapas exportados
+
+`jurisdicciones-exportacion.geojson` contiene 24 perímetros provinciales y 12 regionales, disueltos directamente desde `departamentos.geojson` con Mapshaper (`-dissolve provincia` para los provinciales, y `-filter 'provincia==="BUENOS AIRES" && !!region' -dissolve region` para los regionales). No se aplicó otra simplificación. El PNG usa esta geometría tanto para el perímetro como para recortar las divisiones internas, de modo que ambas capas coincidan. La fuente bonaerense conserva la limitación de 134 partidos indicada arriba.
