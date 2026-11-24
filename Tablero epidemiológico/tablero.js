@@ -233,6 +233,63 @@ const posicionesProvincia={
  'San Juan':[-68.9,-30.8],'San Luis':[-66,-33.8],'Santa Cruz':[-69.3,-49.3],'Santa Fe':[-60.8,-30.3],
  'Santiago del Estero':[-63.1,-28.2],'Tierra del Fuego':[-67.7,-54.5],'Tucumán':[-65.4,-26.8]
 };
+function tituloMapaExportado(indicador,periodo,{territorio='Argentina',grupo,edad}={}){
+ const desgloses=[grupo,edad].filter(Boolean).map(v=>v.toLocaleLowerCase('es'));
+ const alcance=territorio==='Argentina'?territorio:`${territorio}, Argentina`;
+ return `${indicador} según jurisdicción, ${alcance}${desgloses.length?' · '+desgloses.join(' · '):''}${periodo?` (${periodo})`:''}`;
+}
+// QR estático de https://estudiosymonitoreo-vih.github.io/tableros-vih/Tablero%20epidemiol%C3%B3gico/
+// Se incluye en el PNG aun cuando el tablero se abre sin conexión.
+const modulosQrTablero=[
+ '1111111010111101001010010111101111111',
+ '1000001001101111100100100010001000001',
+ '1011101000000100010101010011001011101',
+ '1011101010111110101010000110001011101',
+ '1011101010000110001000010101101011101',
+ '1000001010010111100100101100101000001',
+ '1111111010101010101010101010101111111',
+ '0000000011011111011001100010000000000',
+ '1000101110000010000001101001011111001',
+ '0001000000101100011011010001100011110',
+ '1101011011010111010010010001100011100',
+ '0110000001001110010101010010100100110',
+ '1001011011100001110111000000011100111',
+ '1001000011000101100000010111110011000',
+ '1111001101110101000011011101011111100',
+ '1100000011011000010111001001100110111',
+ '0011111100011111011111110001011001101',
+ '0110110001000101000101010011100011010',
+ '0001111011011111011011011011010100100',
+ '1000100000000010011011011011101110110',
+ '1110011110010001010111101000011101100',
+ '1010100111010001001001110011110110000',
+ '0001011000010011000001010111111111100',
+ '0111010001101110011111011011010110100',
+ '0111101110111101010011101010001101101',
+ '1111000000000111101010010011100110000',
+ '0000111101010011000000010111100111000',
+ '0010110011100010110011110011010000110',
+ '1111001100010010011011100000111110111',
+ '0000000011010111101011010110100010000',
+ '1111111010110011001001111010101010000',
+ '1000001001000001111001010010100011110',
+ '1011101010110001010011110010111111111',
+ '1011101000010111111001011001011101111',
+ '1011101000100011001011110110101000000',
+ '1000001000010101110111000000101010110',
+ '1111111011101001010011101001010101111'
+];
+function qrTablero(){
+ const margen=4,lado=modulosQrTablero.length+2*margen,pixeles=2*lado;
+ const qr=svg('svg',{width:pixeles,height:pixeles,viewBox:`0 0 ${lado} ${lado}`,
+  role:'img','aria-label':'Código QR del tablero epidemiológico público'});
+ qr.style.cssText='display:block;flex:none;margin-left:auto';
+ qr.append(svg('rect',{width:lado,height:lado,fill:'#fff'}));
+ const trazos=modulosQrTablero.flatMap((fila,y)=>Array.from(fila,(modulo,x)=>
+  modulo==='1'?`M${x+margen} ${y+margen}h1v1h-1z`:'')).join('');
+ qr.append(svg('path',{d:trazos,fill:'#000','shape-rendering':'crispEdges'}));
+ return qr;
+}
 async function descargarMapa(panel,host,titulo,escala){
  const medidas=panel.getBoundingClientRect();
  const copia=panel.cloneNode(true);
@@ -254,7 +311,7 @@ async function descargarMapa(panel,host,titulo,escala){
    destino.append(marca);
   }
  });
- copia.querySelectorAll('.descarga-mapa,.zoom,.acciones-datos,.controles').forEach(n=>n.style.display='none');
+ copia.querySelectorAll('.descarga-mapa,.zoom,.acciones-datos,.banda-filtros,.controles,.mapa-sifilis h4').forEach(n=>n.remove());
  const mapasSifilis=[...panel.querySelectorAll('.mapa-sifilis')];
  let anchoPanel=medidas.width;
  if(mapasSifilis.length>1){
@@ -266,24 +323,32 @@ async function descargarMapa(panel,host,titulo,escala){
   grilla.style.width=`${anchoPanel}px`;
   grilla.style.gridTemplateColumns='minmax(0,1fr)';
   copia.style.width=`${anchoPanel}px`;
-  copia.style.height='auto';
-  copia.querySelector('h3').style.width='auto';
  }
  copia.style.margin='0';
- const bandas=$('contenido').querySelectorAll('.banda-filtros');
- const filtros=panel.querySelector('.controles')||
-  (pagina==='casos'?bandas[1]:bandas[0])||$('contenido').querySelector('.controles');
- const seleccion=[...filtros?.querySelectorAll('select')||[]].map(select=>
-  `${select.getAttribute('aria-label')}: ${select.selectedOptions[0]?.textContent||''}`).join(' · ');
+ copia.style.height='auto';
+ copia.style.minHeight='0';
+ const encabezado=copia.querySelector('h3')||nodo('h3');
+ if(!encabezado.parentNode){
+  encabezado.style.cssText='margin:0;color:#f5f5f8;font-size:16px;line-height:1.25';
+  copia.prepend(encabezado);
+ }
+ encabezado.textContent=titulo;
+ encabezado.style.width='auto';
+ encabezado.style.height='auto';
+ encabezado.style.whiteSpace='normal';
+ encabezado.style.overflowWrap='anywhere';
  const pie=[$('periodo').textContent,$('fecha-exportacion').textContent].filter(Boolean).join(' · ');
  const marco=nodo('div');
  marco.style.cssText=`padding:12px;color:#e6eef9;background:${getComputedStyle(document.querySelector('main')).backgroundColor};font:12px/16px sans-serif`;
- const contexto=nodo('div',seleccion);
  const fuente=nodo('div',pie);
- for(const texto of [contexto,fuente]){
-  texto.style.cssText='overflow-wrap:anywhere;padding:4px 0';
- }
- marco.append(contexto,copia,fuente);
+ const credito=nodo('div','Elaboración a cargo de la DRVIHyT. Boletín Epidemiológico VIH de la Argentina N° 43, 2026');
+ for(const linea of [fuente,credito])linea.style.cssText='overflow-wrap:anywhere;padding:4px 0';
+ const pieImagen=nodo('div'),textoPie=nodo('div');
+ pieImagen.style.cssText='display:flex;align-items:flex-end;gap:12px;padding-top:4px';
+ textoPie.style.minWidth='0';
+ textoPie.append(fuente,credito);
+ pieImagen.append(textoPie,qrTablero());
+ marco.append(copia,pieImagen);
  marco.style.width=`${anchoPanel}px`;
  marco.style.boxSizing='content-box';
  marco.style.position='fixed';
@@ -315,7 +380,7 @@ async function descargarMapa(panel,host,titulo,escala){
  enlace.click();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argentina',{soloMapa=false,maximo=null,resaltar=[],decimales=unidad?1:0}={}){
+function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argentina',{soloMapa=false,maximo=null,resaltar=[],decimales=unidad?1:0,tituloImagen}={}){
  incluirPeriodoTitulo(host,filas.length?filas:[{anio:pagina==='casos'?estados[pagina]?.am:estados[pagina]?.a}]);
  const regional=region!=='Argentina',features=regional?D.mapa.territorios.features.filter(f=>f.properties.region===region):D.mapa.provincias.features;
  filas=features.map(f=>filas.find(r=>r.geografia===nombreMapa(f.id))||{geografia:nombreMapa(f.id),n:0,validos:0,total:0,insuficiente:campo!=='valor'});
@@ -373,9 +438,6 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
  const descarga=nodo('details',null,'descarga-mapa');
  const etiquetaDescarga=nodo('summary','Descargar imagen');
  const panelMapa=host.closest('.panel')||host;
- const tituloMapa=panelMapa.querySelector('h3')?.textContent||'Mapa';
- const subtituloMapa=host.querySelector('h4')?.textContent;
- const tituloImagen=[tituloMapa,subtituloMapa].filter(Boolean).join(' · ');
  etiquetaDescarga.setAttribute('aria-label',`Descargar imagen de ${tituloImagen}`);
  descarga.append(etiquetaDescarga);
  for(const [calidad,escala] of [['Estándar (1×)',1],['Alta (3×)',3]]){
@@ -449,7 +511,10 @@ function seccionMortalidad(host){
  const body=nodo('tbody');for(const geo of geografias){const tr=nodo('tr'),th=nodo('th',geo);th.scope='row';tr.append(th);for(const a of [2020,2021,2022,2023,2024])tr.append(nodo('td',exacto(filas.find(r=>r.geografia===geo&&r.anio===a)?.valor,decimales)));body.append(tr);}tabla.append(body);wrap.append(tabla);tablaPanel.append(wrap);
  const barrasPanel=panel(columnas,`${titulo} · por provincia · 2024`),p=panel(columnas,`Mapa de ${titulo.toLowerCase()} · 2024`),actuales=filas.filter(r=>r.anio===2024&&r.geografia!=='Argentina'&&!extras.includes(r.geografia));
  p.classList.add('panel-mortalidad');
- mapa(p,actuales,'valor',unidad,colorMapa(sexo));
+ const indicadorMapa=defunciones?titulo:`${tipo} de mortalidad por sida por 100.000 habitantes`;
+ mapa(p,actuales,'valor',unidad,colorMapa(sexo),'Argentina',{
+  tituloImagen:tituloMapaExportado(indicadorMapa,2024,{grupo:sexo})
+ });
  if(defunciones){const nota=nodo('p',null,'nota mortalidad-residencias');nota.setAttribute('aria-live','polite');extras.forEach((g,i)=>{if(i)nota.append(document.createTextNode(' · '));const valor=filas.find(r=>r.geografia===g&&r.anio===2024)?.valor;nota.append(nodo('span',`${g}: ${exacto(valor,0)}`));});p.querySelector('.mapa-columna').append(nota);}
  p.querySelectorAll('.muestra-n').forEach(n=>n.remove());
  barrasPanel.classList.add('barras-mortalidad');barrasPanel.append(p.querySelector('.ranking'));
@@ -491,11 +556,15 @@ function seccionCasos(host){
  const m=panel(grid,'Casos de VIH por provincia'),cm=controles(m),prov=T.casos.filter(r=>r.nivel==='Provincial');
  const im=filtro(cm,prov,'indicador','Indicador del mapa','im','Tasa por 100.000 habitantes'),am=filtro(cm,prov,'anio','Año','am',anios.at(-1)),sm=filtro(cm,prov,'genero','Sexo','sm','Ambos sexos'),em=filtro(cm,prov,'edad','Grupo de edad','em','Todas las edades',false,edades);
  m.querySelector('h3').textContent=im==='Casos'?'Casos de VIH por provincia':'Tasas de VIH por provincia (por 100.000 habitantes)';
- mapa(m,prov.filter(r=>r.indicador===im&&r.anio===am&&r.genero===sm&&r.edad===em),'valor',im==='Casos'?'':' por 100 mil',colorMapa(sm));
+ mapa(m,prov.filter(r=>r.indicador===im&&r.anio===am&&r.genero===sm&&r.edad===em),'valor',im==='Casos'?'':' por 100 mil',colorMapa(sm),'Argentina',{
+  tituloImagen:tituloMapaExportado(im==='Casos'?'Casos de VIH':'Tasa de VIH por 100.000 habitantes',am,{grupo:sm,edad:em})
+ });
 }
 function seccionGeografia(host){const c=controles(host),s=filtro(c,T.regiones,'genero','Género','s','Todos los géneros',false,generos),e=filtro(c,T.regiones,'edad','Grupo de edad','e','Todas las edades',false,edades),a=filtro(c,T.provincias,'anio','Año del mapa y ranking','a',anios.at(-1));
  const g=layout(host),p=panel(g,'Distribución de diagnósticos de VIH por región');grafico(p,T.regiones.filter(r=>r.genero===s&&r.edad===e).map(r=>({...r,anio:r.anio,serie:r.serie,valor:r.valor})),{tipo:'apilado',porcentaje:true,ordenSeries:regiones});
- const m=panel(g,'Participación provincial en los diagnósticos de VIH');mapa(m,T.provincias.filter(r=>r.genero===s&&r.edad===e&&r.anio===a&&r.indicador==='Porcentaje'),'valor','%',colorMapa(s));m.append(nodo('p','Porcentaje sobre el total de diagnósticos de las provincias con residencia conocida, según los filtros elegidos.','nota'));}
+ const m=panel(g,'Participación provincial en los diagnósticos de VIH');mapa(m,T.provincias.filter(r=>r.genero===s&&r.edad===e&&r.anio===a&&r.indicador==='Porcentaje'),'valor','%',colorMapa(s),'Argentina',{
+  tituloImagen:tituloMapaExportado('Distribución porcentual de los diagnósticos de VIH con residencia conocida',a,{grupo:s,edad:e})
+ });m.append(nodo('p','Porcentaje sobre el total de diagnósticos de las provincias con residencia conocida, según los filtros elegidos.','nota'));}
 function seccionGenero(host){
  const c=controles(host),g=filtro(c,[...T.genero,...T.edad],'geografia','Unidad geográfica','g','Argentina',false,geos);
  const geografia=crearBandaFiltros(c,'Geografía de los cuatro gráficos','Selección compartida');geografia.classList.add('geografia-demografia');host.append(geografia);
@@ -682,7 +751,14 @@ function seccionMapasDiagnostico(host){
  const fuente=r==='Argentina'?T.diagnostico:(T.diagnostico_regional||[]).filter(x=>x.region===r),grid=layout(host);
  const prov=seriesBienalesDT(fuente.filter(x=>x.genero===s&&x.edad===e),['geografia'],.55)
   .filter(x=>x.bienio===a).map(({anio,...x})=>x);
- mapa(panel(grid,`Diagnóstico tardío de VIH por jurisdicción · ${r} · ${a}`),prov,'tardio','%',colorMapa(s),r);mapa(panel(grid,`Enfermedad avanzada al diagnóstico de VIH por jurisdicción · ${r} · ${a}`),prov,'avanzada','%',colorMapa(s,true),r);
+ for(const [nombre,campo,avanzada,titulo] of [
+  ['Diagnóstico tardío de VIH','tardio',false,'Porcentaje de diagnósticos tardíos de VIH'],
+  ['Enfermedad avanzada al diagnóstico de VIH','avanzada',true,'Porcentaje de casos con enfermedad avanzada al diagnóstico de VIH']
+ ]){
+  mapa(panel(grid,`${nombre} por jurisdicción · ${r} · ${a}`),prov,campo,'%',colorMapa(s,avanzada),r,{
+   tituloImagen:tituloMapaExportado(titulo,a,{territorio:r,grupo:s,edad:e})
+  });
+ }
 }
 const sexosSifilis=['Varones','Mujeres','Sin clasificación en F/M'];
 const coloresSifilis={'Ambos sexos':'#446bb6',Varones:'#4c94f1',Mujeres:'#24b5aa','Sin clasificación en F/M':'#a7b1c2'};
@@ -828,7 +904,10 @@ function mapaSifilis(host,{medida,sexo,anio,edad}){
   if(series.length>1)marco.append(nodo('h4',serie));
   const color=(serie==='Mujeres'?coloresEdadMujeres:coloresEdad)[indiceEdad];
   const filas=datos.filter(r=>r.sexo===serie).map(r=>({geografia:r.geografia,anio,valor:tasa?r.tasa:r.casos}));
-  mapa(marco,filas,'valor',tasa?' por 100.000 habitantes':'',color,'Argentina',{soloMapa:true,maximo});
+  mapa(marco,filas,'valor',tasa?' por 100.000 habitantes':'',color,'Argentina',{soloMapa:true,maximo,
+   tituloImagen:tituloMapaExportado(tasa?'Tasa de sífilis por 100.000 habitantes':'Casos de sífilis',anio,
+    {grupo:serie,edad:etiquetaEdadSifilis(edad)})
+  });
  }
 }
 function seccionSifilis(host){
@@ -1101,9 +1180,9 @@ function seccionResumen(host){
   ['Coinfección VIH–sífilis en el mismo año',coinfeccion,'%','#edb753']
  ].map(([titulo,valor,unidad,color,d=1])=>({titulo,valor,unidad,color,d}));
  const sexual=[
-  {titulo:'Varones · Relaciones sexuales con varones',valor:via('Varón',['varones']),unidad:'%',color:'#bd77ed',d:1},
-  {titulo:'Varones · Relaciones sexuales con mujeres',valor:via('Varón',['mujeres']),unidad:'%',color:'#f295c1',d:1},
-  {titulo:'Mujeres · Transmisión sexual',valor:via('Mujer',['varones','mujeres','trans']),unidad:'%',color:'#e5a565',d:1}
+  {titulo:'Varones · Relaciones sexuales con varones',tituloExportacion:'Porcentaje de diagnósticos de VIH en varones con transmisión por relaciones sexuales con varones',valor:via('Varón',['varones']),unidad:'%',color:'#bd77ed',d:1},
+  {titulo:'Varones · Relaciones sexuales con mujeres',tituloExportacion:'Porcentaje de diagnósticos de VIH en varones con transmisión por relaciones sexuales con mujeres',valor:via('Varón',['mujeres']),unidad:'%',color:'#f295c1',d:1},
+  {titulo:'Mujeres · Transmisión sexual',tituloExportacion:'Porcentaje de diagnósticos de VIH en mujeres con transmisión sexual',valor:via('Mujer',['varones','mujeres','trans']),unidad:'%',color:'#e5a565',d:1}
  ];
  const desgloseSexo=obtener=>['Varones','Mujeres'].map(s=>[s,obtener(s)]);
  const desgloseGenero=nombre=>generosResumen.map(([g,s])=>[s,campo(indice(datosDT,r=>r.genero===g),nombre)]);
@@ -1187,16 +1266,20 @@ function seccionResumen(host){
  const realce=geografia==='Argentina'?[]:regiones.includes(geografia)
   ?uniq(D.mapa.territorios.features.filter(f=>f.properties.region===geografia).map(f=>nombreMapa(f.id)).filter(n=>provincias.includes(n)))
   :[geografia];
+ const nombreIndicador=indicador.tituloExportacion||
+  `${indicador.titulo}${indicador.unidad.startsWith(' por ')?indicador.unidad:''}`;
+ const periodo=Number.isFinite(anioMapa)?etiquetaPeriodo(indicador,anioMapa):null;
+ const tituloImagen=tituloMapaExportado(nombreIndicador,periodo);
  if(Number.isFinite(anioMapa)){
   mapaPanel.querySelector('h3').textContent=`Mapa por jurisdicción · ${etiquetaPeriodo(indicador,anioMapa)}`;
   mapa(mapaPanel,provincias.map(g=>({geografia:g,anio:anioMapa,valor:indicador.valor(anioMapa,g)})),
    'valor',indicador.unidad,
-   indicador.color,'Argentina',{soloMapa:true,resaltar:realce,decimales:indicador.d});
+   indicador.color,'Argentina',{soloMapa:true,resaltar:realce,decimales:indicador.d,tituloImagen});
  }else{
   const n=vigente(serie(indicador,'Argentina'),indicador);
   const nota=n?`Argentina · ${etiquetaPeriodo(indicador,n.anio)} · ${mostrar(indicador,n.valor)}`:'Sin datos provinciales para este indicador.';
   mapaPanel.append(nodo('p',nota,'nota'));
-  mapa(mapaPanel,[],'valor',indicador.unidad,indicador.color,'Argentina',{soloMapa:true,resaltar:realce});
+  mapa(mapaPanel,[],'valor',indicador.unidad,indicador.color,'Argentina',{soloMapa:true,resaltar:realce,tituloImagen});
  }
  if(['GBA','Centro'].includes(geografia))host.append(nodo('p','Los indicadores de ITS agrupan CABA y toda la provincia de Buenos Aires en Centro. El desglose GBA y Centro de VIH usa otra cobertura territorial.','nota'));
 }
