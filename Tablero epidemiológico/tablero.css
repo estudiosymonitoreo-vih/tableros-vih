@@ -414,3 +414,13 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 .descarga-mapa summary{cursor:pointer;padding:4px 7px}
 .descarga-mapa button{display:block;width:100%;background:#fff;color:#253657;border-color:#829bb5;padding:4px 7px;font-size:11px}
 .descarga-mapa-conjunta{position:static;align-self:flex-end;flex:none}
+
+.acciones-datos{flex-wrap:wrap}
+.descarga-grafico{position:relative;flex:none}
+.descarga-grafico summary{cursor:pointer;white-space:nowrap;background:#344768;color:#f5f5f8;border:1px solid #829bb5;border-radius:4px;font-size:10px;padding:5px 8px}
+.resoluciones-grafico{position:absolute;z-index:5;right:0;bottom:calc(100% + 3px);width:max-content;background:#242c50;border:1px solid #829bb5;border-radius:4px}
+.resoluciones-grafico button{display:block;width:100%}
+.demografia-pie{flex-wrap:wrap}
+.demografia-pie .acciones-datos{margin-left:auto}
+.estado-descarga-grafico{position:fixed;right:16px;bottom:16px;z-index:10;margin:0}
+.estado-descarga-grafico:not(:empty){padding:8px;background:#242c50;border:1px solid #829bb5}
