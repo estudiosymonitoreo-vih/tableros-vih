@@ -94,19 +94,33 @@ window.crearMapaSVIH = (() => {
     "1111111011101110010000111110010010111"
   ];
 
-  async function exportarMapa(mapa, titulo, leyenda, escala, rango) {
-    const ancho = 640, altoMapa = 520, margen = 20;
-    const lienzo = document.createElement("canvas");
-    const ctx = lienzo.getContext("2d");
+  function repartirTexto(ctx,texto,ancho) {
     const lineas = [];
-    ctx.font = "bold 20px Arial";
-    for (const palabra of titulo.split(/\s+/)) {
+    for (const palabra of texto.split(/\s+/)) {
       const ultima = lineas.at(-1);
-      if (ultima && ctx.measureText(ultima + " " + palabra).width <= ancho - 2 * margen)
+      if (ultima && ctx.measureText(ultima + " " + palabra).width <= ancho)
         lineas[lineas.length - 1] += " " + palabra;
       else lineas.push(palabra);
     }
-    const yMapa = margen + lineas.length * 25, alto = yMapa + altoMapa + 120;
+    return lineas;
+  }
+
+  async function exportarImagen(dibujo, titulo, leyenda, escala, rango, grafico=false) {
+    const margen = 20, vista = dibujo.viewBox.baseVal;
+    const ancho = grafico ? Math.max(640, Math.min(3000, Math.ceil(vista.width)+2*margen)) : 640;
+    const altoMapa = grafico ? Math.max(85,Math.min(4000,Math.round(vista.height/vista.width*(ancho-2*margen)))) : 520;
+    const lienzo = document.createElement("canvas");
+    const ctx = lienzo.getContext("2d");
+    ctx.font = "bold 20px Arial";
+    const lineas = repartirTexto(ctx,titulo,ancho-2*margen);
+    ctx.font = "13px Arial";
+    const anchoPie=ancho-110;
+    const pie=[...leyenda,"Elaboración a cargo de la DRVIHyT · Ministerio de Salud de la Nación"]
+      .flatMap(entrada=>{
+        const {texto,color}=typeof entrada==="string"?{texto:entrada}:entrada;
+        return repartirTexto(ctx,texto,anchoPie-24).map((linea,i)=>({linea,color:i===0?color:null,sangria:color?18:0}));
+      });
+    const yMapa = margen + lineas.length * 25, alto = yMapa + altoMapa + Math.max(120, 45+pie.length*18+(rango?19:0));
     lienzo.width = ancho * escala;
     lienzo.height = alto * escala;
     ctx.scale(escala, escala);
@@ -115,7 +129,7 @@ window.crearMapaSVIH = (() => {
     ctx.fillStyle = "#fff";
     ctx.font = "bold 20px Arial";
     lineas.forEach((linea, i) => ctx.fillText(linea, margen, margen + 18 + i * 25));
-    const copia = mapa.cloneNode(true);
+    const copia = dibujo.cloneNode(true);
     copia.setAttribute("width", (ancho - 2 * margen) * escala);
     copia.setAttribute("height", altoMapa * escala);
     copia.querySelectorAll('[vector-effect="non-scaling-stroke"][stroke-width]').forEach(elemento => {
@@ -126,7 +140,7 @@ window.crearMapaSVIH = (() => {
       const imagen = new Image();
       imagen.src = urlSvg;
       await imagen.decode();
-      ctx.fillStyle = "#e3edf1";
+      ctx.fillStyle = grafico ? "#242c50" : "#e3edf1";
       ctx.fillRect(margen, yMapa, ancho - 2 * margen, altoMapa);
       ctx.drawImage(imagen, margen, yMapa, ancho - 2 * margen, altoMapa);
     } finally {
@@ -146,8 +160,13 @@ window.crearMapaSVIH = (() => {
     }
     ctx.fillStyle = "#fff";
     ctx.font = "13px Arial";
-    for (const linea of [...leyenda, "Elaboración a cargo de la DRVIHyT · Ministerio de Salud de la Nación"]) {
-      ctx.fillText(linea, margen, y, ancho - 110);
+    for (const {linea,color,sangria} of pie) {
+      if(color){
+        ctx.fillStyle=color;
+        ctx.fillRect(margen,y-9,10,10);
+        ctx.fillStyle="#fff";
+      }
+      ctx.fillText(linea,margen+sangria,y,anchoPie-sangria);
       y += 18;
     }
     const lado = qrPortal.length + 8, xQr = ancho - margen - lado, yQr = alto - margen - lado;
@@ -164,6 +183,88 @@ window.crearMapaSVIH = (() => {
       .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + escala + "x.png";
     enlace.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  const selectorGraficos="svg.grafico-svg, svg.dona-svg, svg.medidor-lineal, svg.spark, .cd4-barra";
+  const graficosRegistrados=new WeakSet();
+  const piesGraficos=new Map();
+
+  function copiarGrafico(original) {
+    if(original.matches(".cd4-barra")){
+      const dibujo=svg("svg",{viewBox:"0 0 600 55"});
+      let x=0;
+      for(const segmento of original.children){
+        const ancho=parseFloat(segmento.style.width)*6;
+        if(!(ancho>0))continue;
+        dibujo.append(svg("rect",{x,y:8,width:ancho,height:30,fill:segmento.style.background}));
+        if(ancho>=32)dibujo.append(svg("text",{x:x+ancho/2,y:28,"text-anchor":"middle",fill:"#fff","font-size":12},segmento.textContent));
+        x+=ancho;
+      }
+      return dibujo;
+    }
+    const dibujo=original.cloneNode(true);
+    const nodos=[original,...original.querySelectorAll("*")];
+    const propiedades=["fill","fill-opacity","stroke","stroke-width","stroke-opacity","stroke-dasharray","stroke-dashoffset",
+      "font-size","font-weight","font-family","text-anchor","paint-order","opacity"];
+    [dibujo,...dibujo.querySelectorAll("*")].forEach((copia,i)=>{
+      const estilo=getComputedStyle(nodos[i]);
+      for(const propiedad of propiedades)copia.style.setProperty(propiedad,estilo.getPropertyValue(propiedad));
+    });
+    return dibujo;
+  }
+
+  function agregarDescargasGraficos() {
+    for(const [grafico,pie] of piesGraficos){
+      if(!grafico.isConnected){pie.remove();piesGraficos.delete(grafico);}
+    }
+    for(const original of principal.querySelectorAll(selectorGraficos)){
+      if(graficosRegistrados.has(original))continue;
+      const panel=original.closest(".grafico-panel,.comparativo-barras,.tarjeta");
+      if(!panel)continue;
+      graficosRegistrados.add(original);
+      const pie=document.createElement("div"), boton=document.createElement("button");
+      pie.className="descarga-grafico-svih";
+      boton.type="button";
+      boton.textContent="↓ PNG";
+      boton.title="Descargar gráfico en alta resolución";
+      boton.setAttribute("aria-label",boton.title);
+      boton.onclick=async()=>{
+        boton.disabled=true;
+        boton.textContent="↓ PNG";
+        try{
+          const titulo=original.dataset.tituloExportacion||panel.querySelector(".rotulo,.etiqueta")?.textContent||
+            original.getAttribute("aria-label")||"Gráfico";
+          const provincia=original.dataset.ambitoExportacion??document.querySelector("#provincia")?.selectedOptions[0]?.textContent;
+          const institucion=original.dataset.ambitoExportacion===undefined&&!document.querySelector("#filtro-institucion")?.hidden?
+            document.querySelector("#institucion")?.selectedOptions[0]?.textContent:null;
+          const solapa={prep:"PrEP",pep:"PeP"}[principal.dataset.vista];
+          const contexto=[solapa&&!titulo.includes(solapa)?solapa:null,provincia,institucion,
+            document.querySelector("#fecha")?.textContent].filter(Boolean);
+          const leyenda=[...panel.querySelectorAll(".leyenda > span")].map(item=>({
+            texto:item.textContent.trim(),color:item.querySelector("i")?.style.background
+          }));
+          const serieAnual=original.matches(".spark")&&original.querySelector("title")?.textContent;
+          if(serieAnual)leyenda.push({texto:serieAnual,color:"#539aff"});
+          const fuente=original.closest("#epidemiologia")?"Contexto epidemiológico del tablero SVIH":"SVIH / SISA";
+          await exportarImagen(copiarGrafico(original),[titulo,...contexto].join(" · "),
+            [...leyenda,"Fuente: "+fuente],3,null,true);
+        }catch{
+          boton.textContent="Reintentar";
+        }finally{
+          boton.disabled=false;
+        }
+      };
+      pie.append(boton);
+      piesGraficos.set(original,pie);
+      if(panel.matches(".grafico-panel"))panel.append(pie);
+      else original.after(pie);
+    }
+  }
+
+  const principal=document.querySelector("main");
+  if(principal){
+    new MutationObserver(agregarDescargasGraficos).observe(principal,{childList:true,subtree:true});
+    agregarDescargasGraficos();
   }
 
   function controlExportacion(host, titulo, crearImagen, resoluciones) {
@@ -188,7 +289,7 @@ window.crearMapaSVIH = (() => {
             `${titulo} · ${fmt(instituciones)} ${instituciones === 1 ? "institución" : "instituciones"}`;
           const personas = tratamiento ?
             ` · ${fmt(totalPersonas)} ${totalPersonas === 1 ? "persona" : "personas"} con retiro de ${tratamiento}` : "";
-          await exportarMapa(mapa, tituloPng + personas, leyenda, escala, rango);
+          await exportarImagen(mapa, tituloPng + personas, leyenda, escala, rango);
           menu.open = false;
         } catch {
           estado.textContent = "No se pudo descargar la imagen.";

@@ -397,6 +397,11 @@
       ordenBoton.title=histOrden==='valor'?'Mayor a menor según el período más reciente seleccionado. Pulsar para ordenar alfabéticamente.':'Orden alfabético por jurisdicción. Pulsar para ordenar por valor.';
       ordenAyuda.textContent=histOrden==='valor'&&periodoOrden?'Valor al '+new Date(periodoOrden+'T12:00:00').toLocaleDateString('es-AR'):'Ordenar barras';
       barras(graf,a,"Provincia_atencion","Valor","periodo_visible",{formato:v=>f(v,pct?1:0)+(pct?"%":"")});
+      const grafico=graf.querySelector(".grafico-svg");
+      if(grafico){
+        grafico.dataset.tituloExportacion=etiquetas[histIndicador]+" por jurisdicción y período";
+        grafico.dataset.ambitoExportacion="";
+      }
       const hayBarras=!!graf.querySelector('.barra-dato'),periodosVisibles=uniq(histPeriodos).sort().reverse();
       estadisticas.classList.toggle('varios-periodos',periodosVisibles.length>1);
       for(const periodo of periodosVisibles){
@@ -435,7 +440,8 @@
         return etiquetaJurisdiccion(a.Provincia_atencion).localeCompare(etiquetaJurisdiccion(b.Provincia_atencion),'es');
       });
       ordenBoton.textContent=comparativoOrden==='valor'?'↓ Valor':'A–Z Jurisdicción';ordenBoton.setAttribute('aria-pressed',String(comparativoOrden==='valor'));ordenBoton.title=comparativoOrden==='valor'?'Mayor a menor. Pulsar para ordenar alfabéticamente.':'Orden alfabético por jurisdicción. Pulsar para ordenar por valor.';
-      barHost.replaceChildren();barras(barHost,ordenadas,"Provincia_atencion","valor",null,{horizontal:true,log:cfg.tipo==="numero",formato});lista.querySelectorAll("input").forEach(i=>i.checked=i.value===indicadorComparativo);mapaHost.dataset.indicador=cfg.id;barHost.dataset.indicador=cfg.id;}
+      barHost.replaceChildren();barras(barHost,ordenadas,"Provincia_atencion","valor",null,{horizontal:true,log:cfg.tipo==="numero",formato});const grafico=barHost.querySelector(".grafico-svg");
+      if(grafico){grafico.dataset.tituloExportacion=cfg.titulo;grafico.dataset.ambitoExportacion="Argentina";}lista.querySelectorAll("input").forEach(i=>i.checked=i.value===indicadorComparativo);mapaHost.dataset.indicador=cfg.id;barHost.dataset.indicador=cfg.id;}
     ordenBoton.onclick=()=>{comparativoOrden=comparativoOrden==='valor'?'alfabetico':'valor';dibujar()};
     configs.forEach(cfg=>{const l=el("label"),radio=el("input");radio.type="radio";radio.name="indicador-provincial";radio.value=cfg.id;l.append(radio,el("span",null,cfg.etiqueta));lista.append(l);radio.onchange=()=>{indicadorComparativo=radio.value;dibujar()};});buscar.oninput=()=>{const q=buscar.value.toLocaleLowerCase();lista.querySelectorAll("label").forEach(l=>l.hidden=!l.textContent.toLocaleLowerCase().includes(q));};dibujar();
   }
