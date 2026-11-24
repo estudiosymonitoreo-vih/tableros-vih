@@ -370,7 +370,7 @@ async function descargarPanel(panel,titulo,escala){
  const marco=nodo('div');
  marco.style.cssText=`padding:12px;color:#e6eef9;background:${getComputedStyle(document.querySelector('main')).backgroundColor};font:12px/16px sans-serif`;
  const fuente=nodo('div',pie);
- const credito=nodo('div','Elaboración a cargo de la DRVIHyT. Boletín Epidemiológico VIH de la Argentina N° 43, 2026');
+ const credito=nodo('div','Elaboración a cargo de la DRVIHyT.');
  for(const linea of [fuente,credito])linea.style.cssText='overflow-wrap:anywhere;padding:4px 0';
  const pieImagen=nodo('div'),textoPie=nodo('div');
  pieImagen.style.cssText='display:flex;align-items:flex-end;gap:12px;padding-top:4px';
