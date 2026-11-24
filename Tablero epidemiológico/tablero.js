@@ -233,6 +233,88 @@ const posicionesProvincia={
  'San Juan':[-68.9,-30.8],'San Luis':[-66,-33.8],'Santa Cruz':[-69.3,-49.3],'Santa Fe':[-60.8,-30.3],
  'Santiago del Estero':[-63.1,-28.2],'Tierra del Fuego':[-67.7,-54.5],'Tucumán':[-65.4,-26.8]
 };
+async function descargarMapa(panel,host,titulo,escala){
+ const medidas=panel.getBoundingClientRect();
+ const copia=panel.cloneNode(true);
+ const originales=[panel,...panel.querySelectorAll('*')];
+ [copia,...copia.querySelectorAll('*')].forEach((elemento,i)=>{
+  const estilo=getComputedStyle(originales[i]);
+  for(const propiedad of estilo)elemento.style.setProperty(propiedad,estilo.getPropertyValue(propiedad));
+ });
+ const barras=panel.querySelectorAll('.barra-ranking');
+ copia.querySelectorAll('.barra-ranking').forEach((barra,i)=>{
+  for(const [selector,pseudo] of [['.barra-ranking','::before'],['i','::after']]){
+   const original=selector==='i'?barras[i].querySelector('i'):barras[i];
+   const destino=selector==='i'?barra.querySelector('i'):barra;
+   if(!original)continue;
+   const estilo=getComputedStyle(original,pseudo);
+   if(estilo.content==='none'||estilo.display==='none')continue;
+   const marca=nodo('span');
+   for(const propiedad of estilo)marca.style.setProperty(propiedad,estilo.getPropertyValue(propiedad));
+   destino.append(marca);
+  }
+ });
+ copia.querySelectorAll('.descarga-mapa,.zoom,.acciones-datos,.controles').forEach(n=>n.style.display='none');
+ const mapasSifilis=[...panel.querySelectorAll('.mapa-sifilis')];
+ let anchoPanel=medidas.width;
+ if(mapasSifilis.length>1){
+  const indice=mapasSifilis.indexOf(host);
+  const mapasCopia=copia.querySelectorAll('.mapa-sifilis');
+  mapasCopia.forEach((mapa,i)=>{if(i!==indice)mapa.remove();});
+  const grilla=copia.querySelector('.mapas-sifilis');
+  anchoPanel=host.getBoundingClientRect().width;
+  grilla.style.width=`${anchoPanel}px`;
+  grilla.style.gridTemplateColumns='minmax(0,1fr)';
+  copia.style.width=`${anchoPanel}px`;
+  copia.style.height='auto';
+  copia.querySelector('h3').style.width='auto';
+ }
+ copia.style.margin='0';
+ const bandas=$('contenido').querySelectorAll('.banda-filtros');
+ const filtros=panel.querySelector('.controles')||
+  (pagina==='casos'?bandas[1]:bandas[0])||$('contenido').querySelector('.controles');
+ const seleccion=[...filtros?.querySelectorAll('select')||[]].map(select=>
+  `${select.getAttribute('aria-label')}: ${select.selectedOptions[0]?.textContent||''}`).join(' · ');
+ const pie=[$('periodo').textContent,$('fecha-exportacion').textContent].filter(Boolean).join(' · ');
+ const marco=nodo('div');
+ marco.style.cssText=`padding:12px;color:#e6eef9;background:${getComputedStyle(document.querySelector('main')).backgroundColor};font:12px/16px sans-serif`;
+ const contexto=nodo('div',seleccion);
+ const fuente=nodo('div',pie);
+ for(const texto of [contexto,fuente]){
+  texto.style.cssText='overflow-wrap:anywhere;padding:4px 0';
+ }
+ marco.append(contexto,copia,fuente);
+ marco.style.width=`${anchoPanel}px`;
+ marco.style.boxSizing='content-box';
+ marco.style.position='fixed';
+ marco.style.visibility='hidden';
+ document.body.append(marco);
+ const {width,height}=marco.getBoundingClientRect();
+ marco.remove();
+ marco.style.position='static';
+ marco.style.visibility='visible';
+ const ancho=Math.round(width*escala),alto=Math.round(height*escala);
+ const imagenPanel=svg('svg',{width:ancho,height:alto,viewBox:`0 0 ${width} ${height}`});
+ const contenido=svg('foreignObject',{width,height});
+ contenido.append(marco);
+ imagenPanel.append(contenido);
+ const imagen=new Image();
+ // Un SVG autocontenido en una URL de datos permite leer el PNG del lienzo.
+ imagen.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(imagenPanel));
+ await imagen.decode();
+ const lienzo=nodo('canvas');
+ lienzo.width=ancho;
+ lienzo.height=alto;
+ lienzo.getContext('2d').drawImage(imagen,0,0,lienzo.width,lienzo.height);
+ const png=await new Promise(resolve=>lienzo.toBlob(resolve,'image/png'));
+ if(!png)throw new Error('PNG no disponible');
+ const url=URL.createObjectURL(png),enlace=nodo('a');
+ enlace.href=url;
+ enlace.download=titulo.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+`-${escala}x.png`;
+ enlace.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argentina',{soloMapa=false,maximo=null,resaltar=[],decimales=unidad?1:0}={}){
  incluirPeriodoTitulo(host,filas.length?filas:[{anio:pagina==='casos'?estados[pagina]?.am:estados[pagina]?.a}]);
  const regional=region!=='Argentina',features=regional?D.mapa.territorios.features.filter(f=>f.properties.region===region):D.mapa.provincias.features;
@@ -288,8 +370,26 @@ function mapa(host,filas,campo='valor',unidad='',color='#237bd1',region='Argenti
  const centroX=marco.x+marco.ancho/2,centroY=marco.y+marco.alto/2;
  let z=1,dx=0,dy=0;const transforma=()=>g.setAttribute('transform',`translate(${dx},${dy}) translate(${centroX},${centroY}) scale(${z}) translate(${-centroX},${-centroY})`);
  const botones=nodo('div',null,'zoom');[['+','Acercar',()=>z=Math.min(6,z*1.4)],['−','Alejar',()=>z=Math.max(1,z/1.4)],['↺','Restablecer mapa',()=>{z=1;dx=0;dy=0;}]].forEach(([txt,label,fn])=>{const b=nodo('button',txt);b.setAttribute('aria-label',label);b.onclick=()=>{fn();transforma();};botones.append(b);});
+ const descarga=nodo('details',null,'descarga-mapa');
+ const etiquetaDescarga=nodo('summary','Descargar imagen');
+ const panelMapa=host.closest('.panel')||host;
+ const tituloMapa=panelMapa.querySelector('h3')?.textContent||'Mapa';
+ const subtituloMapa=host.querySelector('h4')?.textContent;
+ const tituloImagen=[tituloMapa,subtituloMapa].filter(Boolean).join(' · ');
+ etiquetaDescarga.setAttribute('aria-label',`Descargar imagen de ${tituloImagen}`);
+ descarga.append(etiquetaDescarga);
+ for(const [calidad,escala] of [['Estándar (1×)',1],['Alta (3×)',3]]){
+  const opcion=nodo('button',calidad);
+  opcion.type='button';
+  opcion.onclick=async()=>{
+   descarga.open=false;
+   try{await descargarMapa(panelMapa,host,tituloImagen,escala);}
+   catch{info.textContent='No se pudo descargar la imagen del mapa. Volvé a intentarlo.';}
+  };
+  descarga.append(opcion);
+ }
  let inicio=null;s.onpointerdown=e=>{inicio=[e.clientX,e.clientY,dx,dy];s.setPointerCapture(e.pointerId);};s.onpointermove=e=>{if(inicio){const rect=s.getBoundingClientRect();dx=inicio[2]+(e.clientX-inicio[0])*marco.ancho/rect.width;dy=inicio[3]+(e.clientY-inicio[1])*marco.alto/rect.height;transforma();}};s.onpointerup=s.onpointercancel=()=>{inicio=null;};
- wrap.append(s,botones);columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,${color}33,${color})`;escala.append(nodo('span',unidad==='%'?'0%':'0'),grad,nodo('span',fmt(max)+unidad),nodo('span',campo==='valor'?'Gris: sin datos':'Gris: sin datos suficientes (<55% válidos)'));if(!validos.length)escala.replaceChildren(nodo('span',campo==='valor'?'Sin datos para esta selección.':'Sin jurisdicciones con datos suficientes.'));columna.append(escala);
+ wrap.append(s,descarga,botones);columna.append(wrap,info);const escala=nodo('div',null,'escala');const grad=nodo('i',null,'gradiente');grad.style.background=`linear-gradient(90deg,${color}33,${color})`;escala.append(nodo('span',unidad==='%'?'0%':'0'),grad,nodo('span',fmt(max)+unidad),nodo('span',campo==='valor'?'Gris: sin datos':'Gris: sin datos suficientes (<55% válidos)'));if(!validos.length)escala.replaceChildren(nodo('span',campo==='valor'?'Sin datos para esta selección.':'Sin jurisdicciones con datos suficientes.'));columna.append(escala);
  if(soloMapa){host.append(columna);return;}
  const ranking=nodo('div',null,'ranking');ranking.dataset.maximo=String(max);ranking.style.setProperty('--color-mapa',color);[...valores].sort((a,b)=>(b[1]??-1)-(a[1]??-1)).forEach(([n,v])=>{const row=nodo('div',null,'fila-ranking'),bar=nodo('div',null,'barra-ranking'),i=nodo('i');i.style.width=`${v==null?0:v/max*100}%`;i.style.background=color;if(v==null||!Number.isFinite(v))row.classList.add('sin-dato');bar.append(i);if(insuficientes.has(n)){row.classList.add('insuficiente');row.append(nodo('span',n),nodo('span','Sin datos suficientes','aviso-insuficiente'));}else row.append(nodo('span',n),bar,nodo('strong',v==null?'s/d':exacto(v,unidad?1:0)+(unidad==='%'?'%':'')));ranking.append(row);});division.append(columna,ranking);host.append(division);detalle(host,filas);
  if(pagina!=='mortalidad'){division.classList.add('mapa-extendido');division.append(host.querySelector('.muestra-n'),host.querySelector('.acciones-datos'));}

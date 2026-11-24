@@ -409,3 +409,7 @@ main{padding:8px 18px 8px}header{height:42px;padding-bottom:4px;border-bottom-wi
 @media(max-width:600px){.portada-geografia .control{max-width:none}.portada-desglose-fila{flex-wrap:wrap;gap:2px}}
 @media(max-width:600px){.portada-indicadores{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:360px){.portada-indicadores{grid-template-columns:1fr}}
+
+.descarga-mapa{position:absolute;top:5px;right:5px;max-width:calc(100% - 10px);background:#fff;color:#253657;border:1px solid #829bb5;border-radius:4px;font-size:11px}
+.descarga-mapa summary{cursor:pointer;padding:4px 7px}
+.descarga-mapa button{display:block;width:100%;background:#fff;color:#253657;border-color:#829bb5;padding:4px 7px;font-size:11px}
