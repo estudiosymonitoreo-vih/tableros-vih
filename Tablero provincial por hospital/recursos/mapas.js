@@ -185,7 +185,7 @@ window.crearMapaSVIH = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  const selectorGraficos="svg.grafico-svg, svg.dona-svg, svg.medidor-lineal, svg.spark, .cd4-barra";
+  const selectorGraficos="svg.grafico-svg, svg.dona-svg, svg.medidor-lineal, .cd4-barra";
   const graficosRegistrados=new WeakSet();
   const piesGraficos=new Map();
 
@@ -220,7 +220,7 @@ window.crearMapaSVIH = (() => {
     for(const original of principal.querySelectorAll(selectorGraficos)){
       if(graficosRegistrados.has(original))continue;
       const panel=original.closest(".grafico-panel,.comparativo-barras,.tarjeta");
-      if(!panel)continue;
+      if(!panel||original.matches(".dtg .medidor-lineal,.biterapia .medidor-lineal,.recomendado .medidor-lineal"))continue;
       graficosRegistrados.add(original);
       const pie=document.createElement("div"), boton=document.createElement("button");
       pie.className="descarga-grafico-svih";
@@ -232,22 +232,29 @@ window.crearMapaSVIH = (() => {
         boton.disabled=true;
         boton.textContent="↓ PNG";
         try{
-          const titulo=original.dataset.tituloExportacion||panel.querySelector(".rotulo,.etiqueta")?.textContent||
+          const alcanceNacional=panel.matches(".perfil-residencia");
+          const titulo=original.dataset.tituloExportacion||panel.dataset.tituloExportacion||
+            (alcanceNacional?original.getAttribute("aria-label"):panel.querySelector(".rotulo")?.textContent)||
             original.getAttribute("aria-label")||"Gráfico";
-          const provincia=original.dataset.ambitoExportacion??document.querySelector("#provincia")?.selectedOptions[0]?.textContent;
-          const institucion=original.dataset.ambitoExportacion===undefined&&!document.querySelector("#filtro-institucion")?.hidden?
+          const jurisdiccion=original.dataset.ambitoExportacion??(alcanceNacional?"Argentina":
+            document.querySelector("#provincia")?.selectedOptions[0]?.textContent);
+          const hospital=original.dataset.ambitoExportacion===undefined&&!alcanceNacional&&!document.querySelector("#filtro-institucion")?.hidden?
             document.querySelector("#institucion")?.selectedOptions[0]?.textContent:null;
-          const solapa={prep:"PrEP",pep:"PeP"}[principal.dataset.vista];
-          const contexto=[solapa&&!titulo.includes(solapa)?solapa:null,provincia,institucion,
-            document.querySelector("#fecha")?.textContent].filter(Boolean);
+          const nombreHospital=hospital&&!/^(total\b|pa[ií]s$|provincia (?:de )?buenos aires$)/i.test(hospital.trim())?hospital:null;
+          const contexto=[jurisdiccion==="País"?"Argentina":jurisdiccion,nombreHospital].filter(Boolean);
           const leyenda=[...panel.querySelectorAll(".leyenda > span")].map(item=>({
             texto:item.textContent.trim(),color:item.querySelector("i")?.style.background
           }));
-          const serieAnual=original.matches(".spark")&&original.querySelector("title")?.textContent;
-          if(serieAnual)leyenda.push({texto:serieAnual,color:"#539aff"});
-          const fuente=original.closest("#epidemiologia")?"Contexto epidemiológico del tablero SVIH":"SVIH / SISA";
+          if(panel.matches(".perfil-genero")){
+            for(const porcion of original.querySelectorAll("circle[data-categoria]")){
+              const texto=porcion.querySelector("title")?.textContent;
+              if(texto)leyenda.push({texto,color:porcion.getAttribute("stroke")});
+            }
+          }
+          const fecha=document.querySelector("#fecha")?.textContent.replace(/^(?:Fecha|Corte):\s*/i,"").trim();
+          if(fecha)leyenda.push("Fecha de corte: "+fecha);
           await exportarImagen(copiarGrafico(original),[titulo,...contexto].join(" · "),
-            [...leyenda,"Fuente: "+fuente],3,null,true);
+            [...leyenda,"Fuente: SVIH / SISA"],3,null,true);
         }catch{
           boton.textContent="Reintentar";
         }finally{

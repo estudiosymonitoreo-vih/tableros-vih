@@ -20,7 +20,30 @@
   dimensionar();
   const general=()=>d.general.find(r=>r.Provincia_atencion===provincia())||{};
   const vacio=host=>host.append(el("p","sin-datos","Sin datos disponibles para esta selección."));
-  const panel=(host,titulo,cl="")=>{const p=el("section","grafico-panel "+cl);p.append(el("h3","rotulo",titulo));const c=el("div","interior");p.append(c);host.append(p);return c;};
+  const titulosExportacion={
+    "perfil-genero":"Distribución por género de las personas en TARV",
+    "perfil-mediana":"Mediana de edad de las personas en TARV según género",
+    "perfil-edad":"Distribución por género y edad de las personas en TARV",
+    meses:"Distribución de las personas en TARV por meses de medicación en el último retiro",
+    lineas:"Distribución por línea de tratamiento de las personas en TARV de 15 años o más",
+    "tt-meses":"Distribución de las personas en TARV por meses de medicación en el último retiro",
+    "evolucion-flujo":"Flujos de seguimiento de las personas en TARV durante los últimos 12 meses",
+    "evolucion-cohorte":"Situación actual de las personas que estaban en TARV hace un año",
+    "evolucion-mensual":"Evolución mensual de las personas en TARV con valores al 30 de junio de cada año",
+    "tt-dtg":"Proporción de personas en TARV con esquemas basados en DTG",
+    "tt-biterapia":"Proporción de personas en TARV con biterapia (DTG/3TC o DTG/DRV800)",
+    "tp-anual":"Personas y dispensas de PeP por año"
+  };
+  const panel=(host,titulo,cl="")=>{const p=el("section","grafico-panel "+cl);
+    let tituloPng=titulosExportacion[cl];
+    if(cl==="profilaxis-genero"||cl==="profilaxis-edad"){
+      const grupo=cl==="profilaxis-genero"?"género":"género y edad";
+      tituloPng=`Distribución por ${grupo} de las personas ${host.classList.contains("es-prep")?"en PrEP":"que recibieron PeP"}`;
+    }
+    if(cl==="profilaxis-anual")tituloPng=host.classList.contains("es-pep")?
+      "Personas y dispensas de PeP por año":"Personas en PrEP por año según tipo de retiro";
+    if(tituloPng)p.dataset.tituloExportacion=tituloPng;
+    p.append(el("h3","rotulo",titulo));const c=el("div","interior");p.append(c);host.append(p);return c;};
   const nota=(host,text)=>host.append(el("p","nota",text));
   const participacion=(a,k)=>{const total=a.reduce((s,r)=>s+(numeric(r[k])?r[k]:0),0);return a.map(r=>({...r,participacion:total>0&&numeric(r[k])?100*r[k]/total:null}));};
   const leyenda=(host,labels,paleta=colores)=>{const l=el("div","leyenda");labels.forEach((s,i)=>{const x=el("span",null,s),c=el("i");c.style.background=paleta[i%paleta.length];x.prepend(c);l.append(x)});host.append(l);};
