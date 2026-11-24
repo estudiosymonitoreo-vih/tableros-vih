@@ -145,7 +145,10 @@ aside{overflow-y:auto;scrollbar-width:thin}
 @media(max-width:699px){.controles-historicos.con-orden{height:auto}.orden-historico{align-self:flex-start;margin:3px 0}}
 @media(max-width:699px){.cabecera-comparativo{align-items:flex-start;flex-direction:column;gap:6px}.cabecera-comparativo .orden-historico{margin:0 0 6px}}
 
-.mapa-exportacion{position:absolute;top:6px;right:6px;z-index:2;max-width:calc(100% - 12px);border:1px solid #8194a6;border-radius:4px;background:#fff;color:#253657;font:12px/1.3 Arial,sans-serif}
+.mapa-con-descarga{display:flex;flex-direction:column;min-height:0}
+.mapa-con-descarga > .mapa-interactivo,.mapa-con-descarga > .mapa-coropletico{flex:1 1 0;min-height:0}
+.comparativo-grid .mapa-con-descarga > .mapa-coropletico{min-height:0}
+.mapa-exportacion{align-self:flex-end;flex:none;max-width:100%;margin-top:4px;border:1px solid #8194a6;border-radius:4px;background:#fff;color:#253657;font:12px/1.3 Arial,sans-serif}
 .mapa-exportacion summary{padding:4px 7px;cursor:pointer}
 .mapa-exportacion button{display:block;width:100%;border:0;border-top:1px solid #c6d4e2;background:#fff;color:#253657;padding:4px;cursor:pointer}
 .mapa-exportacion [role=status]:not(:empty){display:block;padding:4px}

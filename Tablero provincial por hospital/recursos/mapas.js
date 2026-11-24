@@ -166,7 +166,8 @@ window.crearMapaSVIH = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function controlExportacion(caja, titulo, crearImagen, resoluciones) {
+  function controlExportacion(host, titulo, crearImagen, resoluciones) {
+    host.classList.add("mapa-con-descarga");
     const menu = document.createElement("details");
     menu.className = "mapa-exportacion";
     const resumen = document.createElement("summary");
@@ -194,10 +195,34 @@ window.crearMapaSVIH = (() => {
       menu.append(boton);
     }
     menu.append(estado);
-    caja.append(menu);
+    host.append(menu);
   }
 
-  function mapaJurisdiccionExportado(geometria, filas) {
+  const departamentos = base.departamentos?.features || [];
+  function dibujarLimitesExportados(mapa, divisiones, {antes = null, recorte, grosor = .85} = {}) {
+    if (!divisiones.length) return;
+    const atributos = {class:"limites-exportados", d:divisiones.map(f => path(f.geometry)).join(""),
+      fill:"none", stroke:"#4d6178", "stroke-width":grosor, "stroke-opacity":.78,
+      "vector-effect":"non-scaling-stroke"};
+    if (recorte) {
+      const mascara = svg("clipPath",{id:"recorte-limites"});
+      mascara.append(svg("path",{d:path(recorte),"clip-rule":"evenodd"}));
+      mapa.prepend(mascara);
+      atributos["clip-path"] = "url(#recorte-limites)";
+    }
+    mapa.insertBefore(svg("path",atributos),antes);
+  }
+
+  function mapaComparativoExportado(original) {
+    const mapa = original.cloneNode(true);
+    for (const capa of capasDetalle) mapa.querySelector(`.limites-${capa[0]}`)?.remove();
+    dibujarLimitesExportados(mapa,departamentos,{
+      antes:mapa.querySelector(".valores-provinciales"),grosor:.45
+    });
+    return mapa;
+  }
+
+  function mapaJurisdiccionExportado(geometria, filas, territorio, codigoRegion) {
     const vertices = coordenadas(geometria).map(project);
     const xs = vertices.map(p => p[0]), ys = vertices.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -205,6 +230,11 @@ window.crearMapaSVIH = (() => {
     const mapa = svg("svg", {viewBox:`${minX - ancho * .05} ${minY - alto * .05} ${ancho * 1.1} ${alto * 1.1}`});
     mapa.append(svg("path", {d:path(geometria), fill:"#f5f5ee", stroke:"#52677e",
       "stroke-width":"1.2", "vector-effect":"non-scaling-stroke", "fill-rule":"evenodd"}));
+    const jurisdiccion = normalizar(territorio);
+    const divisiones = departamentos.filter(f => codigoRegion ?
+      normalizar(f.properties.region) === codigoRegion :
+      normalizar(f.properties.provincia) === jurisdiccion);
+    dibujarLimitesExportados(mapa,divisiones,{recorte:geometria});
     const radio = Math.max(ancho / 600, alto / 520) * 4.4;
     for (const fila of filas) {
       const coordenada = [fila.Longitud, fila.Latitud];
@@ -217,6 +247,11 @@ window.crearMapaSVIH = (() => {
       "● Institución con ubicación registrada · puntos de igual tamaño" :
       "Sin instituciones con ubicación válida en la jurisdicción.",
       "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"];
+    if (divisiones.length) {
+      const tipo = jurisdiccion === "ciudad de buenos aires" ? "comunas" :
+        (codigoRegion || jurisdiccion === "buenos aires" ? "partidos" : "departamentos");
+      leyenda.splice(1,0,"Límites internos: " + tipo);
+    }
     return {mapa, leyenda};
   }
 
@@ -244,6 +279,7 @@ window.crearMapaSVIH = (() => {
   }
   window.crearMapaComparativoSVIH = function(host, filas, {formato = v => fmt(v), nacional = null, mini = false, seleccion = "País", tituloExportacion} = {}) {
     host.replaceChildren();
+    host.classList.remove("mapa-con-descarga");
     const caja = document.createElement("div"); caja.className = mini ? "mini-argentina" : "mapa-coropletico"; host.append(caja);
     const s = svg("svg",{viewBox:"-82 15 35 57",role:"img","aria-label":mini?"Jurisdicción seleccionada en Argentina":"Mapa de indicadores por provincia de Argentina"});
     const validos = filas.filter(r=>Number.isFinite(r.valor)&&base.provincias.features.some(f=>normalizar(f.id)===normalizar(r.Provincia_atencion))), valores = validos.map(r=>r.valor), min = valores.length?Math.min(...valores):null, max = valores.length?Math.max(...valores):null;
@@ -268,13 +304,15 @@ window.crearMapaSVIH = (() => {
       });s.append(etiquetas);
     }caja.append(s);if(!mini)navegarComparativo(caja,s);
     if(!mini){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);const leyenda=document.createElement("div");leyenda.className="escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);leyenda.append(a,grad,b);host.append(leyenda);
-      if(tituloExportacion)controlExportacion(caja,tituloExportacion,()=>({mapa:s,
-        leyenda:[`Total país: ${formato(nacional)} · Gris claro: sin datos`, "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"],
+      if(tituloExportacion)controlExportacion(host,tituloExportacion,()=>({mapa:mapaComparativoExportado(s),
+        leyenda:[`Total país: ${formato(nacional)} · Gris claro: sin datos`,
+          "Límites internos: comunas, partidos y departamentos", "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"],
         rango:valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
     }
   };
   return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false, tituloExportacion} = {}) {
     host.replaceChildren();
+    host.classList.remove("mapa-con-descarga");
     const validos = datos.filter(r => Number.isFinite(r.Latitud) && Number.isFinite(r.Longitud) &&
       Math.abs(r.Latitud) <= 90 && Math.abs(r.Longitud) <= 180 && Number.isFinite(r[cantidad]) && r[cantidad] > 0);
     const frame = document.createElement("div"); frame.className = "mapa-interactivo";
@@ -433,7 +471,8 @@ window.crearMapaSVIH = (() => {
     const territorio = provinciaSeleccionada || base.regiones_sanitarias?.features.find(f =>
       codigoRegion && normalizar(f.properties.region) === codigoRegion);
     if(tituloExportacion && territorio)
-      controlExportacion(frame,tituloExportacion,()=>mapaJurisdiccionExportado(territorio.geometry,validos),[3]);
+      controlExportacion(host,tituloExportacion,() =>
+        mapaJurisdiccionExportado(territorio.geometry,validos,seleccion,codigoRegion),[3]);
     if (!validos.length) {const mensaje = document.createElement("span"); mensaje.className = "mapa-sin-puntos"; mensaje.textContent = "Sin instituciones con coordenadas y cantidad válidas."; frame.append(mensaje);}
     pintar();
     return {registros: validos.length, excluidos: datos.length - validos.length};
