@@ -125,7 +125,7 @@
   function medidor(host,v,n){if(!numeric(v)){vacio(host);return;}const s=sv("svg",{viewBox:"0 0 240 68",class:"medidor medidor-lineal",role:"img","aria-label":`${f(v,1)}%`});s.append(sv("text",{x:0,y:24,fill:"#9ed9fa","font-size":26,"font-weight":700},f(v,1)+"%"),sv("rect",{x:0,y:36,width:240,height:8,fill:"#536385"}),sv("rect",{x:0,y:36,width:240*Math.max(0,Math.min(100,v))/100,height:8,fill:"#9ed9fa"}),sv("text",{x:0,y:62,fill:"white","font-size":10},"0%"),sv("text",{x:240,y:62,fill:"white","font-size":10,"text-anchor":"end"},"100%"));host.append(el("div","numero-indicador",f(n)),s);}
   function mapa(host,a,nombre="nombre_institucion",cantidad="cantidad"){
     const indicador=activa==="prep"?"Instituciones que distribuyen PrEP":"Instituciones que dispensaron PeP en los últimos 12 meses";
-    window.crearMapaSVIH(host,a,{nombre,cantidad,seleccion:provincia(),
+    window.crearMapaSVIH(host,a,{nombre,cantidad,seleccion:provincia(),tratamiento:activa==="prep"?"PrEP":"PeP",
       tituloExportacion:`${indicador} · ${etiquetaJurisdiccion(provincia())} · Corte: ${d.fecha}`});
   }
   function serieMixta(host,a,estudios,personas,promedio){

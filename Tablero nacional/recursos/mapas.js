@@ -183,10 +183,12 @@ window.crearMapaSVIH = (() => {
         boton.disabled = true;
         estado.textContent = "";
         try {
-          const {mapa, leyenda, rango, instituciones} = crearImagen();
+          const {mapa, leyenda, rango, instituciones, totalPersonas, tratamiento} = crearImagen();
           const tituloPng = instituciones === undefined ? titulo :
             `${titulo} · ${fmt(instituciones)} ${instituciones === 1 ? "institución" : "instituciones"}`;
-          await exportarMapa(mapa, tituloPng, leyenda, escala, rango);
+          const personas = tratamiento ?
+            ` · ${fmt(totalPersonas)} ${totalPersonas === 1 ? "persona" : "personas"} con retiro de ${tratamiento}` : "";
+          await exportarMapa(mapa, tituloPng + personas, leyenda, escala, rango);
           menu.open = false;
         } catch {
           estado.textContent = "No se pudo descargar la imagen.";
@@ -225,7 +227,7 @@ window.crearMapaSVIH = (() => {
     return mapa;
   }
 
-  function mapaJurisdiccionExportado(geometria, filas, territorio, codigoRegion, cantidad) {
+  function mapaJurisdiccionExportado(geometria, filas, territorio, codigoRegion, cantidad, tratamiento) {
     const jurisdiccion = normalizar(territorio);
     // El perímetro y las divisiones internas salen de la misma capa del IGN.
     const contorno = contornosExportacion.find(f => codigoRegion ?
@@ -286,7 +288,9 @@ window.crearMapaSVIH = (() => {
         (codigoRegion || jurisdiccion === "buenos aires" ? "partidos" : "departamentos");
       leyenda.splice(1,0,"Límites internos: " + tipo);
     }
-    return {mapa, leyenda, instituciones:marcas.length};
+    if(tratamiento)leyenda.push("Total de personas: suma de las instituciones representadas.");
+    return {mapa, leyenda, instituciones:marcas.length,
+      totalPersonas:puntos.reduce((total,fila)=>total+fila[cantidad],0), tratamiento};
   }
 
   const zoomMaximo = 1024;
@@ -344,7 +348,7 @@ window.crearMapaSVIH = (() => {
         rango:valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
     }
   };
-  return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false, tituloExportacion} = {}) {
+  return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false, tituloExportacion, tratamiento} = {}) {
     host.replaceChildren();
     host.classList.remove("mapa-con-descarga");
     const validos = datos.filter(r => Number.isFinite(r.Latitud) && Number.isFinite(r.Longitud) &&
@@ -506,7 +510,7 @@ window.crearMapaSVIH = (() => {
       codigoRegion && normalizar(f.properties.region) === codigoRegion);
     if(tituloExportacion && territorio)
       controlExportacion(host,tituloExportacion,() =>
-        mapaJurisdiccionExportado(territorio.geometry,validos,seleccion,codigoRegion,cantidad),[3]);
+        mapaJurisdiccionExportado(territorio.geometry,validos,seleccion,codigoRegion,cantidad,tratamiento),[3]);
     else if (tituloExportacion && normalizar(seleccion)==="pais") {
       host.classList.add("mapa-con-descarga");
       const ayuda = document.createElement("p");
