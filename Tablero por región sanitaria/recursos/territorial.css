@@ -42,3 +42,9 @@
   main[data-ambito=provincial] #filtro-institucion{display:grid;grid-template-columns:max-content minmax(0,1fr)}
   main[data-ambito=provincial] #filtro-institucion select{width:75%;box-sizing:border-box}
 }
+
+.tp-pep{grid-column:3}
+.tp-mapa-pep{grid-column:4;grid-row:3}
+.tp-mapa-pep .interior{padding:0}
+.tp-mapa-pep .mapa-interactivo{width:100%;height:100%}
+@media(max-width:900px){.tp-mapa-pep .mapa-interactivo{height:280px}}

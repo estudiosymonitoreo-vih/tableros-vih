@@ -16,7 +16,7 @@ header{position:absolute;top:20px;left:28px;right:26px;height:100px}h1{font-size
 .detalles{column-gap:35px}
 .detalles{align-items:start}
 .evolucion-resumen .mini>.interior{padding:0}.profilaxis-resumen>.interior{padding:30px 5px 0;gap:15px}.profilaxis-resumen .mini{flex:0 0 105px;margin:0}.profilaxis-resumen .mini>.interior{padding:4px 0;flex:none;height:auto;min-height:0}.es-prep .profilaxis-anual .leyenda{flex-direction:column;align-items:flex-start;padding:3px 12px;gap:7px;min-height:45px;font-size:10px}
-.selector-comparativo{margin-top:54px}
+main[data-vista=comparativo] .barra{display:block;left:28px;top:128px}.selector-comparativo{margin-top:54px}
 .evolucion-anual .nota{font-size:9px;line-height:1.5;flex:none;margin:5px 10px}.notas-tratamiento{position:absolute;right:0;bottom:-35px;width:270px;margin:0;font-size:10px;line-height:1.4}.notas-laboratorio{position:absolute;left:190px;right:0;bottom:-35px;text-align:center;font-size:11px;line-height:1.5}.notas-laboratorio p{margin:0}.notas-laboratorio p:first-child{color:#ffdb27}
 @media(max-width:699px){.notas-tratamiento,.notas-laboratorio{position:static;width:auto;margin:12px 0}.profilaxis-resumen .mini{flex:auto;min-height:100px}}
 .tabla-con-controles{position:relative}.abrir-busqueda{position:absolute;top:0;right:0;z-index:2;border:0;background:#658bb5;color:white;width:24px;height:22px;padding:0;font-size:20px;opacity:0}.tabla-con-controles:hover>.abrir-busqueda,.abrir-busqueda:focus-visible{opacity:1}.tabla-buscando>.buscar{display:block;position:absolute;z-index:3;top:0;left:0;right:25px;width:calc(100% - 25px);height:24px;border:1px solid #9dbce0;padding:3px 8px;background:#f7f9fe;color:#253657;font-size:11px}.tabla-buscando>.abrir-busqueda{opacity:1}
@@ -31,7 +31,7 @@ header{position:absolute;top:20px;left:28px;right:26px;height:100px}h1{font-size
 .tabla-scroll::-webkit-scrollbar,.opciones-periodos::-webkit-scrollbar{width:8px;height:8px}
 .tabla-scroll::-webkit-scrollbar-thumb,.opciones-periodos::-webkit-scrollbar-thumb{background:#7188ab;border-radius:5px}
 .tabla-scroll:focus-visible{outline:2px solid #ffdb49;outline-offset:-2px}
-
+main[data-vista=comparativo] .barra,main[data-vista=historico] .barra{display:none}
 .selector-comparativo{margin-top:5px}
 .controles-historicos{left:30px;right:60px;grid-template-columns:280px minmax(0,1fr) 220px;gap:20px}
 .selector-jurisdicciones{position:relative;min-width:0;z-index:11}
@@ -144,3 +144,8 @@ aside{overflow-y:auto;scrollbar-width:thin}
 .cabecera-comparativo .orden-historico{flex:none;padding:4px 0}
 @media(max-width:699px){.controles-historicos.con-orden{height:auto}.orden-historico{align-self:flex-start;margin:3px 0}}
 @media(max-width:699px){.cabecera-comparativo{align-items:flex-start;flex-direction:column;gap:6px}.cabecera-comparativo .orden-historico{margin:0 0 6px}}
+
+.mapa-exportacion{position:absolute;top:6px;right:6px;z-index:2;max-width:calc(100% - 12px);border:1px solid #8194a6;border-radius:4px;background:#fff;color:#253657;font:12px/1.3 Arial,sans-serif}
+.mapa-exportacion summary{padding:4px 7px;cursor:pointer}
+.mapa-exportacion button{display:block;width:100%;border:0;border-top:1px solid #c6d4e2;background:#fff;color:#253657;padding:4px;cursor:pointer}
+.mapa-exportacion [role=status]:not(:empty){display:block;padding:4px}

@@ -121,7 +121,8 @@
     const tienePais = datos.mapa.some(x => x.Provincia_atencion === "País");
     const lista = (datos.mapa || []).filter(x => x.Provincia_atencion === provincia ||
       (provincia === "País" && !tienePais));
-    const resultado = window.crearMapaSVIH($("mapa"), lista, {seleccion:provincia});
+    const resultado = window.crearMapaSVIH($("mapa"), lista, {seleccion:provincia,
+      tituloExportacion:`Instituciones de dispensa de TARV · ${provincia} · Corte: ${datos.fecha}`});
     $("mapa-nota").textContent = `${resultado.registros} registros con ubicación · ${resultado.excluidos} sin coordenadas válidas o cantidad positiva.`;
     if($("mini-mapa")) window.crearMapaComparativoSVIH($("mini-mapa"),[],{mini:true,seleccion:provincia});
   }
@@ -133,7 +134,6 @@
   window.ajustarRotulosSVIH=ajustarRotulos;
   function actualizar() {
     const provincia = $("provincia").value;
-    $("acceso-regiones").hidden = !["Provincia de Buenos Aires", "Buenos Aires"].includes(provincia);
     const fila = datos.general.find(x => x.Provincia_atencion === provincia)||{};
     for (const [id, config] of [["epidemiologia",epidemiologia],["tarv",tarjetas],["detalle",detalles]]) {
       const origen=id==='epidemiologia'&&contexto?contexto.filas.find(r=>r.Provincia_atencion===provincia)||{}:fila;

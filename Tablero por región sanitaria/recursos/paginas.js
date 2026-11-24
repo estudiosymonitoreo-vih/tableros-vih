@@ -124,7 +124,9 @@
   }
   function medidor(host,v,n){if(!numeric(v)){vacio(host);return;}const s=sv("svg",{viewBox:"0 0 240 68",class:"medidor medidor-lineal",role:"img","aria-label":`${f(v,1)}%`});s.append(sv("text",{x:0,y:24,fill:"#9ed9fa","font-size":26,"font-weight":700},f(v,1)+"%"),sv("rect",{x:0,y:36,width:240,height:8,fill:"#536385"}),sv("rect",{x:0,y:36,width:240*Math.max(0,Math.min(100,v))/100,height:8,fill:"#9ed9fa"}),sv("text",{x:0,y:62,fill:"white","font-size":10},"0%"),sv("text",{x:240,y:62,fill:"white","font-size":10,"text-anchor":"end"},"100%"));host.append(el("div","numero-indicador",f(n)),s);}
   function mapa(host,a,nombre="nombre_institucion",cantidad="cantidad"){
-    window.crearMapaSVIH(host,a,{nombre,cantidad,seleccion:provincia()});
+    const indicador=activa==="prep"?"Instituciones que distribuyen PrEP":"Instituciones que dispensaron PeP en los últimos 12 meses";
+    window.crearMapaSVIH(host,a,{nombre,cantidad,seleccion:provincia(),
+      tituloExportacion:`${indicador} · ${etiquetaJurisdiccion(provincia())} · Corte: ${d.fecha}`});
   }
   function serieMixta(host,a,estudios,personas,promedio){
     if(!a.length)return vacio(host);
@@ -419,7 +421,12 @@
     let indicadorMapa=null;
     const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
       // Alternar el ranking no reconstruye el mapa ni pierde su zoom.
-      if(indicadorMapa!==cfg.id){window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg)});indicadorMapa=cfg.id;}
+      if(indicadorMapa!==cfg.id){
+        const alcance=/jurisdicción|provincia/i.test(cfg.titulo)?", Argentina":" según jurisdicción, Argentina";
+        window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg),
+          tituloExportacion:`${cfg.titulo}${alcance} · Corte: ${d.fecha}`});
+        indicadorMapa=cfg.id;
+      }
       const ordenadas=rows.slice().sort((a,b)=>{
         if(comparativoOrden==='valor'){
           if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;

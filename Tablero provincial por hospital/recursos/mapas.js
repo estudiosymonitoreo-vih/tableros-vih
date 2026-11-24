@@ -53,6 +53,173 @@ window.crearMapaSVIH = (() => {
       if(c.clave===clave)return;c.clave=clave;c.g.replaceChildren(...visibles.map(f=>{if(!f.d)f.d=path(f.geometry);return svg('path',{d:f.d,'stroke-width':c.grosor,'vector-effect':'non-scaling-stroke'})}));
     });
   }
+  // Matriz QR de https://estudiosymonitoreo-vih.github.io/tableros-vih/index.html, incorporada para exportar también sin conexión.
+  const qrPortal = [
+    "1111111000001100100001000010101111111",
+    "1000001001111101100011111101101000001",
+    "1011101011011010001001110011101011101",
+    "1011101010110000010010111111101011101",
+    "1011101010100001111111010110101011101",
+    "1000001010100011010011001001101000001",
+    "1111111010101010101010101010101111111",
+    "0000000011110110011001111000100000000",
+    "1011111000100011100101000100001111100",
+    "0100000011011101011010101100100100110",
+    "1100111000101001101100100001011011011",
+    "0001010110001001001111101011111100001",
+    "1011111000110101110100000111011011111",
+    "0001000111000100100110010100110100000",
+    "0110001111101101101010100111100111011",
+    "1111010000001010100110010001011110000",
+    "0000111110010000001011111110011110101",
+    "1101110101001101100000000100100100010",
+    "0001111101011110000011111011001100011",
+    "1001010100000110100001110010110110001",
+    "0101001110001000010000111110011010100",
+    "0100110110000000011111110100110001000",
+    "1001111110001111110001001001000111011",
+    "0100000011010100111111100001101110011",
+    "0110001110100010100101001111001010101",
+    "1001110001110011001011101110100001000",
+    "1010101100100101111100101111111111111",
+    "1011100111100111001111000011001000001",
+    "1001001111000001011100110110111111101",
+    "0000000011110110101100010001100011000",
+    "1111111000001001101000100010101010111",
+    "1000001010000101000000001000100011001",
+    "1011101010011110001111111111111110111",
+    "1011101010001001110000010100011010101",
+    "1011101010111110010011000110010000111",
+    "1000001000011000101001100001110010001",
+    "1111111011101110010000111110010010111"
+  ];
+
+  async function exportarMapa(mapa, titulo, leyenda, escala, rango) {
+    const ancho = 640, altoMapa = 520, margen = 20;
+    const lienzo = document.createElement("canvas");
+    const ctx = lienzo.getContext("2d");
+    const lineas = [];
+    ctx.font = "bold 20px Arial";
+    for (const palabra of titulo.split(/\s+/)) {
+      const ultima = lineas.at(-1);
+      if (ultima && ctx.measureText(ultima + " " + palabra).width <= ancho - 2 * margen)
+        lineas[lineas.length - 1] += " " + palabra;
+      else lineas.push(palabra);
+    }
+    const yMapa = margen + lineas.length * 25, alto = yMapa + altoMapa + 120;
+    lienzo.width = ancho * escala;
+    lienzo.height = alto * escala;
+    ctx.scale(escala, escala);
+    ctx.fillStyle = "#242c50";
+    ctx.fillRect(0, 0, ancho, alto);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 20px Arial";
+    lineas.forEach((linea, i) => ctx.fillText(linea, margen, margen + 18 + i * 25));
+    const copia = mapa.cloneNode(true);
+    copia.setAttribute("width", (ancho - 2 * margen) * escala);
+    copia.setAttribute("height", altoMapa * escala);
+    copia.querySelectorAll('[vector-effect="non-scaling-stroke"][stroke-width]').forEach(elemento => {
+      elemento.setAttribute("stroke-width", Number(elemento.getAttribute("stroke-width")) * escala);
+    });
+    const urlSvg = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copia)], {type:"image/svg+xml"}));
+    try {
+      const imagen = new Image();
+      imagen.src = urlSvg;
+      await imagen.decode();
+      ctx.fillStyle = "#e3edf1";
+      ctx.fillRect(margen, yMapa, ancho - 2 * margen, altoMapa);
+      ctx.drawImage(imagen, margen, yMapa, ancho - 2 * margen, altoMapa);
+    } finally {
+      URL.revokeObjectURL(urlSvg);
+    }
+    let y = yMapa + altoMapa + 24;
+    if (rango) {
+      const gradiente = ctx.createLinearGradient(margen, y, margen + 115, y);
+      gradiente.addColorStop(0, rango[2] ? "#678dc6" : "#b9ddf4");
+      gradiente.addColorStop(1, rango[2] ? "#678dc6" : "#146fc7");
+      ctx.fillStyle = gradiente;
+      ctx.fillRect(margen, y - 9, 115, 9);
+      ctx.fillStyle = "#fff";
+      ctx.font = "13px Arial";
+      ctx.fillText(rango[0] === rango[1] ? rango[0] : rango[0] + " a " + rango[1], margen + 125, y);
+      y += 19;
+    }
+    ctx.fillStyle = "#fff";
+    ctx.font = "13px Arial";
+    for (const linea of [...leyenda, "Elaboración a cargo de la DRVIHyT · Ministerio de Salud de la Nación"]) {
+      ctx.fillText(linea, margen, y, ancho - 110);
+      y += 18;
+    }
+    const lado = qrPortal.length + 8, xQr = ancho - margen - lado, yQr = alto - margen - lado;
+    ctx.fillRect(xQr, yQr, lado, lado);
+    ctx.fillStyle = "#000";
+    qrPortal.forEach((fila, dy) => Array.from(fila).forEach((modulo, dx) => {
+      if (modulo === "1") ctx.fillRect(xQr + 4 + dx, yQr + 4 + dy, 1, 1);
+    }));
+    const png = await new Promise(resolve => lienzo.toBlob(resolve, "image/png"));
+    if (!png) throw new Error("No se pudo crear el PNG");
+    const url = URL.createObjectURL(png), enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = titulo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + escala + "x.png";
+    enlace.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function controlExportacion(caja, titulo, crearImagen, resoluciones) {
+    const menu = document.createElement("details");
+    menu.className = "mapa-exportacion";
+    const resumen = document.createElement("summary");
+    resumen.textContent = "Descargar imagen";
+    menu.append(resumen);
+    const estado = document.createElement("span");
+    estado.setAttribute("role", "status");
+    for (const escala of resoluciones) {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = escala === 1 ? "Estándar (1×)" : "Alta (3×)";
+      boton.onclick = async () => {
+        boton.disabled = true;
+        estado.textContent = "";
+        try {
+          const {mapa, leyenda, rango} = crearImagen();
+          await exportarMapa(mapa, titulo, leyenda, escala, rango);
+          menu.open = false;
+        } catch {
+          estado.textContent = "No se pudo descargar la imagen.";
+        } finally {
+          boton.disabled = false;
+        }
+      };
+      menu.append(boton);
+    }
+    menu.append(estado);
+    caja.append(menu);
+  }
+
+  function mapaJurisdiccionExportado(geometria, filas) {
+    const vertices = coordenadas(geometria).map(project);
+    const xs = vertices.map(p => p[0]), ys = vertices.map(p => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const ancho = Math.max(maxX - minX, 0.005), alto = Math.max(maxY - minY, 0.005);
+    const mapa = svg("svg", {viewBox:`${minX - ancho * .05} ${minY - alto * .05} ${ancho * 1.1} ${alto * 1.1}`});
+    mapa.append(svg("path", {d:path(geometria), fill:"#f5f5ee", stroke:"#52677e",
+      "stroke-width":"1.2", "vector-effect":"non-scaling-stroke", "fill-rule":"evenodd"}));
+    const radio = Math.max(ancho / 600, alto / 520) * 4.4;
+    for (const fila of filas) {
+      const coordenada = [fila.Longitud, fila.Latitud];
+      if (!contienePunto(geometria, coordenada)) continue;
+      const [cx, cy] = project(coordenada);
+      mapa.append(svg("circle", {cx, cy, r:radio, fill:"#1961c9", stroke:"#fff",
+        "stroke-width":".7", "vector-effect":"non-scaling-stroke"}));
+    }
+    const leyenda = [mapa.querySelector("circle") ?
+      "● Institución con ubicación registrada · puntos de igual tamaño" :
+      "Sin instituciones con ubicación válida en la jurisdicción.",
+      "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"];
+    return {mapa, leyenda};
+  }
+
   const zoomMaximo = 1024;
   let contadorMapas = 0;
   function navegarComparativo(caja, mapa) {
@@ -75,7 +242,7 @@ window.crearMapaSVIH = (() => {
     ['pointerup','pointercancel'].forEach(t=>mapa.addEventListener(t,e=>{punteros.delete(e.pointerId);distancia=0}));
     mapa.addEventListener('keydown',e=>{if(['+','=','-','Home','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))e.preventDefault();if(e.key==='+'||e.key==='=')acercar(2);if(e.key==='-')acercar(.5);if(e.key==='Home')restablecer();if(e.key==='ArrowLeft')vista.x-=vista.w*.1;if(e.key==='ArrowRight')vista.x+=vista.w*.1;if(e.key==='ArrowUp')vista.y-=vista.h*.1;if(e.key==='ArrowDown')vista.y+=vista.h*.1;if(e.key.startsWith('Arrow'))pintar();});pintar();
   }
-  window.crearMapaComparativoSVIH = function(host, filas, {formato = v => fmt(v), nacional = null, mini = false, seleccion = "País"} = {}) {
+  window.crearMapaComparativoSVIH = function(host, filas, {formato = v => fmt(v), nacional = null, mini = false, seleccion = "País", tituloExportacion} = {}) {
     host.replaceChildren();
     const caja = document.createElement("div"); caja.className = mini ? "mini-argentina" : "mapa-coropletico"; host.append(caja);
     const s = svg("svg",{viewBox:"-82 15 35 57",role:"img","aria-label":mini?"Jurisdicción seleccionada en Argentina":"Mapa de indicadores por provincia de Argentina"});
@@ -100,9 +267,13 @@ window.crearMapaSVIH = (() => {
         texto.append(svg('title',{},`${f.id}: ${formato(r?.valor)}`));etiquetas.append(texto);
       });s.append(etiquetas);
     }caja.append(s);if(!mini)navegarComparativo(caja,s);
-    if(!mini){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);const leyenda=document.createElement("div");leyenda.className="escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);leyenda.append(a,grad,b);host.append(leyenda);}
+    if(!mini){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);const leyenda=document.createElement("div");leyenda.className="escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);leyenda.append(a,grad,b);host.append(leyenda);
+      if(tituloExportacion)controlExportacion(caja,tituloExportacion,()=>({mapa:s,
+        leyenda:[`Total país: ${formato(nacional)} · Gris claro: sin datos`, "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"],
+        rango:valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
+    }
   };
-  return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false} = {}) {
+  return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false, tituloExportacion} = {}) {
     host.replaceChildren();
     const validos = datos.filter(r => Number.isFinite(r.Latitud) && Number.isFinite(r.Longitud) &&
       Math.abs(r.Latitud) <= 90 && Math.abs(r.Longitud) <= 180 && Number.isFinite(r[cantidad]) && r[cantidad] > 0);
@@ -258,6 +429,11 @@ window.crearMapaSVIH = (() => {
       if (e.key === "ArrowDown") vista.y += vista.h * .1;
       if (e.key.startsWith("Arrow")) pintar();
     });
+    const codigoRegion = normalizar(seleccion).match(/^region sanitaria ([ivx]+)$/)?.[1];
+    const territorio = provinciaSeleccionada || base.regiones_sanitarias?.features.find(f =>
+      codigoRegion && normalizar(f.properties.region) === codigoRegion);
+    if(tituloExportacion && territorio)
+      controlExportacion(frame,tituloExportacion,()=>mapaJurisdiccionExportado(territorio.geometry,validos),[3]);
     if (!validos.length) {const mensaje = document.createElement("span"); mensaje.className = "mapa-sin-puntos"; mensaje.textContent = "Sin instituciones con coordenadas y cantidad válidas."; frame.append(mensaje);}
     pintar();
     return {registros: validos.length, excluidos: datos.length - validos.length};
