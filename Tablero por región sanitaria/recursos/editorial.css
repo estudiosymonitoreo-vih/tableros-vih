@@ -483,6 +483,29 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .territorial .tg-kpis .tg-instituciones .numero-indicador{color:#9ed9fa!important}
 .territorial .tg-notificados .numero-indicador{color:#fff}
 
+.definicion-indicador{font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.definicion-indicador p{margin:0}
+.definicion-indicador-en-recuadro{
+  box-sizing:border-box;
+  flex:none;
+  grid-column:1/-1;
+  border:1px solid #829dbb;
+  height:calc(3.9em + 14px);
+  padding:6px 10px;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:#7085a2 transparent;
+}
+.definicion-indicador-en-recuadro:focus-visible{outline:2px solid #9ed9fa;outline-offset:2px}
+.definicion-indicador-al-pie{margin:12px 0 0}
+@media(min-width:700px){
+  .definicion-indicador{font-size:13px}
+  .comparativo-grid{top:-44px;grid-template-rows:minmax(0,1fr) auto;row-gap:8px}
+  .definicion-indicador-al-pie{position:absolute;top:426px;left:0;right:0;margin:0}
+  .pagina>.historico-grafico,.territorial .tc-grafico,.territorial[data-vista=regiones] .tc-grafico{height:355px}
+  .resumen-historico,.territorial .tc-resumen{bottom:60px}
+}
+
 /* Evolución TARV: separar el resumen del título de página sin desplazar los gráficos. */
 .evolucion-resumen{display:block}
 .evolucion-resumen-titulo{margin:0 0 4px;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.25px}

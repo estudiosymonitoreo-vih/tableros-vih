@@ -40,6 +40,75 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   Porc_no_recomendado: "% de personas > 14 años con esquema no recomendado"
 });
 
+const titulosDefinicionesSVIH = {
+  N_TARV: "N° personas en TARV",
+  N_TARV_criterio_OMS: "N° personas en TARV criterio OMS",
+  N_prep: "N° de personas en PreP",
+  PreP: "N° de personas en PreP",
+  Porc_prep: "% de eprsonas en PreP por provincia de entrega",
+  N_instituciones_disp_TARV: "N° instituciones que distribuyen TARV",
+  Porc_en_TARV: "% de personas en TARV por provincia de atención",
+  Prop_residentes: "% de personas en TARV por provincia de residencia",
+  Variación_TARV: "Variación interanual en el número de personas en TARV",
+  Prop_indetectables: "% de personas en TARV con carga viral indetectables",
+  Prop_con_info_cv: "% con información de carga viral",
+  Prop_DTG_tto: "% de personas en TARV con DTG en último tto",
+  Prop_biterapia: "% de personas en TARV con biterapia",
+  Porc_recomendado: "% personas en TARV >=15 con tto de primera elección para la DRVIHyT.",
+  Prop_perdida_seguimiento: "Proporción de pérdida de seguimiento de personas que retiraron TARV el último año"
+};
+
+const textosDefinicionesSVIH = {
+  Porc_caducados: ["Entre las personas en TARV al corte, porcentaje cuya medicación de la última dispensa ya se venció.", "El indicador depende de la oportunidad de carga de las dispensas."],
+  Prop_notificados: ["Porcentaje de personas en TARV al corte con notificación en el Sistema Nacional de Vigilancia de la Salud (SNVS)."],
+  Prop_caso_confirmado: ["Porcentaje de personas en TARV al corte con caso de VIH confirmado en el SNVS."],
+  revincular: ["Personas fuera de TARV, con retiro en los últimos 12 meses y al menos 90 días desde el vencimiento de la última dispensa.", "Se consideran personas con estado VIH, sin fallecimiento ni cobertura social registrados y sin PUCO en el último remito VIH."],
+  Prop_a_revincular: ["Personas a revincular divididas por las personas que estaban en TARV hace 12 meses, por 100."],
+  Porc_alternativo: ["Entre las personas de 15 años o más en primera línea de TARV, porcentaje con un esquema alternativo según la clasificación de la DRVIHyT."],
+  Porc_no_recomendado: ["Entre las personas de 15 años o más en primera línea de TARV, porcentaje con un esquema no recomendado según la clasificación de la DRVIHyT."],
+  Casos_2024: ["Número de nuevos diagnósticos de VIH notificados al SNVS en 2024."],
+  Casos_VIH_2025: ["Número de nuevos diagnósticos de VIH notificados al SNVS en 2025."],
+  Porc_casos: ["Diagnósticos de VIH de la jurisdicción como porcentaje del total nacional de 2024."],
+  Proporcion_diagnosticos_2025: ["Diagnósticos de VIH de la jurisdicción como porcentaje del total nacional de 2025."],
+  Tasa_2024: ["Nuevos diagnósticos de VIH en 2024 por 100.000 habitantes."],
+  Tasa_VIH_2025: ["Nuevos diagnósticos de VIH en 2025 por 100.000 habitantes."],
+  Dx_tardio_2023_2024: ["Proporción de diagnósticos tardíos de VIH en 2023–2024, expresada como porcentaje."],
+  Dx_tardio_2024_2025: ["Proporción de diagnósticos tardíos de VIH en 2024–2025, expresada como porcentaje.", "Se respeta la indicación de datos insuficientes de la fuente."],
+  Enf_avanz_2023_2024: ["Proporción de diagnósticos de VIH en etapa avanzada en 2023–2024, expresada como porcentaje."],
+  Enf_avanzada_2024_2025: ["Proporción de diagnósticos de VIH en etapa avanzada en 2024–2025, expresada como porcentaje.", "Se respeta la indicación de datos insuficientes de la fuente."],
+  Mortalidad_2023: ["Defunciones por sida en 2023 por 100.000 habitantes.", "Fuente de defunciones: Dirección de Estadísticas e Información de Salud."],
+  Mortalidad_sida_2024: ["Defunciones por sida en 2024 por 100.000 habitantes.", "Fuente de defunciones: Dirección de Estadísticas e Información de Salud."],
+  Sifilis_2024: ["Tasa de sífilis en población general en 2024, por 100.000 habitantes."],
+  Sifilis_2025: ["Tasa de sífilis en población general en 2025, por 100.000 habitantes."]
+};
+
+window.mostrarDefinicionIndicadorSVIH = (host, id, catalogo = []) => {
+  const titulo = titulosDefinicionesSVIH[id];
+  const nombre = texto => String(texto ?? "").trim().replace(/\.$/, "");
+  const fila = titulo && catalogo.find(r => nombre(r.INDICADOR) === nombre(titulo));
+  let [definicion, observaciones] = textosDefinicionesSVIH[id] || [fila?.["DESCRIPCIÓN"], fila?.OBSERVACIONES];
+  if (!definicion && /^Prop_TARV_[123]_/.test(id)) {
+    const duracion = {1:"un mes", 2:"dos meses", 3:"tres meses o más"}[id.split("_")[2]];
+    definicion = `Porcentaje de personas en TARV cuya última dispensa entregó medicación para ${duracion}.`;
+  } else if (!definicion && /^Porc_tto_[123]$/.test(id)) {
+    const linea = {1:"primera", 2:"segunda", 3:"tercera"}[id.at(-1)];
+    definicion = `Porcentaje de personas de 15 años o más clasificadas en ${linea} línea según su tratamiento antirretroviral prescripto en SVIH.`;
+  } else if (!definicion && /^Prop_(DRV800|EFV|AZT|RAL|NVP|XTC)_tto$/.test(id)) {
+    const farmaco = id.split("_")[1];
+    definicion = `Porcentaje de personas en TARV cuyo último tratamiento prescripto incluye ${farmaco === "XTC" ? "lamivudina o emtricitabina" : farmaco}.`;
+  }
+  const agregar = (rotulo, texto) => {
+    const parrafo = document.createElement("p"), destacado = document.createElement("strong");
+    destacado.textContent = rotulo;
+    parrafo.append(destacado, " ", texto);
+    host.append(parrafo);
+  };
+  host.replaceChildren();
+  agregar("DEFINICIÓN:", definicion || "Sin definición disponible en el catálogo.");
+  if (observaciones?.trim()) agregar("Observaciones:", observaciones.trim());
+  host.scrollTop = 0;
+};
+
 // Mismo criterio visual en Principal y Laboratorio: celeste desde 70%,
 // transición continua y naranja intenso en 40% o menos, sin cambiar el valor.
 window.colorInformacionCargaViralSVIH = valor => {

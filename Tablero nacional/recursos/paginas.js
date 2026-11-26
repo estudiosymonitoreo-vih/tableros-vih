@@ -436,8 +436,11 @@
     periodos.forEach(v=>{const l=el("label"),c=el("input");c.type="checkbox";c.value=v;c.checked=histPeriodos.includes(v);l.append(c,document.createTextNode(new Date(v+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})));opciones.append(l);c.onchange=()=>{histPeriodos=[...opciones.querySelectorAll("input:checked")].map(i=>i.value);actualizarResumen();dibujar()};});
     const ordenHost=el('div','orden-historico'),ordenAyuda=el('small',null,'Ordenar barras'),ordenBoton=el('button','boton-orden-historico');ordenBoton.type='button';ordenHost.append(ordenAyuda,ordenBoton);controles.append(ordenHost);
     const graf=panel(host,"Evolución de indicadores por período","historico-grafico"),estadisticas=el("div","resumen-historico");
-    host.append(estadisticas);
+    const definicion=el("section","definicion-indicador definicion-indicador-al-pie");
+    definicion.setAttribute("aria-label","Definición del indicador seleccionado");
+    host.append(estadisticas,definicion);
     const dibujar=()=>{
+      window.mostrarDefinicionIndicadorSVIH(definicion,histIndicador,t.definiciones);
       graf.replaceChildren();estadisticas.replaceChildren();const pct=etiquetas[histIndicador].startsWith("%"),a=rows.filter(r=>r.Indicador===histIndicador&&histPeriodos.includes(r.Periodo)&&histJurisdicciones.includes(r.Provincia_atencion)).map(r=>({...r,periodo_visible:new Date(r.Periodo+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}));
       // Comparar jurisdicciones por el último corte seleccionado evita sumar
       // períodos o separar sus barras. NA al final; empates por nombre visible.
@@ -488,10 +491,15 @@
     }));
     const g=el("div","comparativo-grid"),selector=el("div","selector-comparativo"),encabezado=el("div","encabezado-selector","Indicador (1)"),buscar=el("input","buscar-indicador"),lista=el("div","lista-indicadores"),vista=el("div","comparativo-vista"),titulo=el("h3","titulo-comparativo"),cuerpo=el("div","comparativo-cuerpo"),mapaHost=el("div","comparativo-mapa"),barHost=el("div","comparativo-barras");buscar.type="search";buscar.placeholder="Escribí el término de búsqueda";buscar.setAttribute("aria-label","Buscar indicador provincial");selector.append(encabezado,buscar,lista);cuerpo.append(mapaHost,barHost);vista.append(titulo,cuerpo);g.append(selector,vista);host.append(g);
     const cabecera=el('div','cabecera-comparativo'),ordenHost=el('div','orden-historico'),ordenBoton=el('button','boton-orden-historico');ordenBoton.type='button';ordenHost.append(el('small',null,'Ordenar barras'),ordenBoton);vista.insertBefore(cabecera,titulo);cabecera.append(titulo,ordenHost);
+    const definicion=el("section","definicion-indicador definicion-indicador-en-recuadro");
+    definicion.setAttribute("aria-label","Definición del indicador seleccionado");
+    definicion.tabIndex=0;
+    g.append(definicion);
     let indicadorMapa=null;
     const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
       // Alternar el ranking no reconstruye el mapa ni pierde su zoom.
       if(indicadorMapa!==cfg.id){
+        window.mostrarDefinicionIndicadorSVIH(definicion,cfg.id,t.definiciones);
         const alcance=/jurisdicción|provincia/i.test(cfg.titulo)?", Argentina":" según jurisdicción, Argentina";
         window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg),
           tituloExportacion:`${cfg.titulo}${alcance} · Corte: ${d.fecha}`});
