@@ -485,6 +485,22 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 
 .definicion-indicador{font-size:12px;line-height:1.3;overflow-wrap:anywhere}
 .definicion-indicador p{margin:0}
+.definicion-indicador .observaciones-indicador{font-size:calc(1em - 1pt)}
+.comparativo-mapa .controles-inferiores-mapa{
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+}
+.comparativo-mapa .controles-inferiores-mapa .escala-mapa{
+  margin-top:0;
+  padding:2px 5px;
+  background:#202b4de8;
+  color:#fff;
+}
+.comparativo-mapa .controles-inferiores-mapa .escala-mapa i{height:10px;width:64px}
 .definicion-indicador-en-recuadro{
   box-sizing:border-box;
   flex:none;

@@ -405,7 +405,7 @@ window.crearMapaSVIH = (() => {
   let contadorMapas = 0;
   function navegarComparativo(caja, mapa) {
     const actualizarLimites=crearDetalleCartografico(mapa,mapa.querySelector('.valores-provinciales'));
-    const inicial={x:-82,y:15,w:35,h:57};let vista={...inicial},zoom=1;
+    const inicial={x:-79,y:21,w:36,h:48};let vista={...inicial},zoom=1;
     mapa.setAttribute('tabindex','0');mapa.setAttribute('role','application');
     mapa.setAttribute('aria-label','Mapa provincial. Usar botones, rueda, flechas o arrastrar para navegar.');
     const controles=document.createElement('div');controles.className='mapa-controles';
@@ -449,11 +449,14 @@ window.crearMapaSVIH = (() => {
         texto.append(svg('title',{},`${f.id}: ${formato(r?.valor)}`));etiquetas.append(texto);
       });s.append(etiquetas);
     }caja.append(s);if(!mini)navegarComparativo(caja,s);
-    if(!mini){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);const leyenda=document.createElement("div");leyenda.className="escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);leyenda.append(a,grad,b);host.append(leyenda);
-      if(tituloExportacion)controlExportacion(host,tituloExportacion,()=>({mapa:mapaComparativoExportado(s),
+    if(!mini){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);
+      const superposicion=document.createElement("div");superposicion.className="controles-inferiores-mapa";
+      const leyenda=document.createElement("div");leyenda.className="escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);leyenda.append(a,grad,b);superposicion.append(leyenda);
+      if(tituloExportacion)controlExportacion(superposicion,tituloExportacion,()=>({mapa:mapaComparativoExportado(s),
         leyenda:[`Total país: ${formato(nacional)} · Gris claro: sin datos`,
           "Límites internos: comunas, partidos y departamentos", "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"],
         rango:valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
+      caja.append(superposicion);
     }
   };
   return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false, tituloExportacion, tratamiento} = {}) {
