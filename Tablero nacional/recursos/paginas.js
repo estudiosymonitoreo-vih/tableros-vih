@@ -182,6 +182,23 @@
   const notas=el("div","notas-principal");notas.append(el("p",null,"(*) Los indicadores epidemiológicos corresponden a información suministrada por todos los subsistemas de salud al SNVS. TARV y PrEP corresponden al subsector público."),el("p",null,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado."));home.append(notas);
   const otras=el("div","pagina");otras.id="vista-pagina";home.after(otras);
   const paginas=[["general","Principales indicadores"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
+  function definicionesPorSolapa(filas){
+    const campo="PÁGINA DEL TABLERO";
+    const nombresHistoricos=new Map([
+      ["Tablero general TARV","Principales indicadores"],
+      ["Perfil de las personas en TARV","Perfil"],
+      ["Características del TARV","Tratamiento"],
+      ["Evolución personas en TARV","Evolución TARV"],
+      ["Laboratorio TARV","Laboratorio"],
+      ["Tablero PreP","PrEP"],
+      ["Tablero PrEP","PrEP"],
+      ["Tablero PeP","PeP"]
+    ]);
+    const orden=new Map(paginas.map(([,nombre],indice)=>[nombre,indice]));
+    const posicion=fila=>orden.get(fila[campo])??orden.size;
+    return filas.map(fila=>({...fila,[campo]:nombresHistoricos.get(fila[campo])??fila[campo]}))
+      .sort((a,b)=>posicion(a)-posicion(b));
+  }
   let activa="general",histIndicador=null,histPeriodos=null,histJurisdicciones=null,histOrden='alfabetico',indicadorComparativo="N_TARV",comparativoOrden='valor';
   // Símbolos semánticos a color: tablero, población, cápsula, trayectoria,
   // laboratorio, prevención, urgencia, territorio, comparación y glosario.
@@ -490,7 +507,7 @@
     if(activa==="perfil")perfil(otras);if(activa==="tratamiento")tratamiento(otras);if(activa==="evolucion")evolucion(otras);if(activa==="laboratorio")laboratorio(otras);if(activa==="prep"||activa==="pep")profilaxis(otras,activa);
     if(activa==="comparativo")comparativo(otras);
     if(activa==="historico")historico(otras);
-    if(activa==="definiciones"){const tablaHost=el("div","tabla-definiciones");otras.append(tablaHost);tabla(tablaHost,t.definiciones||[],[["PÁGINA DEL TABLERO","PÁGINA DEL TABLERO"],["INDICADOR","INDICADOR"],["DESCRIPCIÓN","DESCRIPCIÓN"],["OBSERVACIONES","OBSERVACIONES"]],50);nota(otras,"Abreviaturas:\nDRVIHyT: Dirección de Respuesta al VIH, ITS, Hepatitis Virales y TB.\nSNVS: Sistema Nacional de Vigilancia de la Salud.\nSVIH: Sistema de gestión de insumos de la DRVIHyT.\nTARV: Tratamiento antirretroviral de VIH.");}
+    if(activa==="definiciones"){const tablaHost=el("div","tabla-definiciones");otras.append(tablaHost);tabla(tablaHost,definicionesPorSolapa(t.definiciones||[]),[["PÁGINA DEL TABLERO","PÁGINA DEL TABLERO"],["INDICADOR","INDICADOR"],["DESCRIPCIÓN","DESCRIPCIÓN"],["OBSERVACIONES","OBSERVACIONES"]],50);nota(otras,"Abreviaturas:\nDRVIHyT: Dirección de Respuesta al VIH, ITS, Hepatitis Virales y TB.\nSNVS: Sistema Nacional de Vigilancia de la Salud.\nSVIH: Sistema de gestión de insumos de la DRVIHyT.\nTARV: Tratamiento antirretroviral de VIH.");}
   }
   function ruta(){const id=location.hash.slice(1);activa=paginas.some(([k])=>k===id)?id:"general";mostrar();}
   document.addEventListener("territorio-tablero",mostrar);window.addEventListener("hashchange",ruta);window.addEventListener("resize",()=>{dimensionar();mostrar()});ruta();

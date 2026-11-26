@@ -182,6 +182,23 @@
   const notas=el("div","notas-principal");notas.append(el("p",null,"(*) Los indicadores epidemiológicos corresponden a información suministrada por todos los subsistemas de salud al SNVS. TARV y PrEP corresponden al subsector público."),el("p",null,"(**) Si la fecha de actualización es previa al 30/6 del año, se toma el último mes procesado."));home.append(notas);
   const otras=el("div","pagina");otras.id="vista-pagina";home.after(otras);
   const paginas=[["general","Principales indicadores"],["perfil","Perfil"],["tratamiento","Tratamiento"],["evolucion","Evolución TARV"],["laboratorio","Laboratorio"],["prep","PrEP"],["pep","PeP"],["comparativo","Comparativo"],["historico","Evolución y comparación"],["definiciones","Definiciones"]];
+  function definicionesPorSolapa(filas){
+    const campo="PÁGINA DEL TABLERO";
+    const nombresHistoricos=new Map([
+      ["Tablero general TARV","Principales indicadores"],
+      ["Perfil de las personas en TARV","Perfil"],
+      ["Características del TARV","Tratamiento"],
+      ["Evolución personas en TARV","Evolución TARV"],
+      ["Laboratorio TARV","Laboratorio"],
+      ["Tablero PreP","PrEP"],
+      ["Tablero PrEP","PrEP"],
+      ["Tablero PeP","PeP"]
+    ]);
+    const orden=new Map(paginas.map(([,nombre],indice)=>[nombre,indice]));
+    const posicion=fila=>orden.get(fila[campo])??orden.size;
+    return filas.map(fila=>({...fila,[campo]:nombresHistoricos.get(fila[campo])??fila[campo]}))
+      .sort((a,b)=>posicion(a)-posicion(b));
+  }
   let activa="general",histIndicador=null,histPeriodos=null,histJurisdicciones=null,histOrden='alfabetico',indicadorComparativo="N_TARV",comparativoOrden='valor';
   // Símbolos semánticos a color: tablero, población, cápsula, trayectoria,
   // laboratorio, prevención, urgencia, territorio, comparación y glosario.
@@ -340,10 +357,24 @@
     const tipos=["N_VIH_seguimiento","Dispensa_TARV","Personas_en_TARV","Anio_1er_TARV"];
     const anual=filas("anual_tarv").slice().sort((a,b)=>Number(b.Anio)-Number(a.Anio)||tipos.indexOf(a.Tipo_de_metrica)-tipos.indexOf(b.Tipo_de_metrica)).map(r=>({...r,Tipo_de_metrica:nombres[r.Tipo_de_metrica]||r.Tipo_de_metrica}));
     barras(panel(g,"Evolución de las personas en TARV","evolucion-anual"),anual,"Anio","Valor","Tipo_de_metrica",{horizontal:true});
-    // Encabezado propio y cuatro categorías agrupadas; conserva los cálculos vigentes.
     const resumen=el("section","evolucion-resumen"),tituloResumen=el("h3","evolucion-resumen-titulo","Personas en TARV y pérdida de seguimiento"),indicadores=el("div","evolucion-indicadores");resumen.append(tituloResumen,indicadores);g.append(resumen);const cad=filas("tratamiento")[0]?.N_TARV_caducado;
-    tarjetasTotal(indicadores,[["En TARV normal",numeric(cad)&&numeric(general().N_TARV)?general().N_TARV-cad:null],["Ya deberían haber vuelto",cad],["3 a 6 meses sin retiro",general().perdidos_90_179],["180 días o más sin retiro",general().perdidos_180_mas]]);
+    const {N_TARV,perdidos_90_179,perdidos_180_mas}=general();
+    const categorias=[
+      ["En TARV normal",numeric(cad)&&numeric(N_TARV)?N_TARV-cad:null],
+      ["Ya deberían haber vuelto",cad],
+      ["3 a 6 meses sin retiro",perdidos_90_179],
+      ["180 días o más sin retiro",perdidos_180_mas]
+    ];
+    tarjetasTotal(indicadores,categorias);
     const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");indicadores.children[1].append(porcentaje);
+    const recuentos=categorias.map(([,valor])=>valor);
+    const total=recuentos.every(numeric)?recuentos.reduce((suma,valor)=>suma+valor,0):0;
+    const perdida=total>0?100*(perdidos_90_179+perdidos_180_mas)/total:null;
+    const resultado=el("div","evolucion-perdida"),flecha=el("span","evolucion-perdida-flecha","→");
+    flecha.setAttribute("aria-hidden","true");
+    resultado.append(flecha,el("div","evolucion-perdida-etiqueta","Pérdida de seguimiento último año"),
+      el("div","numero-indicador",perdida===null?"—":f(perdida,1)+"%"));
+    indicadores.append(resultado);
     flujo(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-flujo"),filas("flujo"));
     tortaCohorte(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-cohorte"),filas("flujo"));
     const mensual=panel(g,"Personas en TARV al 30 de junio de cada año","evolucion-mensual"),datosMes=filas('mensual_tarv').filter(r=>numeric(r.Valor)).sort((a,b)=>a.Fecha.localeCompare(b.Fecha));barras(mensual,datosMes,"Fecha","Valor",null,{linea:true});
@@ -476,7 +507,7 @@
     if(activa==="perfil")perfil(otras);if(activa==="tratamiento")tratamiento(otras);if(activa==="evolucion")evolucion(otras);if(activa==="laboratorio")laboratorio(otras);if(activa==="prep"||activa==="pep")profilaxis(otras,activa);
     if(activa==="comparativo")comparativo(otras);
     if(activa==="historico")historico(otras);
-    if(activa==="definiciones"){const tablaHost=el("div","tabla-definiciones");otras.append(tablaHost);tabla(tablaHost,t.definiciones||[],[["PÁGINA DEL TABLERO","PÁGINA DEL TABLERO"],["INDICADOR","INDICADOR"],["DESCRIPCIÓN","DESCRIPCIÓN"],["OBSERVACIONES","OBSERVACIONES"]],50);nota(otras,"Abreviaturas:\nDRVIHyT: Dirección de Respuesta al VIH, ITS, Hepatitis Virales y TB.\nSNVS: Sistema Nacional de Vigilancia de la Salud.\nSVIH: Sistema de gestión de insumos de la DRVIHyT.\nTARV: Tratamiento antirretroviral de VIH.");}
+    if(activa==="definiciones"){const tablaHost=el("div","tabla-definiciones");otras.append(tablaHost);tabla(tablaHost,definicionesPorSolapa(t.definiciones||[]),[["PÁGINA DEL TABLERO","PÁGINA DEL TABLERO"],["INDICADOR","INDICADOR"],["DESCRIPCIÓN","DESCRIPCIÓN"],["OBSERVACIONES","OBSERVACIONES"]],50);nota(otras,"Abreviaturas:\nDRVIHyT: Dirección de Respuesta al VIH, ITS, Hepatitis Virales y TB.\nSNVS: Sistema Nacional de Vigilancia de la Salud.\nSVIH: Sistema de gestión de insumos de la DRVIHyT.\nTARV: Tratamiento antirretroviral de VIH.");}
   }
   function ruta(){const id=location.hash.slice(1);activa=paginas.some(([k])=>k===id)?id:"general";mostrar();}
   document.addEventListener("territorio-tablero",mostrar);window.addEventListener("hashchange",ruta);window.addEventListener("resize",()=>{dimensionar();mostrar()});ruta();
