@@ -11,6 +11,7 @@ const configuracionComparativoSVIH = [
   ["Prop_notificados","% de personas en TARV notificadas en el SNVS","% de personas en TARV notificadas en el SNVS","Prop_notificados","porcentaje",1],
   ["Prop_caso_confirmado","% de personas en TARV con caso confirmado","% de personas en TARV con caso de VIH confirmado en el SNVS","Prop_caso_confirmado","porcentaje",1],
   ["revincular","N° de personas a revincular al TARV","Cantidad de personas que retiraron TARV el último año y que deben ser revinculadas","revincular","numero",1],
+  ["Prop_perdida_seguimiento",window.SVIH_ETIQUETAS_INDICADORES.Prop_perdida_seguimiento,"Pérdida de seguimiento último año por jurisdicción","Prop_perdida_seguimiento","porcentaje",1],
   ["Prop_indetectables","% de personas en TARV indetectables","% de personas en TARV con carga viral indetectable el último año","Prop_indetectables","porcentaje",1],
   ["Casos_2024","N° de nuevos casos de VIH 2024","Nuevos casos de VIH en 2024 por provincia de residencia","Casos_2024","numero",1],
   ["Porc_casos","% de nuevos casos de VIH 2024","% de nuevos casos de VIH en 2024 por provincia de residencia","Porc_casos","porcentaje",100],

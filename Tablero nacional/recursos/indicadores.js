@@ -1,5 +1,13 @@
 // Autor: Ariel Adaszko
 "use strict";
+
+window.porcentajePerdidaSeguimientoSVIH = ({N_TARV, perdidos_90_179, perdidos_180_mas}) => {
+  if (![N_TARV, perdidos_90_179, perdidos_180_mas].every(Number.isFinite)) return null;
+  const perdidos = perdidos_90_179 + perdidos_180_mas;
+  const total = N_TARV + perdidos;
+  return total > 0 ? 100 * perdidos / total : null;
+};
+
 // Correspondencia literal del CASE de Looker Studio provisto por la persona usuaria.
 window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   N_TARV: "N° de personas en tratamiento antirretroviral (TARV)",
@@ -14,6 +22,7 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   Prop_caso_confirmado: "% de personas con casos confirmados en el SNVS",
   revincular: "N° de personas a revincular",
   Prop_a_revincular: "% de personas a revincular",
+  Prop_perdida_seguimiento: "% de pérdida de seguimiento último año",
   Prop_indetectables: "% de personas con carga viral indetectable (supresión viral)",
   Prop_con_info_cv: "% de personas con información de carga viral",
   Prop_DTG_tto: "% de personas > 14 años en tratamiento con Dolutegravir (DTG)",
