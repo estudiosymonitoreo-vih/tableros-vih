@@ -480,7 +480,11 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 /* Evolución TARV: separar el resumen del título de página sin desplazar los gráficos. */
 .evolucion-resumen{display:block}
 .evolucion-resumen-titulo{margin:0 0 4px;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.25px}
-.evolucion-indicadores{display:grid;grid-template-columns:1fr 1.45fr 1fr 1fr;gap:18px}
+.evolucion-indicadores{display:grid;grid-template-columns:1fr 1.35fr 1fr 1.1fr 1.65fr;gap:14px}
+.evolucion-perdida{position:relative;text-align:center;padding-left:26px}
+.evolucion-perdida-etiqueta{font-size:12px;font-weight:700;line-height:1.2}
+.evolucion-perdida-flecha{position:absolute;left:0;bottom:auto;top:3px;font-size:25px;line-height:1.15}
+.evolucion-resumen .evolucion-perdida .numero-indicador{color:#9ed9fa!important;text-align:center}
 .evolucion-resumen .mini:nth-child(1) .numero-indicador{color:#fff!important}
 .evolucion-resumen .mini:nth-child(2) .numero-indicador{color:#fff0c2!important;padding-left:0}
 :root{--tarv-sin-retiro-90:#ffd09c;--tarv-sin-retiro-180:#f6a04d}
@@ -489,6 +493,7 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .perdida-seguimiento strong[data-campo="perdidos_90_179"],.tg-perdida strong[data-campo="perdidos_90_179"]{color:var(--tarv-sin-retiro-90)}
 .perdida-seguimiento strong[data-campo="perdidos_180_mas"],.tg-perdida strong[data-campo="perdidos_180_mas"]{color:var(--tarv-sin-retiro-180)}
 @media(min-width:700px){
+  .evolucion-perdida-etiqueta{position:absolute;bottom:100%;left:26px;right:0;margin-bottom:2px}
   .evolucion-resumen{margin-left:25%;margin-top:-21px;padding-bottom:8px}
   .evolucion-resumen .rotulo{min-height:0;line-height:1.25}
   .evolucion-anual>.rotulo,.evolucion-mensual>.rotulo{min-height:28px;padding-bottom:2px}
@@ -498,4 +503,6 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
   .evolucion-resumen{min-height:0}
   .evolucion-indicadores .mini>.interior{min-height:0;flex:none}
   .evolucion-indicadores{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
+  .evolucion-perdida{grid-column:1/-1;justify-self:center}
+  .evolucion-perdida-flecha{top:auto;bottom:4px}
 }

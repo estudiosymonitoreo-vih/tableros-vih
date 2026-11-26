@@ -340,10 +340,24 @@
     const tipos=["N_VIH_seguimiento","Dispensa_TARV","Personas_en_TARV","Anio_1er_TARV"];
     const anual=filas("anual_tarv").slice().sort((a,b)=>Number(b.Anio)-Number(a.Anio)||tipos.indexOf(a.Tipo_de_metrica)-tipos.indexOf(b.Tipo_de_metrica)).map(r=>({...r,Tipo_de_metrica:nombres[r.Tipo_de_metrica]||r.Tipo_de_metrica}));
     barras(panel(g,"Evolución de las personas en TARV","evolucion-anual"),anual,"Anio","Valor","Tipo_de_metrica",{horizontal:true});
-    // Encabezado propio y cuatro categorías agrupadas; conserva los cálculos vigentes.
     const resumen=el("section","evolucion-resumen"),tituloResumen=el("h3","evolucion-resumen-titulo","Personas en TARV y pérdida de seguimiento"),indicadores=el("div","evolucion-indicadores");resumen.append(tituloResumen,indicadores);g.append(resumen);const cad=filas("tratamiento")[0]?.N_TARV_caducado;
-    tarjetasTotal(indicadores,[["En TARV normal",numeric(cad)&&numeric(general().N_TARV)?general().N_TARV-cad:null],["Ya deberían haber vuelto",cad],["3 a 6 meses sin retiro",general().perdidos_90_179],["180 días o más sin retiro",general().perdidos_180_mas]]);
+    const {N_TARV,perdidos_90_179,perdidos_180_mas}=general();
+    const categorias=[
+      ["En TARV normal",numeric(cad)&&numeric(N_TARV)?N_TARV-cad:null],
+      ["Ya deberían haber vuelto",cad],
+      ["3 a 6 meses sin retiro",perdidos_90_179],
+      ["180 días o más sin retiro",perdidos_180_mas]
+    ];
+    tarjetasTotal(indicadores,categorias);
     const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");indicadores.children[1].append(porcentaje);
+    const recuentos=categorias.map(([,valor])=>valor);
+    const total=recuentos.every(numeric)?recuentos.reduce((suma,valor)=>suma+valor,0):0;
+    const perdida=total>0?100*(perdidos_90_179+perdidos_180_mas)/total:null;
+    const resultado=el("div","evolucion-perdida"),flecha=el("span","evolucion-perdida-flecha","→");
+    flecha.setAttribute("aria-hidden","true");
+    resultado.append(flecha,el("div","evolucion-perdida-etiqueta","Pérdida de seguimiento último año"),
+      el("div","numero-indicador",perdida===null?"—":f(perdida,1)+"%"));
+    indicadores.append(resultado);
     flujo(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-flujo"),filas("flujo"));
     tortaCohorte(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-cohorte"),filas("flujo"));
     const mensual=panel(g,"Personas en TARV al 30 de junio de cada año","evolucion-mensual"),datosMes=filas('mensual_tarv').filter(r=>numeric(r.Valor)).sort((a,b)=>a.Fecha.localeCompare(b.Fecha));barras(mensual,datosMes,"Fecha","Valor",null,{linea:true});
