@@ -1480,6 +1480,8 @@ function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find
   const url='https://www.argentina.gob.ar/salud/boletin-epidemiologico-nacional/boletines-2026';
   const enlace=nodo('a',url);
   enlace.href=url;
+  enlace.target='_blank';
+  enlace.rel='noopener';
   enlace.style.overflowWrap='anywhere';
   const notaBen=nodo('p',null,'nota');
   notaBen.append('Para acceder a los datos de 2026, consultar el sitio del Boletín Epidemiológico Nacional de Argentina ',enlace);
