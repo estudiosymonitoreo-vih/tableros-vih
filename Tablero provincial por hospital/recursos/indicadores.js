@@ -100,6 +100,7 @@ window.mostrarDefinicionIndicadorSVIH = (host, id, catalogo = []) => {
   const agregar = (rotulo, texto) => {
     const parrafo = document.createElement("p"), destacado = document.createElement("strong");
     destacado.textContent = rotulo;
+    if (rotulo === "Observaciones:") parrafo.className = "observaciones-indicador";
     parrafo.append(destacado, " ", texto);
     host.append(parrafo);
   };
