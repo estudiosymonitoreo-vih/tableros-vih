@@ -1476,6 +1476,15 @@ function render(){if(!estados[pagina])estados[pagina]={};const page=paginas.find
   host.querySelector('.controles');
  if(filtros){filtros.classList.add('controles-con-restablecer');filtros.append(botonRestablecer);}
  agregarDescargasGraficos(host);
+ if(esSifilis){
+  const url='https://www.argentina.gob.ar/salud/boletin-epidemiologico-nacional/boletines-2026';
+  const enlace=nodo('a',url);
+  enlace.href=url;
+  enlace.style.overflowWrap='anywhere';
+  const notaBen=nodo('p',null,'nota');
+  notaBen.append('Para acceder a los datos de 2026, consultar el sitio del Boletín Epidemiológico Nacional de Argentina ',enlace);
+  host.append(notaBen);
+ }
  ajustarPantalla();}
  paginas.forEach(([id,nombre,path])=>{const b=nodo('button');b.dataset.pagina=id;const colorIcono={casos:['#307de0','#e8f0fd'],geografia:['#277cb7','#e9f3f9'],genero:['#a649c6','#f5eafa'],edad:['#26913c','#edf6ee'],vias:['#009ca5','#e8f5f5'],diagnostico:['#cf419b','#faedf6'],'mapas-diagnostico':['#be8c18','#fbf4e4'],mortalidad:['#237bd1','#e8f0fd'],definiciones:['#7561bb','#f0ecfa']}[id]||['#168e9b','#e8f5f5'];b.style.setProperty('--icono',colorIcono[0]);b.style.setProperty('--icono-fondo',colorIcono[1]);const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true,class:'nav-icon'});icon.append(svg('path',{d:path}));b.append(icon,nodo('span',nombre));b.onclick=()=>{pagina=id;history.replaceState(null,'',`#${id}`);render();$('titulo').focus();};$('navegacion').append(b);});
  $('demo').hidden=!D.meta.demostracion;
