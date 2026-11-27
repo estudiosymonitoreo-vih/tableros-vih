@@ -254,7 +254,31 @@
     });
     return selector;
   }
-  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion,selectorIndicador};
+  function configurarSelectorMultiple(selector,aplicar){
+    selector.classList.add("selector-multiple-svih");
+    let pendiente=false;
+    selector.addEventListener("toggle",()=>{
+      if(selector.open||!pendiente)return;
+      pendiente=false;
+      if(selector.isConnected)aplicar();
+    });
+    selector.addEventListener("keydown",e=>{
+      if(e.key!=="Escape"||!selector.open)return;
+      e.preventDefault();
+      selector.open=false;
+      selector.querySelector("summary").focus();
+    });
+    return ()=>{
+      if(selector.open)pendiente=true;
+      else aplicar();
+    };
+  }
+  document.addEventListener("click",e=>{
+    for(const selector of document.querySelectorAll("details.selector-multiple-svih[open]")){
+      if(!selector.contains(e.target))selector.open=false;
+    }
+  },true);
+  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion,selectorIndicador,configurarSelectorMultiple};
   if(d.ambito&&d.ambito!=="nacional"){window.addEventListener("resize",dimensionar);return;}
   const home=el("div","pagina pagina-principal");home.id="vista-general";
   document.querySelectorAll("main>section").forEach(s=>home.append(s));document.querySelector("main").insertBefore(home,document.querySelector("footer"));
@@ -517,14 +541,16 @@
     const jurisdicciones=uniq(rows.map(r=>r.Provincia_atencion)).sort(compararJurisdicciones);
     if(histJurisdicciones===null)histJurisdicciones=jurisdicciones.includes("País")?["País"]:jurisdicciones.slice(0,1);else histJurisdicciones=histJurisdicciones.filter(v=>jurisdicciones.includes(v));
     const jurisd=el('details','selector-jurisdicciones'),resumenJurisd=el('summary'),opcionesJurisd=el('div','opciones-periodos');jurisd.append(resumenJurisd,opcionesJurisd);controles.append(jurisd);
+    const cambioJurisdicciones=configurarSelectorMultiple(jurisd,()=>dibujar());
     const resumenSeleccion=()=>{resumenJurisd.textContent=histJurisdicciones.length===jurisdicciones.length?'Jurisdicciones: todas ▾':histJurisdicciones.length===1?etiquetaJurisdiccion(histJurisdicciones[0])+' ▾':`Jurisdicciones (${histJurisdicciones.length}) ▾`;};resumenSeleccion();
     const todasLabel=el('label'),todas=el('input');todas.type='checkbox';todas.checked=histJurisdicciones.length===jurisdicciones.length;todasLabel.append(todas,document.createTextNode('Todos'));opcionesJurisd.append(todasLabel);
-    jurisdicciones.forEach(v=>{const l=el('label'),c=el('input');c.type='checkbox';c.value=v;c.checked=histJurisdicciones.includes(v);c.dataset.jurisdiccion=v;l.append(c,document.createTextNode(etiquetaJurisdiccion(v)));opcionesJurisd.append(l);c.onchange=()=>{histJurisdicciones=[...opcionesJurisd.querySelectorAll('[data-jurisdiccion]:checked')].map(x=>x.value);todas.checked=histJurisdicciones.length===jurisdicciones.length;todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;resumenSeleccion();dibujar()};});
-    todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;todas.onchange=()=>{histJurisdicciones=todas.checked?jurisdicciones.slice():[];opcionesJurisd.querySelectorAll('[data-jurisdiccion]').forEach(c=>c.checked=todas.checked);resumenSeleccion();dibujar()};
+    jurisdicciones.forEach(v=>{const l=el('label'),c=el('input');c.type='checkbox';c.value=v;c.checked=histJurisdicciones.includes(v);c.dataset.jurisdiccion=v;l.append(c,document.createTextNode(etiquetaJurisdiccion(v)));opcionesJurisd.append(l);c.onchange=()=>{histJurisdicciones=[...opcionesJurisd.querySelectorAll('[data-jurisdiccion]:checked')].map(x=>x.value);todas.checked=histJurisdicciones.length===jurisdicciones.length;todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;resumenSeleccion();cambioJurisdicciones()};});
+    todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;todas.onchange=()=>{histJurisdicciones=todas.checked?jurisdicciones.slice():[];opcionesJurisd.querySelectorAll('[data-jurisdiccion]').forEach(c=>c.checked=todas.checked);resumenSeleccion();cambioJurisdicciones()};
     controles.append(selectorIndicador(inds,etiquetas,histIndicador,id=>{histIndicador=id;dibujar()}));
     const periodLabel=el("div","selector-periodos"),multi=el("details"),summary=el("summary"),opciones=el("div","opciones-periodos");multi.append(summary,opciones);periodLabel.append(multi);controles.append(periodLabel);
+    const cambioPeriodos=configurarSelectorMultiple(multi,()=>dibujar());
     const actualizarResumen=()=>{summary.textContent=histPeriodos.length===1?"Período: "+new Date(histPeriodos[0]+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})+" ▾":`Período (${histPeriodos.length}) ▾`;};actualizarResumen();
-    periodos.forEach(v=>{const l=el("label"),c=el("input");c.type="checkbox";c.value=v;c.checked=histPeriodos.includes(v);l.append(c,document.createTextNode(new Date(v+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})));opciones.append(l);c.onchange=()=>{histPeriodos=[...opciones.querySelectorAll("input:checked")].map(i=>i.value);actualizarResumen();dibujar()};});
+    periodos.forEach(v=>{const l=el("label"),c=el("input");c.type="checkbox";c.value=v;c.checked=histPeriodos.includes(v);l.append(c,document.createTextNode(new Date(v+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})));opciones.append(l);c.onchange=()=>{histPeriodos=[...opciones.querySelectorAll("input:checked")].map(i=>i.value);actualizarResumen();cambioPeriodos()};});
     const ordenHost=el('div','orden-historico'),ordenAyuda=el('small',null,'Ordenar barras'),ordenBoton=el('button','boton-orden-historico');ordenBoton.type='button';ordenHost.append(ordenAyuda,ordenBoton);controles.append(ordenHost);
     const graf=panel(host,"Evolución de indicadores por período","historico-grafico"),estadisticas=el("div","resumen-historico");
     const definicion=el("section","definicion-indicador definicion-indicador-al-pie");
