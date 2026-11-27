@@ -519,8 +519,12 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .mapa-regional-total strong{display:block;font-size:24px;line-height:1.15;font-weight:600}
 .mapa-regional-grid .comparativo-barras{margin-top:0}
 .mapa-regional-grid .lista-indicadores label[hidden]{display:none}
-.comparativo-cuerpo.comparativo-mapa-genero{grid-template-columns:minmax(0,1fr)}
-.leyenda-genero-mapa{max-width:100%;padding:4px 7px;background:#202b4de8;color:#fff;font-size:11px;line-height:1.3}
+.resumen-generos{display:block;overflow-y:auto;text-align:left}
+.resumen-genero{padding:5px 8px;border-bottom:1px solid #829dbb80}
+.resumen-genero h3{margin:0 0 3px;font-size:13px}
+.resumen-genero p{display:flex;justify-content:space-between;gap:4px;margin:0;font-size:11px;line-height:1.35}
+.resumen-generos .resumen-genero strong{display:inline;font-size:13px;line-height:inherit}
+@media(max-width:699px){.resumen-generos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 @media(min-width:700px){
   .definicion-indicador{font-size:13px}
   .comparativo-grid{top:-44px;grid-template-rows:minmax(0,1fr) auto;row-gap:8px}

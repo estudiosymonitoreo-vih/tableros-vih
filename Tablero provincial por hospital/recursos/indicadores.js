@@ -56,6 +56,9 @@ window.SVIH_GENEROS_TARV = Object.freeze([
   ["mujeres_trans","Mujeres trans","♀ᵀ"],["varones_trans","Varones trans","♂ᵀ"]
 ]);
 window.esIndicadorGeneroSVIH = id => id === "Prop_genero_tarv" || id === "Mediana_edad_tarv";
+window.opcionesMapaGeneroSVIH = id => window.SVIH_GENEROS_TARV.map(([clave,genero])=>({
+  id:id+"_"+clave, etiqueta:window.SVIH_ETIQUETAS_INDICADORES[id]+" · "+genero
+}));
 window.valoresGeneroSVIH = (fila, id) => window.SVIH_GENEROS_TARV.map(([clave,genero,icono]) => ({
   genero,icono,valor:fila?.[id+"_"+clave]??null
 }));
@@ -104,6 +107,7 @@ const textosDefinicionesSVIH = {
 };
 
 window.mostrarDefinicionIndicadorSVIH = (host, id, catalogo = []) => {
+  id = ["Prop_genero_tarv","Mediana_edad_tarv"].find(campo=>id.startsWith(campo+"_")) || id;
   const titulos = [].concat(titulosDefinicionesSVIH[id] ?? window.SVIH_ETIQUETAS_INDICADORES[id] ?? []);
   const nombre = texto => String(texto ?? "").trim().replace(/\.$/, "");
   const fila = catalogo.find(r => titulos.some(titulo => nombre(r.INDICADOR) === nombre(titulo)));

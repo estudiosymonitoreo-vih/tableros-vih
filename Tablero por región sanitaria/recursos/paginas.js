@@ -268,7 +268,25 @@
       if(!selector.contains(e.target))selector.open=false;
     }
   },true);
-  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion,selectorIndicador,configurarSelectorMultiple};
+  function resumenPorGenero(host,filas,formato){
+    host.classList.add("resumen-generos");
+    for(const [,nombre] of window.SVIH_GENEROS_TARV){
+      const valores=filas.filter(r=>r.genero===nombre&&numeric(r.valor)).map(r=>r.valor).sort((a,b)=>a-b);
+      const n=valores.length;
+      if(n<2)continue;
+      const grupo=el("section","resumen-genero");
+      grupo.append(el("h3",null,nombre));
+      const medio=Math.floor(n/2),mediana=n%2?valores[medio]:(valores[medio-1]+valores[medio])/2;
+      for(const [rotulo,valor] of [["Mediana",mediana],["Máximo",valores[n-1]],["Mínimo",valores[0]]]){
+        const linea=el("p");
+        linea.append(el("span",null,rotulo),el("strong",null,formato(valor)));
+        grupo.append(linea);
+      }
+      host.append(grupo);
+    }
+    host.hidden=!host.childElementCount;
+  }
+  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion,selectorIndicador,configurarSelectorMultiple,resumenPorGenero};
   if(d.ambito&&d.ambito!=="nacional"){window.addEventListener("resize",dimensionar);return;}
   const home=el("div","pagina pagina-principal");home.id="vista-general";
   document.querySelectorAll("main>section").forEach(s=>home.append(s));document.querySelector("main").insertBefore(home,document.querySelector("footer"));
@@ -581,7 +599,13 @@
         grafico.dataset.ambitoExportacion="";
       }
       const cantidadBarras=graf.querySelectorAll('.barra-dato').length;
-      estadisticas.hidden=porGenero||cantidadBarras===1;
+      estadisticas.classList.remove("resumen-generos");
+      if(porGenero){
+        resumenPorGenero(estadisticas,a.map(r=>({genero:r.Genero,valor:r.Valor})),
+          v=>f(v,1)+(pct?"%":" años"));
+        return;
+      }
+      estadisticas.hidden=cantidadBarras===1;
       if(estadisticas.hidden)return;
       const hayBarras=cantidadBarras>0,periodosVisibles=uniq(histPeriodos).sort().reverse();
       estadisticas.classList.toggle('varios-periodos',periodosVisibles.length>1);
@@ -617,19 +641,15 @@
     definicion.tabIndex=0;
     g.append(definicion);
     let indicadorMapa=null;
-    const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"&&!window.esIndicadorGeneroSVIH(cfg.id)?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
+    const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"?0:1)+(cfg.tipo==="porcentaje"?"%":cfg.tipo==="edad"?" años":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
       // Alternar el ranking no reconstruye el mapa ni pierde su zoom.
-      const porGenero=window.esIndicadorGeneroSVIH(cfg.id);
-      barHost.hidden=ordenHost.hidden=porGenero;
-      cuerpo.classList.toggle("comparativo-mapa-genero",porGenero);
       if(indicadorMapa!==cfg.id){
         window.mostrarDefinicionIndicadorSVIH(definicion,cfg.id,t.definiciones);
         const alcance=/jurisdicción|provincia/i.test(cfg.titulo)?", Argentina":" según jurisdicción, Argentina";
-        window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg),genero:porGenero?cfg.id:null,
+        window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg),
           tituloExportacion:`${cfg.titulo}${alcance} · Corte: ${d.fecha}`});
         indicadorMapa=cfg.id;
       }
-      if(porGenero)return;
       const ordenadas=rows.slice().sort((a,b)=>{
         if(comparativoOrden==='valor'){
           if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;

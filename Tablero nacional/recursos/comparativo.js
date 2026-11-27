@@ -22,9 +22,11 @@ const configuracionComparativoSVIH = [
   ["Sifilis_2024","Tasa de sífilis por 100 mil 2024","Tasa de sífilis por 100 mil habitantes en 2024","Sifilis_2024","tasa",1],
   ["PreP","Personas en PrEP","Cantidad de personas en PrEP por provincia de retiro","N_prep","numero",1]
 ].map(([id,etiqueta,titulo,campo,tipo,escala]) => ({id,etiqueta,titulo,campo,tipo,escala})).concat(
-  window.SVIH_INDICADORES_TARV.map(id=>{
+  window.SVIH_INDICADORES_TARV.flatMap(id=>{
     const etiqueta=window.SVIH_ETIQUETAS_INDICADORES[id];
-    return {id,etiqueta,titulo:etiqueta,campo:id,escala:1,tipo:window.esPorcentajeIndicadorSVIH(id,etiqueta)?"porcentaje":"numero"};
+    const opciones=window.esIndicadorGeneroSVIH(id)?window.opcionesMapaGeneroSVIH(id):[{id,etiqueta}];
+    const tipo=id==="Mediana_edad_tarv"?"edad":window.esPorcentajeIndicadorSVIH(id,etiqueta)?"porcentaje":"numero";
+    return opciones.map(o=>({...o,titulo:o.etiqueta,campo:o.id,escala:1,tipo}));
   })
 );
 // Solo el paquete local puede tener este contexto; el caché de Data Studio

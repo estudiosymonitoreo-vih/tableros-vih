@@ -1,7 +1,7 @@
 // Autor: Ariel Adaszko
 'use strict';
 (()=>{
-  const datos=JSON.parse(document.getElementById('datos-tablero').textContent),t=datos.tablas,u=window.SVIH_UI,{el,sv,panel,tabla,barras,medidor,flujo,tortaCohorte,serieMixta,nota,f,selectorIndicador,configurarSelectorMultiple}=u,$=id=>document.getElementById(id),regional=datos.ambito==='regional',general=t.general;
+  const datos=JSON.parse(document.getElementById('datos-tablero').textContent),t=datos.tablas,u=window.SVIH_UI,{el,sv,panel,tabla,barras,medidor,flujo,tortaCohorte,serieMixta,nota,f,selectorIndicador,configurarSelectorMultiple,resumenPorGenero}=u,$=id=>document.getElementById(id),regional=datos.ambito==='regional',general=t.general;
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(),uniq=a=>[...new Set(a)],numeric=Number.isFinite;
   const esTotal=v=>/^total\b|^pais$|^provincia (de )?buenos aires$/.test(norm(v));
   const scope=()=>$('provincia').value,inst=()=>$('institucion').value,esPBA=v=>norm(v)==='provincia de buenos aires';
@@ -83,17 +83,25 @@
         grafico.dataset.ambitoExportacion=porRegion?'Provincia de Buenos Aires':scope();
       }
       stats.replaceChildren();
-      stats.hidden=porGenero||graph.querySelectorAll('.barra-dato').length===1;
+      stats.classList.remove('resumen-generos');
+      if(porGenero){
+        resumenPorGenero(stats,datosGrafico,v=>f(v,1)+(pct?'%':' años'));
+        return;
+      }
+      stats.hidden=graph.querySelectorAll('.barra-dato').length===1;
       if(stats.hidden)return;
       const visibles=rows.filter(r=>numeric(r[indicador])).map(r=>r[indicador]).sort((a,b)=>a-b),n=visibles.length,resumen={Mediana:n?(n%2?visibles[(n-1)/2]:visibles[n/2-1]/2+visibles[n/2]/2):null,'Máximo':n?visibles[n-1]:null,'Mínimo':n?visibles[0]:null};for(const[nombre,v]of Object.entries(resumen)){const x=el('div');x.append(el('span',null,nombre),el('strong',null,f(v,pct||!Number.isInteger(v)?1:0)+(pct&&numeric(v)?'%':'')));if(n&&nombre!=='Mediana')x.append(el('small',null,uniq(rows.filter(r=>r[indicador]===v).map(r=>r[clave])).sort(ordenar).join(' · ')));stats.append(x)}}
     configurarSelectorMultiple(details);
     const todo=el('label'),check=el('input');check.type='checkbox';check.checked=elegidos.length===valores.length;check.indeterminate=!!elegidos.length&&!check.checked;todo.append(check,document.createTextNode('Todos'));opts.append(todo);check.onchange=()=>{elegidos=check.checked?valores.slice():[];opts.querySelectorAll('[data-opcion]').forEach(x=>x.checked=check.checked);guardar();dibujar()};for(const v of valores){const l=el('label'),c=el('input');c.type='checkbox';c.dataset.opcion=v;c.checked=elegidos.includes(v);l.append(c,document.createTextNode(v));opts.append(l);c.onchange=()=>{elegidos=[...opts.querySelectorAll('[data-opcion]:checked')].map(x=>x.dataset.opcion);check.checked=elegidos.length===valores.length;check.indeterminate=!!elegidos.length&&!check.checked;guardar();dibujar()}}function guardar(){if(porRegion)seleccionRegiones=elegidos;else seleccionComparador=elegidos;}dibujar();}
   let indicadorMapaRegional='N_TARV',ordenMapaRegional='valor';
   function mapaRegional(host){
-    const totales=totalesRegionales(),ids=indicadoresComparables(totales);
+    const totales=totalesRegionales(),etiquetas={...campos,Porc_en_TARV:'% de personas en TARV por región de atención'};
+    const ids=indicadoresComparables(totales).flatMap(id=>{
+      if(!window.esIndicadorGeneroSVIH(id))return [id];
+      return window.opcionesMapaGeneroSVIH(id).map(o=>{etiquetas[o.id]=o.etiqueta;return o.id;});
+    });
     ids.splice(ids.includes('N_TARV')?1:0,0,'Porc_en_TARV');
     if(!ids.includes(indicadorMapaRegional))indicadorMapaRegional=ids[0];
-    const etiquetas={...campos,Porc_en_TARV:'% de personas en TARV por región de atención'};
     const provincia=totales.find(r=>esPBA(r.Provincia_atencion));
     const baseRegiones=totales.filter(r=>roman(r.Provincia_atencion)<99);
     const valor=(r,id)=>{
@@ -121,27 +129,24 @@
     let mapaDibujado=null;
     function dibujar(){
       const id=indicadorMapaRegional,etiqueta=etiquetas[id];
-      const porGenero=window.esIndicadorGeneroSVIH(id);
       const pct=window.esPorcentajeIndicadorSVIH(id,etiqueta)||id==='Variación_TARV';
-      const formato=v=>numeric(v)?f(v,pct||porGenero?1:0)+(pct?'%':''):'—';
-      ranking.hidden=orden.hidden=porGenero;
-      cuerpo.classList.toggle('comparativo-mapa-genero',porGenero);
+      const edad=id.startsWith('Mediana_edad_tarv_');
+      const formato=v=>numeric(v)?f(v,pct||edad?1:0)+(pct?'%':edad?' años':''):'—';
       const filas=baseRegiones.map(r=>({
         codigo:norm(r.Provincia_atencion).split(' ').at(-1).toUpperCase(),
-        region:r.Provincia_atencion,valor:valor(r,id),generos:porGenero?window.valoresGeneroSVIH(r,id):null
+        region:r.Provincia_atencion,valor:valor(r,id)
       }));
       titulo.textContent=etiqueta;
       const valorProvincial=valor(provincia,id);
       orden.textContent=ordenMapaRegional==='valor'?'↓ Valor':'I–XII Región';
       orden.setAttribute('aria-label','Ordenar regiones por '+(ordenMapaRegional==='valor'?'número de región':'valor'));
       if(mapaDibujado!==id){
-        const mostrarProvincial=!porGenero&&id!=='Porc_en_TARV'&&id!=='Porc_prep';
-        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,mostrarProvincial,porGenero,
+        const mostrarProvincial=id!=='Porc_en_TARV'&&id!=='Porc_prep';
+        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,mostrarProvincial,
           tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
         window.mostrarDefinicionIndicadorSVIH(definicion,id,definiciones);
         mapaDibujado=id;
       }
-      if(porGenero)return;
       filas.sort((a,b)=>{
         if(ordenMapaRegional==='valor'){
           if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;
