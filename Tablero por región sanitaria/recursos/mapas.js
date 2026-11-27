@@ -518,7 +518,12 @@ window.crearMapaSVIH = (() => {
     primero.textContent=formato(min);
     ultimo.textContent=formato(max);
     leyenda.append(primero,gradiente,ultimo);
-    controles.append(leyenda);
+    const referencia=document.createElement('div'),provincia=document.createElement('span'),total=document.createElement('strong');
+    referencia.className='mapa-regional-total';
+    provincia.textContent='Provincia de Buenos Aires';
+    total.textContent=formato(provincial);
+    referencia.append(provincia,total);
+    controles.append(referencia,leyenda);
     controlExportacion(controles,tituloExportacion,()=>({
       mapa:mapa.cloneNode(true),
       leyenda:[`Total provincia de Buenos Aires: ${formato(provincial)} · Gris claro: sin datos`,

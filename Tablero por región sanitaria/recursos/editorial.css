@@ -515,7 +515,8 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .definicion-indicador-en-recuadro:focus-visible{outline:2px solid #9ed9fa;outline-offset:2px}
 .definicion-indicador-al-pie{margin:12px 0 0}
 .territorial[data-vista="mapa"] #titulo-vista{display:none}
-.mapa-regional-total{font-size:13px;color:#d6e5f8;margin-top:3px}
+.mapa-regional-total{font-size:11px;color:#d6e5f8;text-align:right;margin:0 0 6px}
+.mapa-regional-total strong{display:block;font-size:24px;line-height:1.15;font-weight:600}
 .mapa-regional-grid .comparativo-barras{margin-top:0}
 .mapa-regional-grid .lista-indicadores label[hidden]{display:none}
 @media(min-width:700px){

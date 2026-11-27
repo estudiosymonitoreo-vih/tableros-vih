@@ -73,6 +73,7 @@
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
     const perfilMediana=!!host.closest('.perfil-mediana'),comparadorTerritorial=!!host.closest('.tc-grafico');
+    const rankingRegional=horizontal&&!!host.closest('.mapa-regional-grid');
     const etiquetasCompactas=etiquetasHorizontales||comparadorTerritorial;
     const comparadorHospital=comparadorTerritorial&&!!host.closest('[data-ambito="provincial"]');
     // Recuperar altura de trazado bajo los títulos de Evolución TARV, sin mover sus paneles.
@@ -105,8 +106,8 @@
       if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;
       const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8&&!comparadorTerritorial?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={class:'etiqueta-categoria',x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};
       if(!horizontal&&!etiquetasCompactas&&xs.length>12){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=historico?10:9;}
-      const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,'');
-      const limite=comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
+      const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):rankingRegional?label:label.replace(/^Provincia de /i,'');
+      const limite=rankingRegional?32:comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
       if(etiquetasCompactas&&!horizontal){
         node.setAttribute('y',y+6);
         const ancho=iw/xs.length, fuente=ancho<80?9:11;
@@ -136,7 +137,7 @@
         if(linea){const px=left+(i+.5)*iw/xs.length;if(conBarras)s.append(sv("rect",{x:left+i*step+step*.1,y:Math.min(base,pos),width:step*.8,height:Math.abs(pos-base),fill:colores[1]}));path.push(`${px},${pos}`);const c=sv("circle",{cx:px,cy:pos,r:2.5,fill:colores[j%7]});c.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}`));s.append(c);return;}
         const color=cs[(serie?j:!horizontal&&xs.length<=8?i:0)%cs.length];
         const unica=!horizontal&&a.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
-        const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;rect.setAttribute('y',cy-1);rect.setAttribute('height',2);rect.setAttribute('rx',1);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
+        const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;const grosor=rankingRegional?4:2;rect.setAttribute('y',cy-grosor/2);rect.setAttribute('height',grosor);rect.setAttribute('rx',grosor/2);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
         if((historico||xs.length<=8||horizontal)&&!(horizontal&&band<11)){
           const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:bx+ancho/2,ty=horizontal?top+i*step+step*.1+(j+.65)*band:Math.min(base,pos)-5;
           const fuente=historico?Math.max(8,Math.min(11,band*.9/(texto.length*.6))):horizontal?10:11,girar=historico&&texto.length*fuente*.6>band*.9;

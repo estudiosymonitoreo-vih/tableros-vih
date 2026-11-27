@@ -99,8 +99,8 @@
     const titulo=el('h3','titulo-comparativo'),orden=el('button','boton-orden-historico');
     orden.type='button';cabecera.append(titulo,orden);
     const cuerpo=el('div','comparativo-cuerpo'),mapaHost=el('div','comparativo-mapa');
-    const ranking=el('div','comparativo-barras'),referencia=el('div','mapa-regional-total');
-    cuerpo.append(mapaHost,ranking);vista.append(cabecera,referencia,cuerpo);
+    const ranking=el('div','comparativo-barras');
+    cuerpo.append(mapaHost,ranking);vista.append(cabecera,cuerpo);
     const definicion=el('section','definicion-indicador definicion-indicador-en-recuadro');
     definicion.setAttribute('aria-label','Definición del indicador seleccionado');definicion.tabIndex=0;
     pagina.append(selector,vista,definicion);host.append(pagina);
@@ -118,11 +118,11 @@
         region:r.Provincia_atencion,valor:valor(r,id)
       }));
       titulo.textContent=etiqueta;
-      referencia.textContent='Total provincia de Buenos Aires · '+formato(valor(provincia,id));
+      const valorProvincial=valor(provincia,id);
       orden.textContent=ordenMapaRegional==='valor'?'↓ Valor':'I–XII Región';
       orden.setAttribute('aria-label','Ordenar regiones por '+(ordenMapaRegional==='valor'?'número de región':'valor'));
       if(mapaDibujado!==id){
-        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valor(provincia,id),tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
+        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
         window.mostrarDefinicionIndicadorSVIH(definicion,id,definiciones);
         mapaDibujado=id;
       }
@@ -134,7 +134,7 @@
         return roman(a.region)-roman(b.region);
       });
       ranking.replaceChildren();
-      barras(ranking,filas,'region','valor',null,{horizontal:true,formato});
+      barras(ranking,[...filas,{region:'Provincia de Buenos Aires',valor:valorProvincial}],'region','valor',null,{horizontal:true,formato});
       const grafico=ranking.querySelector('.grafico-svg');
       if(grafico){grafico.dataset.tituloExportacion=etiqueta;grafico.dataset.ambitoExportacion='Regiones sanitarias de Buenos Aires';}
     }
