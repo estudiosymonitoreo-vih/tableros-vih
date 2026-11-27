@@ -403,6 +403,22 @@ window.crearMapaSVIH = (() => {
 
   const zoomMaximo = 1024;
   let contadorMapas = 0;
+  function ajustarRotulosRegionales(mapa,vista,zoom){
+    const rotulos=mapa.querySelectorAll('.valor-region');
+    if(!rotulos.length)return;
+    const tamaño=.25*(1+.12*(1-1/zoom))/zoom, margen=.035/zoom;
+    const ocupados=[];
+    for(const rotulo of rotulos){
+      rotulo.setAttribute('font-size',tamaño);
+      rotulo.setAttribute('stroke-width',.04/zoom);
+      const b=rotulo.getBBox();
+      const visible=b.x+b.width>=vista.x&&b.x<=vista.x+vista.w&&b.y+b.height>=vista.y&&b.y<=vista.y+vista.h;
+      const superpuesto=visible&&ocupados.some(a=>b.x<a.x+a.width+margen&&b.x+b.width+margen>a.x&&
+        b.y<a.y+a.height+margen&&b.y+b.height+margen>a.y);
+      rotulo.setAttribute('visibility',superpuesto?'hidden':'visible');
+      if(visible&&!superpuesto)ocupados.push(b);
+    }
+  }
   function navegarComparativo(caja, mapa, inicial={x:-79,y:21,w:36,h:48}) {
     const actualizarLimites=crearDetalleCartografico(mapa,mapa.querySelector('.valores-provinciales'));
     let vista={...inicial},zoom=1;
@@ -410,7 +426,7 @@ window.crearMapaSVIH = (() => {
     mapa.setAttribute('aria-label','Mapa provincial. Usar botones, rueda, flechas o arrastrar para navegar.');
     const controles=document.createElement('div');controles.className='mapa-controles';
     const estado=document.createElement('span');estado.className='mapa-zoom';estado.setAttribute('aria-live','polite');
-    const pintar=()=>{mapa.setAttribute('viewBox',`${vista.x} ${vista.y} ${vista.w} ${vista.h}`);caja.dataset.zoom=String(zoom);estado.textContent=zoom.toFixed(1)+'×';mapa.querySelectorAll('path:not([vector-effect="non-scaling-stroke"])').forEach(p=>{if(!p.dataset.grosor)p.dataset.grosor=p.getAttribute('stroke-width')||.12;p.setAttribute('stroke-width',Number(p.dataset.grosor)/zoom)});mapa.querySelectorAll('.valor-provincia').forEach(p=>{p.setAttribute('font-size',.94/zoom);p.setAttribute('stroke-width',.22/zoom)});actualizarLimites(vista);};
+    const pintar=()=>{mapa.setAttribute('viewBox',`${vista.x} ${vista.y} ${vista.w} ${vista.h}`);caja.dataset.zoom=String(zoom);estado.textContent=zoom.toFixed(1)+'×';mapa.querySelectorAll('path:not([vector-effect="non-scaling-stroke"])').forEach(p=>{if(!p.dataset.grosor)p.dataset.grosor=p.getAttribute('stroke-width')||.12;p.setAttribute('stroke-width',Number(p.dataset.grosor)/zoom)});mapa.querySelectorAll('.valor-provincia').forEach(p=>{p.setAttribute('font-size',.94/zoom);p.setAttribute('stroke-width',.22/zoom)});ajustarRotulosRegionales(mapa,vista,zoom);actualizarLimites(vista);};
     const punto=(x,y)=>new DOMPoint(x,y).matrixTransform(mapa.getScreenCTM().inverse());
     function acercar(factor,centro={x:vista.x+vista.w/2,y:vista.y+vista.h/2}){const nuevo=Math.max(1,Math.min(zoomMaximo,zoom*factor)),k=zoom/nuevo;vista={x:centro.x+(vista.x-centro.x)*k,y:centro.y+(vista.y-centro.y)*k,w:vista.w*k,h:vista.h*k};zoom=nuevo;pintar();}
     const restablecer=()=>{vista={...inicial};zoom=1;pintar()};
@@ -487,7 +503,7 @@ window.crearMapaSVIH = (() => {
       const dist=p=>Math.hypot(p[0]-centro[0],p[1]-centro[1]);
       const interior=candidatos.filter(p=>contienePunto(region.geometry,p)).sort((a,b)=>dist(a)-dist(b))[0]||centro;
       const [cx,cy]=project(interior);
-      etiquetas.append(svg('text',{x:cx,y:cy,'text-anchor':'middle','dominant-baseline':'middle',
+      etiquetas.append(svg('text',{x:cx,y:cy,class:'valor-region','text-anchor':'middle','dominant-baseline':'middle',
         fill:'#132c47',stroke:'#fff','stroke-width':.04,'paint-order':'stroke','font-size':.25,'font-weight':700},codigo));
     }
     mapa.append(etiquetas);
