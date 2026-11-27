@@ -349,9 +349,7 @@
     const orden = ordenarOtrosEsquemas(datos.slice().sort((a,b) => numeric(a[clave]) && numeric(b[clave]) ? b[clave]-a[clave] : String(b[clave]??'').localeCompare(String(a[clave]??''),'es')),cols);
     const vista = el('div','tabla-editorial-previa');
     host.append(vista);
-    const previa=cols[0][0]==='drogas'&&orden.length>limite&&sonOtrosEsquemas(orden.at(-1))
-      ?[...orden.slice(0,limite-1),orden.at(-1)]:orden.slice(0,limite);
-    tabla(vista, previa, cols);
+    tabla(vista, orden, cols);
     vista.querySelector('.paginacion')?.remove();
     vista.querySelector('.abrir-busqueda')?.remove();
     vista.querySelectorAll('td:first-child').forEach(td => td.title=td.textContent);
