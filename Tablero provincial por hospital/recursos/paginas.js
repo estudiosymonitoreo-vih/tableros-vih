@@ -109,6 +109,7 @@
       // rotarlos y reservar ancho evita que se pisen aun con ocho categorías.
       const limite=comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
       if(comparadorHospital){
+        node.setAttribute('y',y+6);
         const ancho=iw/xs.length, fuente=ancho<80?9:11;
         const caracteres=Math.max(4,Math.floor((ancho-6)/(fuente*.72)));
         const lineas=[];
