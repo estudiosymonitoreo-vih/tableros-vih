@@ -32,6 +32,9 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   Prop_genero_tarv: "% de personas en TARV por género",
   Prop_TARV_hasta_24: "% de personas en TARV de hasta 24 años",
   Prop_TARV_55_mas: "% de personas en TARV de 55 años o más",
+  N_VIH_seguimiento_2026: "Alguna prestación en 2026",
+  Prom_CV_2026: "Promedio de cargas virales / persona 2026",
+  Prom_CD4_2026: "Promedio de CD4 / persona 2026",
   Prop_DTG_tto: "% de personas > 14 años en tratamiento con Dolutegravir (DTG)",
   Prop_DRV800_tto: "% de personas > 14 años en tratamiento con Darunavir 800 mg",
   Prop_EFV_tto: "% de personas > 14 años en tratamiento con Efavirenz",
@@ -49,7 +52,8 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
 
 window.SVIH_INDICADORES_TARV = Object.freeze([
   "Prop_CD4_menor_350","Prop_CD4_menor_200","Prop_con_info_cd4","Mediana_edad_tarv",
-  "Prop_genero_tarv","Prop_TARV_hasta_24","Prop_TARV_55_mas"
+  "Prop_genero_tarv","Prop_TARV_hasta_24","Prop_TARV_55_mas",
+  "N_VIH_seguimiento_2026","Prom_CV_2026","Prom_CD4_2026"
 ]);
 window.SVIH_GENEROS_TARV = Object.freeze([
   ["varones","Varones","♂"],["mujeres","Mujeres","♀"],
@@ -63,6 +67,7 @@ window.valoresGeneroSVIH = (fila, id) => window.SVIH_GENEROS_TARV.map(([clave,ge
   genero,icono,valor:fila?.[id+"_"+clave]??null
 }));
 window.esPorcentajeIndicadorSVIH = (id,etiqueta) => id === "Prop_con_info_cd4" || String(etiqueta).startsWith("%");
+window.esPromedioLaboratorioSVIH = id => id === "Prom_CV_2026" || id === "Prom_CD4_2026";
 
 const titulosDefinicionesSVIH = {
   N_TARV: "N° personas en TARV",

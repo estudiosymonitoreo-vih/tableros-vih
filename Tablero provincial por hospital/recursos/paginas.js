@@ -46,6 +46,10 @@
     p.append(el("h3","rotulo",titulo));const c=el("div","interior");p.append(c);host.append(p);return c;};
   const nota=(host,text)=>host.append(el("p","nota",text));
   const participacion=(a,k)=>{const total=a.reduce((s,r)=>s+(numeric(r[k])?r[k]:0),0);return a.map(r=>({...r,participacion:total>0&&numeric(r[k])?100*r[k]/total:null}));};
+  const sonOtrosEsquemas=r=>/^otros esquemas$/i.test(String(r?.drogas).trim());
+  const ordenarOtrosEsquemas=(a,cols)=>cols[0][0]==='drogas'
+    ?a.slice().sort((x,y)=>Number(sonOtrosEsquemas(x))-Number(sonOtrosEsquemas(y)))
+    :a;
   const leyenda=(host,labels,paleta=colores)=>{const l=el("div","leyenda");labels.forEach((s,i)=>{const x=el("span",null,s),c=el("i");c.style.background=paleta[i%paleta.length];x.prepend(c);l.append(x)});host.append(l);};
   function tabla(host,datos,cols,limite=6) {
     if(!datos.length)return vacio(host);
@@ -56,6 +60,7 @@
     function pintar(){
       let a=datos.filter(r=>cols.some(([k])=>String(r[k]??"").toLocaleLowerCase().includes(estado.q)));
       if(estado.col)a=a.slice().sort((x,y)=>{const v=x[estado.col],w=y[estado.col];return (numeric(v)&&numeric(w)?v-w:String(v??"").localeCompare(String(w??""),"es"))*(estado.desc?-1:1)});
+      a=ordenarOtrosEsquemas(a,cols);
       vista.tabIndex=0;vista.setAttribute("aria-label","Lista desplazable; usar rueda o flechas");
       const table=el("table"),head=el("thead"),tr=el("tr");
       cols.forEach(([k,n])=>{const th=el("th"),b=el("button",null,n+(estado.col===k?(estado.desc?" ▾":" ▴"):""));b.type="button";b.onclick=()=>{estado.desc=estado.col===k?!estado.desc:false;estado.col=k;pintar()};th.append(b);tr.append(th)});head.append(tr);table.append(head);
@@ -137,7 +142,7 @@
         if(linea){const px=left+(i+.5)*iw/xs.length;if(conBarras)s.append(sv("rect",{x:left+i*step+step*.1,y:Math.min(base,pos),width:step*.8,height:Math.abs(pos-base),fill:colores[1]}));path.push(`${px},${pos}`);const c=sv("circle",{cx:px,cy:pos,r:2.5,fill:colores[j%7]});c.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}`));s.append(c);return;}
         const color=cs[(serie?j:!horizontal&&xs.length<=8?i:0)%cs.length];
         const unica=!horizontal&&a.length===1&&ss.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
-        const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;const grosor=rankingRegional?4:2;rect.setAttribute('y',cy-grosor/2);rect.setAttribute('height',grosor);rect.setAttribute('rx',grosor/2);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
+        const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;const grosor=rankingRegional||anualTarv||anualPrep?4:2;rect.setAttribute('y',cy-grosor/2);rect.setAttribute('height',grosor);rect.setAttribute('rx',grosor/2);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
         if((historico||xs.length<=8||horizontal)&&!(horizontal&&band<11)){
           const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:bx+ancho/2,ty=horizontal?top+i*step+step*.1+(j+.65)*band:Math.min(base,pos)-5;
           const fuente=historico?Math.max(8,Math.min(11,band*.9/(texto.length*.6))):horizontal?10:11,girar=historico&&texto.length*fuente*.6>band*.9;
@@ -341,16 +346,97 @@
     if(host.classList.contains("tabla-definiciones"))return tabla(host,datos,cols,limite);
     if (!datos.length) return vacio(host);
     const clave = cols[1]?.[0] || cols[0][0];
-    const orden = datos.slice().sort((a,b) => numeric(a[clave]) && numeric(b[clave]) ? b[clave]-a[clave] : String(b[clave]??'').localeCompare(String(a[clave]??''),'es'));
+    const orden = ordenarOtrosEsquemas(datos.slice().sort((a,b) => numeric(a[clave]) && numeric(b[clave]) ? b[clave]-a[clave] : String(b[clave]??'').localeCompare(String(a[clave]??''),'es')),cols);
     const vista = el('div','tabla-editorial-previa');
     host.append(vista);
-    tabla(vista, orden.slice(0,limite), cols);
+    const previa=cols[0][0]==='drogas'&&orden.length>limite&&sonOtrosEsquemas(orden.at(-1))
+      ?[...orden.slice(0,limite-1),orden.at(-1)]:orden.slice(0,limite);
+    tabla(vista, previa, cols);
     vista.querySelector('.paginacion')?.remove();
     vista.querySelector('.abrir-busqueda')?.remove();
     vista.querySelectorAll('td:first-child').forEach(td => td.title=td.textContent);
     const abrir = el('button','ver-completo',`${f(datos.length)} registros · ver tabla completa`);
-    abrir.type='button';host.append(abrir);
-    abrir.onclick=()=>abrirDialogoEditorial(host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa',cuerpo=>tabla(cuerpo,datos,cols));
+    const acciones=el('div','tabla-acciones'),titulo=host.closest('.grafico-panel')?.querySelector('h3')?.textContent||'Tabla completa';
+    abrir.type='button';acciones.append(abrir);host.append(acciones);
+    abrir.onclick=()=>abrirDialogoEditorial(titulo,cuerpo=>tabla(cuerpo,datos,cols));
+    if(host.closest('.instituciones,.profilaxis-instituciones,.tt-instituciones,.tp-instituciones,.tp-pep')){
+      const descargar=el('button','ver-completo','Descargar XLSX');
+      descargar.type='button';acciones.append(descargar);
+      descargar.onclick=()=>{
+        const vinculo=el('a');
+        vinculo.href=URL.createObjectURL(libroTablaSVIH(orden,cols));
+        vinculo.download=titulo.replace(/[\\/:*?"<>|]/g,'-')+'.xlsx';
+        vinculo.click();
+        setTimeout(()=>URL.revokeObjectURL(vinculo.href),1000);
+      };
+    }
+  }
+
+  function libroTablaSVIH(datos,cols) {
+    const escalar=x=>String(x??'').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const xml='<?xml version="1.0" encoding="UTF-8"?>';
+    const ss='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const pkg='http://schemas.openxmlformats.org/package/2006/relationships';
+    const tipo='application/vnd.openxmlformats-officedocument.spreadsheetml';
+    const fecha=new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date());
+    const cadenas=new Map();
+    const texto=v=>{
+      const valor=String(v??'');
+      if(!cadenas.has(valor))cadenas.set(valor,cadenas.size);
+      return `<c t="s"><v>${cadenas.get(valor)}</v></c>`;
+    };
+    const filas=[
+      ['Fuente de datos','SVIH - SISA'].map(texto),
+      ['Fecha de exportación',fecha].map(texto),
+      [],
+      cols.map(([,nombre])=>texto(nombre)),
+      ...datos.map(r=>cols.map(([k,,,pct])=>numeric(r[k])
+        ?`<c${pct?' s="1"':''}><v>${pct?r[k]/100:r[k]}</v></c>`:texto(r[k])))
+    ];
+    const contenido=filas.map((celdas,i)=>`<row r="${i+1}">${celdas.map((celda,j)=>
+      celda.replace('<c',`<c r="${String.fromCharCode(65+j)}${i+1}"`)).join('')}</row>`).join('');
+    return zipTablaSVIH({
+      '[Content_Types].xml':xml+`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="${tipo}.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="${tipo}.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="${tipo}.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="${tipo}.sharedStrings+xml"/></Types>`,
+      '_rels/.rels':xml+`<Relationships xmlns="${pkg}"><Relationship Id="rId1" Type="${rel}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      'xl/workbook.xml':xml+`<workbook xmlns="${ss}" xmlns:r="${rel}"><sheets><sheet name="Datos" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      'xl/_rels/workbook.xml.rels':xml+`<Relationships xmlns="${pkg}"><Relationship Id="rId1" Type="${rel}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${rel}/styles" Target="styles.xml"/><Relationship Id="rId3" Type="${rel}/sharedStrings" Target="sharedStrings.xml"/></Relationships>`,
+      'xl/sharedStrings.xml':xml+`<sst xmlns="${ss}">${[...cadenas.keys()].map(v=>`<si><t xml:space="preserve">${escalar(v)}</t></si>`).join('')}</sst>`,
+      'xl/styles.xml':xml+`<styleSheet xmlns="${ss}"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0%"/></numFmts><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
+      'xl/worksheets/sheet1.xml':xml+`<worksheet xmlns="${ss}"><cols><col min="1" max="1" width="55" customWidth="1"/><col min="2" max="${Math.max(2,cols.length)}" width="18" customWidth="1"/></cols><sheetData>${contenido}</sheetData></worksheet>`
+    });
+  }
+
+  // Contenedor ZIP sin compresión para que la descarga también funcione sin red.
+  function zipTablaSVIH(archivos) {
+    const codificador=new TextEncoder(),local=[],central=[];
+    let desplazamiento=0,tamanoCentral=0;
+    const bloque=n=>new DataView(new ArrayBuffer(n));
+    const crc32=bytes=>{
+      let crc=0xffffffff;
+      for(const b of bytes){
+        crc^=b;
+        for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);
+      }
+      return (crc^0xffffffff)>>>0;
+    };
+    for(const [nombre,contenido] of Object.entries(archivos)){
+      const n=codificador.encode(nombre),datos=codificador.encode(contenido),crc=crc32(datos);
+      const l=bloque(30),c=bloque(46);
+      l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);
+      l.setUint32(14,crc,true);l.setUint32(18,datos.length,true);l.setUint32(22,datos.length,true);l.setUint16(26,n.length,true);
+      c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);
+      c.setUint32(16,crc,true);c.setUint32(20,datos.length,true);c.setUint32(24,datos.length,true);c.setUint16(28,n.length,true);
+      c.setUint32(42,desplazamiento,true);
+      local.push(l.buffer,n,datos);central.push(c.buffer,n);
+      desplazamiento+=30+n.length+datos.length;
+      tamanoCentral+=46+n.length;
+    }
+    const fin=bloque(22),n=central.length/2;
+    fin.setUint32(0,0x06054b50,true);fin.setUint16(8,n,true);fin.setUint16(10,n,true);
+    fin.setUint32(12,tamanoCentral,true);fin.setUint32(16,desplazamiento,true);
+    return new Blob([...local,...central,fin.buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   }
   function jurisdiccionesPerfil(host) {
     // Ambas series usan el total nacional TARV al corte. El Porcentaje de residencia
@@ -410,12 +496,13 @@
   }
   function medianaEditorial(host, datos) {
     const a=datos.filter(r=>numeric(r.Mediana_edad));if(!a.length)return vacio(host);
-    const W=Math.max(320,host.clientWidth),H=Math.max(120,host.clientHeight),L=106,R=72,T=9,B=30,max=Math.max(60,Math.ceil(Math.max(...a.map(r=>r.Mediana_edad))/10)*10),iw=W-L-R,ih=H-T-B;
+    const W=Math.max(320,host.clientWidth),H=Math.max(120,host.clientHeight),L=34,R=12,T=24,B=30,max=Math.max(60,Math.ceil(Math.max(...a.map(r=>r.Mediana_edad))/10)*10),iw=W-L-R,ih=H-T-B;
     const s=sv('svg',{viewBox:`0 0 ${W} ${H}`,class:'grafico-svg',role:'img','aria-label':'Mediana de edad según género, en años'});
-    for(let v=0;v<=max;v+=10){const x=L+v/max*iw;s.append(sv('line',{x1:x,y1:T,x2:x,y2:H-B,stroke:'#ffffff20'}),sv('text',{x,y:H-16,fill:'white','font-size':12,'text-anchor':'middle'},String(v)));}
-    a.forEach((r,i)=>{const y=T+(i+.5)*ih/a.length,x=L+r.Mediana_edad/max*iw;
-      s.append(sv('text',{x:L-12,y:y+4,fill:'white','font-size':13,'text-anchor':'end'},r.Genero),sv('line',{x1:L,y1:y,x2:x,y2:y,stroke:'#9ed9fa','stroke-width':2}));
-      const punto=sv('circle',{cx:x,cy:y,r:5,fill:'#9ed9fa','data-valor':r.Mediana_edad});punto.append(sv('title',{},`${r.Genero}: ${f(r.Mediana_edad)} años`));s.append(punto,sv('text',{x:x+14,y:y+4,fill:'white','font-size':13,'font-weight':600},`${f(r.Mediana_edad)} años`));
+    for(let v=0;v<=max;v+=10){const y=T+(1-v/max)*ih;s.append(sv('line',{x1:L,y1:y,x2:W-R,y2:y,stroke:'#ffffff20'}),sv('text',{x:L-7,y:y+4,fill:'white','font-size':11,'text-anchor':'end'},String(v)));}
+    a.forEach((r,i)=>{const x=L+(i+.5)*iw/a.length,y=T+(1-r.Mediana_edad/max)*ih;
+      const valor=f(r.Mediana_edad,Number.isInteger(r.Mediana_edad)?0:1);
+      s.append(sv('text',{x,y:H-11,fill:'white','font-size':11,'text-anchor':'middle'},r.Genero));
+      const punto=sv('circle',{cx:x,cy:y,r:5,fill:'#9ed9fa','data-valor':r.Mediana_edad});punto.append(sv('title',{},`${r.Genero}: ${valor} años`));s.append(punto,sv('text',{x,y:y-9,fill:'white','font-size':12,'font-weight':600,'text-anchor':'middle'},valor));
     });host.append(s);
   }
   function edadEditorial(host, datos) {
@@ -468,7 +555,7 @@
     const nombres={N_VIH_seguimiento:"Con alguna prestación en servicios de salud",Dispensa_TARV:"Al menos una dispensa en el año",Personas_en_TARV:"En TARV al 30/6 del año",Anio_1er_TARV:"Primera dispensa ese año"};
     const tipos=["N_VIH_seguimiento","Dispensa_TARV","Personas_en_TARV","Anio_1er_TARV"];
     const anual=filas("anual_tarv").slice().sort((a,b)=>Number(b.Anio)-Number(a.Anio)||tipos.indexOf(a.Tipo_de_metrica)-tipos.indexOf(b.Tipo_de_metrica)).map(r=>({...r,Tipo_de_metrica:nombres[r.Tipo_de_metrica]||r.Tipo_de_metrica}));
-    barras(panel(g,"Evolución de las personas en TARV","evolucion-anual"),anual,"Anio","Valor","Tipo_de_metrica",{horizontal:true});
+    barras(panel(g,"Evolución de las personas en TARV por año","evolucion-anual"),anual,"Anio","Valor","Tipo_de_metrica",{horizontal:true});
     const resumen=el("section","evolucion-resumen"),tituloResumen=el("h3","evolucion-resumen-titulo","Personas en TARV y pérdida de seguimiento"),indicadores=el("div","evolucion-indicadores");resumen.append(tituloResumen,indicadores);g.append(resumen);const cad=filas("tratamiento")[0]?.N_TARV_caducado;
     const {N_TARV,perdidos_90_179,perdidos_180_mas}=general();
     const categorias=[
@@ -488,14 +575,19 @@
       return grupo;
     };
     const grupoTarv=agregarGrupo("evolucion-grupos-tarv","Recuentos de personas en TARV",categorias.slice(0,2));
-    agregarGrupo("evolucion-grupos-perdida","Recuentos que se suman para la pérdida de seguimiento",categorias.slice(2));
+    const totalTarv=el("div","evolucion-total-tarv");
+    tarjetasTotal(totalTarv,[["Total de personas en TARV",N_TARV]]);
+    const igual=el("span","evolucion-signo-suma","=");
+    igual.setAttribute("aria-hidden","true");
+    grupoTarv.prepend(totalTarv,igual);
+    const grupoPerdida=agregarGrupo("evolucion-grupos-perdida","Recuentos que se suman para la pérdida de seguimiento",categorias.slice(2));
     const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");grupoTarv.lastElementChild.append(porcentaje);
     const perdida=window.porcentajePerdidaSeguimientoSVIH(general());
     const resultado=el("div","evolucion-perdida"),flecha=el("span","evolucion-perdida-flecha","→");
     flecha.setAttribute("aria-hidden","true");
     resultado.append(flecha,el("div","evolucion-perdida-etiqueta","Pérdida de seguimiento último año"),
       el("div","numero-indicador",perdida===null?"—":f(perdida,1)+"%"));
-    indicadores.append(resultado);
+    grupoPerdida.append(resultado);
     flujo(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-flujo"),filas("flujo"));
     tortaCohorte(panel(g,"Situación de quienes hace un año estaban en TARV","evolucion-cohorte"),filas("flujo"));
     const mensual=panel(g,"Personas en TARV al 30 de junio de cada año","evolucion-mensual"),datosMes=filas('mensual_tarv').filter(r=>numeric(r.Valor)).sort((a,b)=>a.Fecha.localeCompare(b.Fecha));barras(mensual,datosMes,"Fecha","Valor",null,{linea:true});
@@ -515,11 +607,11 @@
   function laboratorio(host){
     const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable (<50)","laboratorio-viral"),actual=general();
     resumen.append(el("strong","viral-valor",f(actual.Prop_indetectables,1)+"%"),el("div","viral-ic",`IC 95   ${f(actual.Prop_indetect_IC95_inf,1)}%  ${f(actual.Prop_indetect_IC95_sup,1)}%`));
-    const cobertura=el("div","viral-cobertura"),valorCobertura=el("strong",null,f(actual.Prop_con_info_cv,1)+"%");valorCobertura.style.color=window.colorInformacionCargaViralSVIH(actual.Prop_con_info_cv);cobertura.append(el("span",null,"Información sobre carga viral"),valorCobertura);resumen.append(cobertura);
-    const cd=panel(g,"Distribución de CD4 en personas en TARV","laboratorio-cd4"),info=el("div","cd4-cobertura");
-    const proporcionCD4=filas("cd4_cobertura")[0]?.Prop_con_info_cd4,valorCD4=el("strong",null,f(proporcionCD4,1)+"%");
+    const cobertura=el("div","viral-cobertura cobertura-laboratorio"),valorCobertura=el("strong",null,numeric(actual.Prop_con_info_cv)?f(actual.Prop_con_info_cv,1)+"%":"—");valorCobertura.style.color=window.colorInformacionCargaViralSVIH(actual.Prop_con_info_cv);cobertura.append(el("span",null,"Información sobre carga viral"),valorCobertura);resumen.parentElement.append(cobertura);
+    const cd=panel(g,"Distribución de CD4 en personas en TARV","laboratorio-cd4"),info=el("div","cd4-cobertura cobertura-laboratorio");
+    const proporcionCD4=filas("cd4_cobertura")[0]?.Prop_con_info_cd4,valorCD4=el("strong",null,numeric(proporcionCD4)?f(proporcionCD4,1)+"%":"—");
     valorCD4.style.color=window.colorInformacionCargaViralSVIH(proporcionCD4);
-    info.append(el("span",null,"Información sobre CD4"),valorCD4);cd.append(info);
+    info.append(el("span",null,"Información sobre CD4"),valorCD4);cd.parentElement.append(info);
     const ordenCD4=["500 o más","350 a 499","200 a 349","<200"],dist=filas("cd4_distribucion").slice().sort((a,b)=>ordenCD4.indexOf(a.intervalo_cd4)-ordenCD4.indexOf(b.intervalo_cd4));if(!dist.length)vacio(cd);else{const bar=el("div","cd4-barra");dist.forEach((r,i)=>{const seg=el("span",null,f(r.porcentaje,1)+"%");seg.style.width=(numeric(r.porcentaje)?r.porcentaje:0)+"%";seg.style.background=colores[i%7];seg.title=r.intervalo_cd4+": "+f(r.n_personas)+" personas";bar.append(seg)});cd.append(bar);leyenda(cd,dist.map(r=>r.intervalo_cd4));}
     serieMixta(panel(g,"Estudios de carga viral por año","laboratorio-estudios-cv"),filas("cv"),"CV","CV_p","Promedio_CV");
     serieMixta(panel(g,"Estudios de CD4 por año","laboratorio-estudios-cd4"),filas("cd4"),"CD4","CD4_p","Promedio_CD4");
@@ -527,13 +619,13 @@
   }
   function profilaxis(host,tipo){
     const prep=tipo==="prep",g=el("div","diseno-profilaxis "+(prep?"es-prep":"es-pep"));host.append(g);
-    if(prep){const r=filas("prep")[0]||{},c=panel(g,"Personas en PrEP","profilaxis-resumen");tarjetasTotal(c,[["N° de personas en PrEP",r.N_prep],["% por provincia donde retira",r.Porc_prep,true]]);}
+    if(prep){const r=filas("prep")[0]||{},c=panel(g,"Personas en PrEP","profilaxis-resumen");const tarjetas=[["N° de personas en PrEP",r.N_prep]];if(provincia()!=="País")tarjetas.push(["% por provincia donde retira",r.Porc_prep,true]);tarjetasTotal(c,tarjetas);}
     const anual=prep?filas("anual_prep").filter(r=>r.etiqueta===(provincia()==="País"?"País":"TOTAL PROVINCIA")).sort((a,b)=>b.anio-a.anio||(a.indicador==="Inicios"?-1:1)).map(r=>({...r,indicador:r.indicador==="Inicios"?"Personas con primer retiro ese año":"Personas con al menos un retiro en el año"})):filas("anual_pep");
     barras(panel(g,prep?"Evolución personas en PrEP":"PeP por año","profilaxis-anual"),anual,prep?"anio":"Anio",prep?"valor":"Valor",prep?"indicador":"Indicador",{horizontal:prep});
     const inst=filas("mapa_"+tipo),nombre=prep?"nombre_institucion":"Institucion",cant=prep?"cantidad":"Cantidad";
     tablaEditorial(panel(g,prep?"Personas en PrEP por institución":"Instituciones que dispensaron PeP los últimos 12 meses","profilaxis-instituciones"),participacion(inst,cant),[[nombre,"Institución"],[cant,"N"],["participacion","%",1,true]],6);
     mapa(panel(g,prep?"Localización de instituciones que distribuyen PrEP":"Instituciones que dispensaron PeP los últimos 12 meses","profilaxis-mapa"),inst,nombre,cant);
-    barras(panel(g,prep?"Evolución de personas en PrEP por mes y año":"Evolución de personas en PeP","profilaxis-mensual"),filas("mensual_"+tipo).sort((a,b)=>String(a.Fecha||a.periodo).localeCompare(String(b.Fecha||b.periodo))),prep?"Fecha":"periodo",prep?"Valor":"valor",null,{linea:prep,conBarras:prep});
+    barras(panel(g,prep?"Evolución de personas en PrEP por mes y año":"Evolución de las personas en PeP por mes","profilaxis-mensual"),filas("mensual_"+tipo).sort((a,b)=>String(a.Fecha||a.periodo).localeCompare(String(b.Fecha||b.periodo))),prep?"Fecha":"periodo",prep?"Valor":"valor",null,{linea:prep,conBarras:prep});
     dona(panel(g,"Distribución por género","profilaxis-genero"),filas("genero_"+tipo),prep?"género":"Genero",prep?"casos":"Personas",prep?"porcentaje":"Porcentaje");
     const grupo=prep?"género":"Genero",orden=prep?["Varón trans","Varón CIS","Mujer trans","Mujer CIS"]:["Varón CIS","Mujer CIS","Mujer trans","Varón trans"];apiladas(panel(g,"Distribución por género y edad","profilaxis-edad"),filas("edad_"+tipo).filter(r=>orden.includes(r[grupo])).sort((a,b)=>orden.indexOf(a[grupo])-orden.indexOf(b[grupo])),grupo,prep?"grupo_edad":"Grupo_edad",prep?"porcentaje":"Porcentaje");
   }
@@ -592,7 +684,7 @@
       ordenAyuda.textContent=histOrden==='valor'&&periodoOrden?'Valor al '+new Date(periodoOrden+'T12:00:00').toLocaleDateString('es-AR'):'Ordenar barras';
       barras(graf,a,"Provincia_atencion","Valor",porGenero?"Genero":"periodo_visible",{
         ordenSeries:porGenero?window.SVIH_GENEROS_TARV.map(g=>g[1]):null,
-        formato:v=>f(v,pct||porGenero?1:0)+(pct?"%":"")});
+        formato:v=>f(v,pct||porGenero||window.esPromedioLaboratorioSVIH(histIndicador)?1:0)+(pct?"%":"")});
       const grafico=graf.querySelector(".grafico-svg");
       if(grafico){
         grafico.dataset.tituloExportacion=etiquetas[histIndicador]+" por jurisdicción y período";

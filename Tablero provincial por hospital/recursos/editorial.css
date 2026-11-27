@@ -541,6 +541,14 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 
 /* Evolución TARV: separar el resumen del título de página sin desplazar los gráficos. */
 .evolucion-resumen{display:block}
+.encabezado-texto{display:flex;flex-direction:column;min-width:0;gap:3px;text-align:left}
+header .encabezado-texto .eyebrow{position:static;margin:0;font-weight:450}
+.subtitulo-tarv{font-size:.64em;font-weight:550;letter-spacing:0}
+.tarjetas [data-campo=N_TARV]>.etiqueta,.tg-kpis>.territorial-tarjeta:first-child>.rotulo{display:none}
+.tabla-acciones{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
+.tabla-acciones>.ver-completo{margin:0}
+.cobertura-laboratorio{display:flex;align-items:baseline;gap:8px;font-size:14px;line-height:1.2}
+.cobertura-laboratorio strong{display:inline;width:auto;margin:0;padding:0;background:transparent;font-size:25px;line-height:1.15}
 .evolucion-resumen-titulo{margin:0 0 4px;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.25px}
 .umbral-indetectable{font-size:.78em}
 .control-indicador{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px}
@@ -562,41 +570,52 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .resultados-indicador>button[aria-pressed="true"]{background:#40577a}
 .resultados-indicador>button:hover,.resultados-indicador>button:focus-visible{background:#49617f}
 .opciones-indicador>p{margin:6px;font-size:13px}
-.evolucion-indicadores{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.64fr);gap:14px}
+.evolucion-indicadores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .evolucion-recuentos{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
   gap:8px;
   min-width:0;
   border:1px solid #829dbb;
   padding:0 8px 3px;
 }
+.evolucion-grupos-tarv{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1.15fr)}
+.evolucion-grupos-perdida{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1.35fr)}
 .evolucion-resumen .evolucion-recuentos .mini{align-items:center;text-align:center}
 .evolucion-resumen .evolucion-recuentos .numero-indicador{text-align:center}
+.evolucion-resumen .evolucion-grupos-tarv>.mini .numero-indicador{font-size:28px}
 .evolucion-signo-suma{align-self:start;text-align:center;font-size:23px;line-height:37.4px;font-weight:700}
 .evolucion-perdida{position:relative;text-align:center;padding-left:26px}
 .evolucion-perdida-etiqueta{font-size:12px;font-weight:700;line-height:1.2}
 .evolucion-perdida-flecha{position:absolute;left:0;bottom:auto;top:3px;font-size:25px;line-height:1.15}
 .evolucion-resumen .evolucion-perdida .numero-indicador{color:#9ed9fa!important;text-align:center}
-.evolucion-grupos-tarv>.mini:first-child .numero-indicador{color:#fff!important}
 .evolucion-grupos-tarv>.mini:last-child .numero-indicador{color:#fff0c2!important;padding-left:0}
 :root{--tarv-sin-retiro-90:#ffd09c;--tarv-sin-retiro-180:#f6a04d}
 .evolucion-grupos-perdida>.mini:first-child .numero-indicador{color:var(--tarv-sin-retiro-90)!important}
-.evolucion-grupos-perdida>.mini:last-child .numero-indicador{color:var(--tarv-sin-retiro-180)!important}
+.evolucion-grupos-perdida>.mini:nth-child(3) .numero-indicador{color:var(--tarv-sin-retiro-180)!important}
 .perdida-seguimiento strong[data-campo="perdidos_90_179"],.tg-perdida strong[data-campo="perdidos_90_179"]{color:var(--tarv-sin-retiro-90)}
 .perdida-seguimiento strong[data-campo="perdidos_180_mas"],.tg-perdida strong[data-campo="perdidos_180_mas"]{color:var(--tarv-sin-retiro-180)}
 @media(min-width:700px){
-  .evolucion-perdida-etiqueta{position:absolute;bottom:100%;left:26px;right:0;margin-bottom:2px}
-  .evolucion-resumen{margin-left:25%;margin-top:-21px;padding-bottom:8px}
+  .diseno-evolucion{grid-template-rows:94px 194px 178px}
+  .evolucion-resumen{margin:0;padding-bottom:4px}
   .evolucion-resumen .rotulo{min-height:0;line-height:1.25}
+  .evolucion-perdida-etiqueta{margin:2px 0}
   .evolucion-anual>.rotulo,.evolucion-mensual>.rotulo{min-height:28px;padding-bottom:2px}
   .evolucion-anual .interior,.evolucion-mensual .interior{padding-top:0}
+  .detalles{grid-template-columns:1.15fr 1.35fr 1fr 1.25fr}
+  .detalles [data-campo=Prop_notificados]>.etiqueta,.detalles [data-campo=Prop_caso_confirmado]>.etiqueta{font-size:12px!important;min-height:34px}
+  .territorial .tg-notificados .rotulo,.territorial .tg-confirmados .rotulo{height:auto;min-height:30px;font-size:11px!important}
+  .laboratorio-cd4 .interior{padding-left:0}
+  .diseno-laboratorio .cobertura-laboratorio{position:absolute;left:0;right:auto;top:auto;bottom:4px;width:auto}
 }
 @media(max-width:699px){
   .evolucion-resumen{min-height:0}
   .evolucion-indicadores .mini>.interior{min-height:0;flex:none}
-  .evolucion-indicadores{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
-  .evolucion-recuentos{grid-column:1/-1}
-  .evolucion-perdida{grid-column:1/-1;justify-self:center}
-  .evolucion-perdida-flecha{top:auto;bottom:4px}
+  .evolucion-indicadores{grid-template-columns:minmax(0,1fr);gap:12px}
+  .evolucion-recuentos{gap:4px;padding-inline:5px}
+  .evolucion-resumen .evolucion-recuentos .numero-indicador,.evolucion-resumen .evolucion-grupos-tarv>.mini .numero-indicador{font-size:20px}
+  .evolucion-perdida{padding-left:15px}
+  .evolucion-perdida-flecha{font-size:16px}
+  .evolucion-signo-suma{font-size:16px;line-height:26px}
+  .diseno-laboratorio .cobertura-laboratorio{position:static;width:auto}
+  .laboratorio-cd4 .interior{padding:0}
 }

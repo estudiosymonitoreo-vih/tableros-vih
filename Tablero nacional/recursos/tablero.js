@@ -37,8 +37,8 @@
   const detalles = [
     ["Prop_indetectables", "Carga viral indetectable", 1, 1, true],
     ["revincular", "Personas que retiraron TARV los últimos 12 meses, ya no lo hacen, están vivas y no tienen otra cobertura social"],
-    ["Prop_notificados", "Notificadas en SNVS", 1, 1, true],
-    ["Prop_caso_confirmado", "Confirmadas en SNVS", 1, 1, true]
+    ["Prop_notificados", "Notificados en el Sistema Nacional de Vigilancia de la Salud", 1, 1, true],
+    ["Prop_caso_confirmado", "Correctamente notificados en el Sistema Nacional de Vigilancia de la Salud", 1, 1, true]
   ];
   function tarjeta(config, fila, provincia) {
     const [campo, titulo, dec = 0, escala = 1, porcentaje = false, serie, estado] = config;
@@ -144,7 +144,8 @@
     const fila = datos.general.find(x => x.Provincia_atencion === provincia)||{};
     for (const [id, config] of [["epidemiologia",epidemiologia],["tarv",tarjetas],["detalle",detalles]]) {
       const origen=id==='epidemiologia'&&contexto?contexto.filas.find(r=>r.Provincia_atencion===provincia)||{}:fila;
-      $(id).replaceChildren(...config.map(x=>tarjeta(x,origen,provincia)));
+      const visibles=provincia==="País"?config.filter(([campo])=>!["Porc_en_TARV","Prop_residentes"].includes(campo)):config;
+      $(id).replaceChildren(...visibles.map(x=>tarjeta(x,origen,provincia)));
     }
     ajustarRotulos();
     dibujarMapa(provincia);

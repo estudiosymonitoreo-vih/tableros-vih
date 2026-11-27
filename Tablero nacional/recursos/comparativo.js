@@ -25,7 +25,7 @@ const configuracionComparativoSVIH = [
   window.SVIH_INDICADORES_TARV.flatMap(id=>{
     const etiqueta=window.SVIH_ETIQUETAS_INDICADORES[id];
     const opciones=window.esIndicadorGeneroSVIH(id)?window.opcionesMapaGeneroSVIH(id):[{id,etiqueta}];
-    const tipo=id==="Mediana_edad_tarv"?"edad":window.esPorcentajeIndicadorSVIH(id,etiqueta)?"porcentaje":"numero";
+    const tipo=id==="Mediana_edad_tarv"?"edad":window.esPromedioLaboratorioSVIH(id)?"promedio":window.esPorcentajeIndicadorSVIH(id,etiqueta)?"porcentaje":"numero";
     return opciones.map(o=>({...o,titulo:o.etiqueta,campo:o.id,escala:1,tipo}));
   })
 );
