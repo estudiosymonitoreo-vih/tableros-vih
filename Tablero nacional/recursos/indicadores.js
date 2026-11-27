@@ -25,6 +25,13 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   Prop_perdida_seguimiento: "% de pérdida de seguimiento último año",
   Prop_indetectables: "% de personas con carga viral indetectable (supresión viral)",
   Prop_con_info_cv: "% de personas con información de carga viral",
+  Prop_CD4_menor_350: "% de personas en TARV con menos de 350 CD4",
+  Prop_CD4_menor_200: "% de personas en TARV con menos de 200 CD4",
+  Prop_con_info_cd4: "Cobertura de datos de CD4 en personas en TARV",
+  Mediana_edad_tarv: "Mediana de edad actual por género en personas en TARV",
+  Prop_genero_tarv: "% de personas en TARV por género",
+  Prop_TARV_hasta_24: "% de personas en TARV de hasta 24 años",
+  Prop_TARV_55_mas: "% de personas en TARV de 55 años o más",
   Prop_DTG_tto: "% de personas > 14 años en tratamiento con Dolutegravir (DTG)",
   Prop_DRV800_tto: "% de personas > 14 años en tratamiento con Darunavir 800 mg",
   Prop_EFV_tto: "% de personas > 14 años en tratamiento con Efavirenz",
@@ -39,6 +46,20 @@ window.SVIH_ETIQUETAS_INDICADORES = Object.freeze({
   Porc_alternativo: "% de personas > 14 años con esquema alternativo",
   Porc_no_recomendado: "% de personas > 14 años con esquema no recomendado"
 });
+
+window.SVIH_INDICADORES_TARV = Object.freeze([
+  "Prop_CD4_menor_350","Prop_CD4_menor_200","Prop_con_info_cd4","Mediana_edad_tarv",
+  "Prop_genero_tarv","Prop_TARV_hasta_24","Prop_TARV_55_mas"
+]);
+window.SVIH_GENEROS_TARV = Object.freeze([
+  ["varones","Varones","♂"],["mujeres","Mujeres","♀"],
+  ["mujeres_trans","Mujeres trans","♀ᵀ"],["varones_trans","Varones trans","♂ᵀ"]
+]);
+window.esIndicadorGeneroSVIH = id => id === "Prop_genero_tarv" || id === "Mediana_edad_tarv";
+window.valoresGeneroSVIH = (fila, id) => window.SVIH_GENEROS_TARV.map(([clave,genero,icono]) => ({
+  genero,icono,valor:fila?.[id+"_"+clave]??null
+}));
+window.esPorcentajeIndicadorSVIH = (id,etiqueta) => id === "Prop_con_info_cd4" || String(etiqueta).startsWith("%");
 
 const titulosDefinicionesSVIH = {
   N_TARV: "N° personas en TARV",
@@ -83,7 +104,7 @@ const textosDefinicionesSVIH = {
 };
 
 window.mostrarDefinicionIndicadorSVIH = (host, id, catalogo = []) => {
-  const titulos = [].concat(titulosDefinicionesSVIH[id] ?? []);
+  const titulos = [].concat(titulosDefinicionesSVIH[id] ?? window.SVIH_ETIQUETAS_INDICADORES[id] ?? []);
   const nombre = texto => String(texto ?? "").trim().replace(/\.$/, "");
   const fila = catalogo.find(r => titulos.some(titulo => nombre(r.INDICADOR) === nombre(titulo)));
   let [definicion, observaciones] = textosDefinicionesSVIH[id] || [fila?.["DESCRIPCIÓN"], fila?.OBSERVACIONES];

@@ -21,7 +21,12 @@ const configuracionComparativoSVIH = [
   ["Mortalidad_2023","Tasa de mortalidad por sida 2023","Tasa de mortalidad por sida por 100 mil habitantes 2023","Mortalidad_2023","tasa",1],
   ["Sifilis_2024","Tasa de sífilis por 100 mil 2024","Tasa de sífilis por 100 mil habitantes en 2024","Sifilis_2024","tasa",1],
   ["PreP","Personas en PrEP","Cantidad de personas en PrEP por provincia de retiro","N_prep","numero",1]
-].map(([id,etiqueta,titulo,campo,tipo,escala]) => ({id,etiqueta,titulo,campo,tipo,escala}));
+].map(([id,etiqueta,titulo,campo,tipo,escala]) => ({id,etiqueta,titulo,campo,tipo,escala})).concat(
+  window.SVIH_INDICADORES_TARV.map(id=>{
+    const etiqueta=window.SVIH_ETIQUETAS_INDICADORES[id];
+    return {id,etiqueta,titulo:etiqueta,campo:id,escala:1,tipo:window.esPorcentajeIndicadorSVIH(id,etiqueta)?"porcentaje":"numero"};
+  })
+);
 // Solo el paquete local puede tener este contexto; el caché de Data Studio
 // conserva sus columnas históricas. No mezclar indicadores 2024 y 2025.
 const contextoComparativoSVIH = JSON.parse(document.getElementById('datos-tablero').textContent).contexto_epidemiologico;

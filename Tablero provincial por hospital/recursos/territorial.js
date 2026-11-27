@@ -10,7 +10,8 @@
   const campos={...window.SVIH_ETIQUETAS_INDICADORES,'Variación_TARV':'Variación interanual','Porc_prep':regional?'% del total provincial de personas en PrEP':'% de personas en PrEP por provincia donde retira'};
   const totalesRegionales=()=>general.filter(r=>esTotal(r.Institucion));
   const indicadoresComparables=filas=>Object.keys(campos).filter(k=>
-    k==='Prop_perdida_seguimiento'||filas.some(r=>numeric(r[k])));
+    k==='Prop_perdida_seguimiento'||filas.some(r=>window.esIndicadorGeneroSVIH(k)
+      ?window.valoresGeneroSVIH(r,k).some(v=>numeric(v.valor)):numeric(r[k])));
   const valorComparable=(fila,id)=>id==='Prop_perdida_seguimiento'
     ?window.porcentajePerdidaSeguimientoSVIH(fila):fila[id];
   const paginas=[['general','Principales indicadores'],['tratamiento','Tratamiento'],['laboratorio','Laboratorio'],['prevencion','PrEP y PeP'],['comparador',regional?'Comparador- por institución':'Comparación'],...(regional?[['regiones','Comparador por región sanitaria'],['mapa','Mapa']]:[]),['definiciones','Definiciones']];
@@ -56,28 +57,33 @@
     definicion.setAttribute('aria-label','Definición del indicador seleccionado');
     host.append(definicion);
     ordenBoton.onclick=()=>{ordenComparadores[tipoOrden]=ordenComparadores[tipoOrden]==='valor'?'alfabetico':'valor';dibujar()};
-    function dibujar(){summary.textContent=(porRegion?'Regiones':'Instituciones')+` (${elegidos.length}) ▾`;graph.replaceChildren();const pct=String(campos[indicador]).startsWith('%')||(porRegion&&indicador==='Variación_TARV'),rows=candidatos.filter(r=>elegidos.includes(r[clave]));
+    function dibujar(){summary.textContent=(porRegion?'Regiones':'Instituciones')+` (${elegidos.length}) ▾`;graph.replaceChildren();const pct=window.esPorcentajeIndicadorSVIH(indicador,campos[indicador])||(porRegion&&indicador==='Variación_TARV'),rows=candidatos.filter(r=>elegidos.includes(r[clave]));
+      const porGenero=window.esIndicadorGeneroSVIH(indicador);
+      ordenHost.hidden=porGenero;
       window.mostrarDefinicionIndicadorSVIH(definicion,indicador,t.definiciones);
       // Ordenar solo las filas visibles conserva totales, filtros y resúmenes.
       if(indicador==='Prop_perdida_seguimiento'){
         for(let i=0;i<rows.length;i++)rows[i]={...rows[i],Prop_perdida_seguimiento:valorComparable(rows[i],indicador)};
       }
       rows.sort((a,b)=>{
-        if(ordenComparadores[tipoOrden]==='valor'){
+        if(ordenComparadores[tipoOrden]==='valor'&&!porGenero){
           if(numeric(a[indicador])!==numeric(b[indicador]))return numeric(a[indicador])?-1:1;
           if(numeric(a[indicador])&&a[indicador]!==b[indicador])return b[indicador]-a[indicador];
         }
         return ordenar(a[clave],b[clave]);
       });
       ordenBoton.textContent=ordenComparadores[tipoOrden]==='valor'?'↓ Valor':porRegion?'A–Z Región':'A–Z Institución';ordenBoton.setAttribute('aria-pressed',String(ordenComparadores[tipoOrden]==='valor'));ordenBoton.title='Alternar orden alfabético y valor de mayor a menor. Empates por nombre; faltantes al final.';
-      barras(graph,rows,clave,indicador,null,{etiquetasHorizontales:regional,formato:v=>f(v,pct?1:0)+(pct?'%':'')});
+      const datosGrafico=porGenero?rows.flatMap(r=>window.valoresGeneroSVIH(r,indicador).map(v=>({[clave]:r[clave],...v}))):rows;
+      barras(graph,datosGrafico,clave,porGenero?'valor':indicador,porGenero?'genero':null,{
+        etiquetasHorizontales:regional,ordenSeries:porGenero?window.SVIH_GENEROS_TARV.map(g=>g[1]):null,
+        formato:v=>f(v,pct||porGenero?1:0)+(pct?'%':'')});
       const grafico=graph.querySelector('.grafico-svg');
       if(grafico){
         grafico.dataset.tituloExportacion=campos[indicador]+(porRegion?' por región sanitaria':' por institución');
         grafico.dataset.ambitoExportacion=porRegion?'Provincia de Buenos Aires':scope();
       }
       stats.replaceChildren();
-      stats.hidden=graph.querySelectorAll('.barra-dato').length===1;
+      stats.hidden=porGenero||graph.querySelectorAll('.barra-dato').length===1;
       if(stats.hidden)return;
       const visibles=rows.filter(r=>numeric(r[indicador])).map(r=>r[indicador]).sort((a,b)=>a-b),n=visibles.length,resumen={Mediana:n?(n%2?visibles[(n-1)/2]:visibles[n/2-1]/2+visibles[n/2]/2):null,'Máximo':n?visibles[n-1]:null,'Mínimo':n?visibles[0]:null};for(const[nombre,v]of Object.entries(resumen)){const x=el('div');x.append(el('span',null,nombre),el('strong',null,f(v,pct||!Number.isInteger(v)?1:0)+(pct&&numeric(v)?'%':'')));if(n&&nombre!=='Mediana')x.append(el('small',null,uniq(rows.filter(r=>r[indicador]===v).map(r=>r[clave])).sort(ordenar).join(' · ')));stats.append(x)}}
     configurarSelectorMultiple(details);
@@ -115,22 +121,27 @@
     let mapaDibujado=null;
     function dibujar(){
       const id=indicadorMapaRegional,etiqueta=etiquetas[id];
-      const pct=etiqueta.startsWith('%')||id==='Variación_TARV';
-      const formato=v=>numeric(v)?f(v,pct?1:0)+(pct?'%':''):'—';
+      const porGenero=window.esIndicadorGeneroSVIH(id);
+      const pct=window.esPorcentajeIndicadorSVIH(id,etiqueta)||id==='Variación_TARV';
+      const formato=v=>numeric(v)?f(v,pct||porGenero?1:0)+(pct?'%':''):'—';
+      ranking.hidden=orden.hidden=porGenero;
+      cuerpo.classList.toggle('comparativo-mapa-genero',porGenero);
       const filas=baseRegiones.map(r=>({
         codigo:norm(r.Provincia_atencion).split(' ').at(-1).toUpperCase(),
-        region:r.Provincia_atencion,valor:valor(r,id)
+        region:r.Provincia_atencion,valor:valor(r,id),generos:porGenero?window.valoresGeneroSVIH(r,id):null
       }));
       titulo.textContent=etiqueta;
       const valorProvincial=valor(provincia,id);
       orden.textContent=ordenMapaRegional==='valor'?'↓ Valor':'I–XII Región';
       orden.setAttribute('aria-label','Ordenar regiones por '+(ordenMapaRegional==='valor'?'número de región':'valor'));
       if(mapaDibujado!==id){
-        const mostrarProvincial=id!=='Porc_en_TARV'&&id!=='Porc_prep';
-        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,mostrarProvincial,tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
+        const mostrarProvincial=!porGenero&&id!=='Porc_en_TARV'&&id!=='Porc_prep';
+        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,mostrarProvincial,porGenero,
+          tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
         window.mostrarDefinicionIndicadorSVIH(definicion,id,definiciones);
         mapaDibujado=id;
       }
+      if(porGenero)return;
       filas.sort((a,b)=>{
         if(ordenMapaRegional==='valor'){
           if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;

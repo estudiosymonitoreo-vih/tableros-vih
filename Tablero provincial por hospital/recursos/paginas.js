@@ -64,13 +64,13 @@
     }
     entrada.oninput=()=>{estado.q=entrada.value.toLocaleLowerCase();vista.scrollTop=0;pintar()};pintar();
   }
-  function barras(host,datos,x,y,serie=null,{horizontal=false,pct=false,linea=false,log=false,conBarras=false,formato=null,etiquetasHorizontales=false}={}) {
+  function barras(host,datos,x,y,serie=null,{horizontal=false,pct=false,linea=false,log=false,conBarras=false,formato=null,etiquetasHorizontales=false,ordenSeries=null}={}) {
     const a=datos.filter(r=>numeric(r[y])&&r[x]!==null&&r[x]!==undefined);
     if(!a.length)return vacio(host);
-    const xs=uniq(a.map(r=>String(r[x]))),ss=serie?uniq(a.map(r=>String(r[serie]))):["Valor"];
+    const xs=uniq(a.map(r=>String(r[x]))),ss=ordenSeries||(serie?uniq(a.map(r=>String(r[serie]))):["Valor"]);
     // Nunca sumar claves repetidas silenciosamente.
     if(new Set(a.map(r=>JSON.stringify([r[x],serie?r[serie]:""]))).size!==a.length){nota(host,"Hay claves duplicadas en la fuente; no se agregaron valores.");return;}
-    const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
+    const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5","#86bbc0"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
     const perfilMediana=!!host.closest('.perfil-mediana'),comparadorTerritorial=!!host.closest('.tc-grafico');
     const rankingRegional=horizontal&&!!host.closest('.mapa-regional-grid');
@@ -136,7 +136,7 @@
         const step=(horizontal?ih:iw)/xs.length,band=step*.8/ss.length,base=horizontal?left+iw*unit(0):top+ih-ih*unit(0),pos=horizontal?left+iw*unit(r[y]):top+ih-ih*unit(r[y]);
         if(linea){const px=left+(i+.5)*iw/xs.length;if(conBarras)s.append(sv("rect",{x:left+i*step+step*.1,y:Math.min(base,pos),width:step*.8,height:Math.abs(pos-base),fill:colores[1]}));path.push(`${px},${pos}`);const c=sv("circle",{cx:px,cy:pos,r:2.5,fill:colores[j%7]});c.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}`));s.append(c);return;}
         const color=cs[(serie?j:!horizontal&&xs.length<=8?i:0)%cs.length];
-        const unica=!horizontal&&a.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
+        const unica=!horizontal&&a.length===1&&ss.length===1,ancho=unica?Math.min(64,band*.9):band*.9,bx=unica?left+iw/2-ancho/2:left+i*step+step*.1+j*band;
         const rect=sv("rect",horizontal?{x:Math.min(base,pos),y:top+i*step+step*.1+j*band,width:Math.max(0.5,Math.abs(pos-base)),height:band*.9,fill:color}:{x:bx,y:Math.min(base,pos),width:ancho,height:Math.max(.5,Math.abs(pos-base)),fill:color});if(horizontal){const cy=top+i*step+step*.1+(j+.45)*band;const grosor=rankingRegional?4:2;rect.setAttribute('y',cy-grosor/2);rect.setAttribute('height',grosor);rect.setAttribute('rx',grosor/2);rect.setAttribute('opacity',.7);const punto=sv('circle',{cx:pos,cy,r:Math.max(2.4,Math.min(4,band*.32)),fill:color,class:'punto-dato','data-categoria':label,'data-valor':r[y]});punto.append(sv('title',{},`${label} · ${name}: ${f(r[y],2)}${pct?'%':''}`));s.append(punto);}rect.setAttribute('class','barra-dato');rect.setAttribute('data-categoria',label);rect.setAttribute('data-valor',r[y]);rect.append(sv("title",{},`${label} · ${name}: ${f(r[y],2)}${pct?"%":""}`));s.append(rect);
         if((historico||xs.length<=8||horizontal)&&!(horizontal&&band<11)){
           const texto=formato?formato(r[y]):f(r[y],pct?1:0)+(pct?"%":""),tx=horizontal?Math.min(W-5,pos+8):unica?left+iw/2:bx+ancho/2,ty=horizontal?top+i*step+step*.1+(j+.65)*band:Math.min(base,pos)-5;
@@ -525,7 +525,13 @@
       Provincia_atencion:r.Provincia_atencion, Indicador:indicadorPerdida, Periodo:d.corte,
       Valor:window.porcentajePerdidaSeguimientoSVIH(r)
     })).filter(r=>numeric(r.Valor)):[];
-    const anteriores=(t.historico||[]).filter(r=>!(r.Indicador===indicadorPerdida&&r.Periodo===d.corte&&filasCorte.length));
+    if(d.corte)for(const r of t.tarv_comparacion||[])for(const id of window.SVIH_INDICADORES_TARV){
+      const fila={Provincia_atencion:r.Provincia_atencion,Indicador:id,Periodo:d.corte};
+      const valores=window.esIndicadorGeneroSVIH(id)?window.valoresGeneroSVIH(r,id):[{valor:r[id]}];
+      for(const v of valores)if(numeric(v.valor))filasCorte.push({...fila,Genero:v.genero,Valor:v.valor});
+    }
+    const indicadoresCorte=new Set(filasCorte.map(r=>r.Indicador));
+    const anteriores=(t.historico||[]).filter(r=>!(r.Periodo===d.corte&&indicadoresCorte.has(r.Indicador)));
     const rows=[...anteriores,...filasCorte].filter(r=>!desconocida(r.Provincia_atencion)),controles=el("div","controles-historicos con-orden");host.append(controles);const etiquetas=window.SVIH_ETIQUETAS_INDICADORES;const inds=uniq(rows.map(r=>r.Indicador)).filter(k=>Object.hasOwn(etiquetas,k)),periodos=uniq(rows.map(r=>r.Periodo)).sort().reverse();
     if(!inds.length){vacio(host);return;}if(!inds.includes(histIndicador))histIndicador=inds.includes("N_TARV")?"N_TARV":inds[0];if(!histPeriodos)histPeriodos=periodos.slice(0,1);
     const jurisdicciones=uniq(rows.map(r=>r.Provincia_atencion)).sort(compararJurisdicciones);
@@ -548,13 +554,15 @@
     host.append(estadisticas,definicion);
     const dibujar=()=>{
       window.mostrarDefinicionIndicadorSVIH(definicion,histIndicador,t.definiciones);
-      graf.replaceChildren();estadisticas.replaceChildren();const pct=etiquetas[histIndicador].startsWith("%"),a=rows.filter(r=>r.Indicador===histIndicador&&histPeriodos.includes(r.Periodo)&&histJurisdicciones.includes(r.Provincia_atencion)).map(r=>({...r,periodo_visible:new Date(r.Periodo+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}));
+      const porGenero=window.esIndicadorGeneroSVIH(histIndicador);
+      ordenHost.hidden=porGenero;
+      graf.replaceChildren();estadisticas.replaceChildren();const pct=window.esPorcentajeIndicadorSVIH(histIndicador,etiquetas[histIndicador]),a=rows.filter(r=>r.Indicador===histIndicador&&histPeriodos.includes(r.Periodo)&&histJurisdicciones.includes(r.Provincia_atencion)).map(r=>({...r,periodo_visible:new Date(r.Periodo+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}));
       // Comparar jurisdicciones por el último corte seleccionado evita sumar
       // períodos o separar sus barras. NA al final; empates por nombre visible.
       const periodoOrden=histPeriodos.slice().sort().at(-1),valoresOrden=new Map(a.filter(r=>r.Periodo===periodoOrden&&numeric(r.Valor)).map(r=>[r.Provincia_atencion,r.Valor]));
       const alfabetico=(x,y)=>etiquetaJurisdiccion(x).localeCompare(etiquetaJurisdiccion(y),'es');
       a.sort((x,y)=>{
-        if(histOrden==='valor'){
+        if(histOrden==='valor'&&!porGenero){
           const vx=valoresOrden.get(x.Provincia_atencion),vy=valoresOrden.get(y.Provincia_atencion);
           if(numeric(vx)!==numeric(vy))return numeric(vx)?-1:1;
           if(numeric(vx)&&vx!==vy)return vy-vx;
@@ -564,14 +572,16 @@
       ordenBoton.textContent=histOrden==='valor'?'↓ Valor':'A–Z Jurisdicción';ordenBoton.setAttribute('aria-pressed',String(histOrden==='valor'));
       ordenBoton.title=histOrden==='valor'?'Mayor a menor según el período más reciente seleccionado. Pulsar para ordenar alfabéticamente.':'Orden alfabético por jurisdicción. Pulsar para ordenar por valor.';
       ordenAyuda.textContent=histOrden==='valor'&&periodoOrden?'Valor al '+new Date(periodoOrden+'T12:00:00').toLocaleDateString('es-AR'):'Ordenar barras';
-      barras(graf,a,"Provincia_atencion","Valor","periodo_visible",{formato:v=>f(v,pct?1:0)+(pct?"%":"")});
+      barras(graf,a,"Provincia_atencion","Valor",porGenero?"Genero":"periodo_visible",{
+        ordenSeries:porGenero?window.SVIH_GENEROS_TARV.map(g=>g[1]):null,
+        formato:v=>f(v,pct||porGenero?1:0)+(pct?"%":"")});
       const grafico=graf.querySelector(".grafico-svg");
       if(grafico){
         grafico.dataset.tituloExportacion=etiquetas[histIndicador]+" por jurisdicción y período";
         grafico.dataset.ambitoExportacion="";
       }
       const cantidadBarras=graf.querySelectorAll('.barra-dato').length;
-      estadisticas.hidden=cantidadBarras===1;
+      estadisticas.hidden=porGenero||cantidadBarras===1;
       if(estadisticas.hidden)return;
       const hayBarras=cantidadBarras>0,periodosVisibles=uniq(histPeriodos).sort().reverse();
       estadisticas.classList.toggle('varios-periodos',periodosVisibles.length>1);
@@ -592,11 +602,12 @@
   }
 
   function comparativo(host){
+    const agregados=new Map((t.tarv_comparacion||[]).map(r=>[normalizarJurisdiccion(etiquetaJurisdiccion(r.Provincia_atencion)),r]));
     const perdidas=new Map(d.general.map(r=>[
       normalizarJurisdiccion(etiquetaJurisdiccion(r.Provincia_atencion)),
       window.porcentajePerdidaSeguimientoSVIH(r)
     ]));
-    const datos=(t.comparativo||[]).map(r=>({...r,
+    const datos=(t.comparativo||[]).map(r=>({...agregados.get(normalizarJurisdiccion(etiquetaJurisdiccion(r.Provincia_atencion))),...r,
       Prop_perdida_seguimiento:perdidas.get(normalizarJurisdiccion(etiquetaJurisdiccion(r.Provincia_atencion)))??null
     }));
     const g=el("div","comparativo-grid"),selector=el("div","selector-comparativo"),encabezado=el("div","encabezado-selector","Indicador (1)"),buscar=el("input","buscar-indicador"),lista=el("div","lista-indicadores"),vista=el("div","comparativo-vista"),titulo=el("h3","titulo-comparativo"),cuerpo=el("div","comparativo-cuerpo"),mapaHost=el("div","comparativo-mapa"),barHost=el("div","comparativo-barras");buscar.type="search";buscar.placeholder="Escribí el término de búsqueda";buscar.setAttribute("aria-label","Buscar indicador provincial");selector.append(encabezado,buscar,lista);cuerpo.append(mapaHost,barHost);vista.append(titulo,cuerpo);g.append(selector,vista);host.append(g);
@@ -606,15 +617,19 @@
     definicion.tabIndex=0;
     g.append(definicion);
     let indicadorMapa=null;
-    const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
+    const configs=window.SVIH_COMPARATIVO;function dibujar(){const cfg=configs.find(x=>x.id===indicadorComparativo),formato=v=>numeric(v)?f(v,cfg.tipo==="numero"&&!window.esIndicadorGeneroSVIH(cfg.id)?0:1)+(cfg.tipo==="porcentaje"?"%":""):"—";titulo.textContent=cfg.titulo;const rows=datos.filter(r=>r.Provincia_atencion!=="País"&&!desconocida(r.Provincia_atencion)).map(r=>({...r,valor:window.valorComparativoSVIH(r,cfg)})),pais=datos.find(r=>r.Provincia_atencion==="País");
       // Alternar el ranking no reconstruye el mapa ni pierde su zoom.
+      const porGenero=window.esIndicadorGeneroSVIH(cfg.id);
+      barHost.hidden=ordenHost.hidden=porGenero;
+      cuerpo.classList.toggle("comparativo-mapa-genero",porGenero);
       if(indicadorMapa!==cfg.id){
         window.mostrarDefinicionIndicadorSVIH(definicion,cfg.id,t.definiciones);
         const alcance=/jurisdicción|provincia/i.test(cfg.titulo)?", Argentina":" según jurisdicción, Argentina";
-        window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg),
+        window.crearMapaComparativoSVIH(mapaHost,rows,{formato,nacional:window.valorComparativoSVIH(pais,cfg),genero:porGenero?cfg.id:null,
           tituloExportacion:`${cfg.titulo}${alcance} · Corte: ${d.fecha}`});
         indicadorMapa=cfg.id;
       }
+      if(porGenero)return;
       const ordenadas=rows.slice().sort((a,b)=>{
         if(comparativoOrden==='valor'){
           if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;

@@ -406,11 +406,13 @@ window.crearMapaSVIH = (() => {
   function ajustarRotulosRegionales(mapa,vista,zoom){
     const rotulos=mapa.querySelectorAll('.valor-region');
     if(!rotulos.length)return;
-    const tamaño=.25*(1+.12*(1-1/zoom))/zoom, margen=.035/zoom;
+    const margen=.035/zoom;
     const ocupados=[];
     for(const rotulo of rotulos){
+      const base=Number(rotulo.getAttribute('data-tamano'))||.25;
+      const tamaño=base*(1+.12*(1-1/zoom))/zoom;
       rotulo.setAttribute('font-size',tamaño);
-      rotulo.setAttribute('stroke-width',.04/zoom);
+      rotulo.setAttribute('stroke-width',base*.16/zoom);
       const b=rotulo.getBBox();
       const visible=b.x+b.width>=vista.x&&b.x<=vista.x+vista.w&&b.y+b.height>=vista.y&&b.y<=vista.y+vista.h;
       const superpuesto=visible&&ocupados.some(a=>b.x<a.x+a.width+margen&&b.x+b.width+margen>a.x&&
@@ -419,6 +421,18 @@ window.crearMapaSVIH = (() => {
       if(visible&&!superpuesto)ocupados.push(b);
     }
   }
+  const leyendaGenero=()=>window.SVIH_GENEROS_TARV.map(([,grupo,icono])=>`${icono} ${grupo}`).join(' · ');
+  function rotuloGenero(x,y,valores,formato,tamano){
+    const texto=svg('text',{x,y,class:'valor-region','data-tamano':tamano,
+      'text-anchor':'middle',fill:'#132c47',stroke:'#fff','paint-order':'stroke',
+      'font-family':'Arial, sans-serif','font-size':tamano,'font-weight':700});
+    for(let i=0;i<valores.length;i+=2){
+      const linea=valores.slice(i,i+2).map(v=>`${v.icono} ${formato(v.valor)}`).join('   ');
+      texto.append(svg('tspan',{x,dy:i?'1.1em':0},linea));
+    }
+    return texto;
+  }
+  const detalleGenero=(valores,formato)=>valores.map(v=>`${v.genero}: ${formato(v.valor)}`).join(' · ');
   function navegarComparativo(caja, mapa, inicial={x:-79,y:21,w:36,h:48}) {
     const actualizarLimites=crearDetalleCartografico(mapa,mapa.querySelector('.valores-provinciales'));
     let vista={...inicial},zoom=1;
@@ -439,7 +453,7 @@ window.crearMapaSVIH = (() => {
     ['pointerup','pointercancel'].forEach(t=>mapa.addEventListener(t,e=>{punteros.delete(e.pointerId);distancia=0}));
     mapa.addEventListener('keydown',e=>{if(['+','=','-','Home','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))e.preventDefault();if(e.key==='+'||e.key==='=')acercar(2);if(e.key==='-')acercar(.5);if(e.key==='Home')restablecer();if(e.key==='ArrowLeft')vista.x-=vista.w*.1;if(e.key==='ArrowRight')vista.x+=vista.w*.1;if(e.key==='ArrowUp')vista.y-=vista.h*.1;if(e.key==='ArrowDown')vista.y+=vista.h*.1;if(e.key.startsWith('Arrow'))pintar();});pintar();
   }
-  window.crearMapaComparativoSVIH = function(host, filas, {formato = v => fmt(v), nacional = null, mini = false, seleccion = "País", tituloExportacion} = {}) {
+  window.crearMapaComparativoSVIH = function(host, filas, {formato = v => fmt(v), nacional = null, mini = false, seleccion = "País", genero=null, tituloExportacion} = {}) {
     host.replaceChildren();
     host.classList.remove("mapa-con-descarga");
     const caja = document.createElement("div"); caja.className = mini ? "mini-argentina" : "mapa-coropletico"; host.append(caja);
@@ -451,9 +465,9 @@ window.crearMapaSVIH = (() => {
       const r = filas.find(r=>normalizar(r.Provincia_atencion)===normalizar(nombre));
       let fill="#f5f5ee";
       if (mini) {if(normalizar(seleccion)===normalizar(nombre))fill="#4285f4";}
-      else if(Number.isFinite(r?.valor)){const z=max===min ? 0.5 : (r.valor-min)/(max-min);fill=`rgb(${Math.round(185-165*z)},${Math.round(221-110*z)},${Math.round(244-45*z)})`;}
+      else if(!genero&&Number.isFinite(r?.valor)){const z=max===min ? 0.5 : (r.valor-min)/(max-min);fill=`rgb(${Math.round(185-165*z)},${Math.round(221-110*z)},${Math.round(244-45*z)})`;}
       const p=svg("path",{d,fill,stroke:mini?"#aaa":"#516474","stroke-width":mini ? 0.12 : 0.09,class:"provincia-indicador","data-jurisdiccion":nombre||"","data-valor":Number.isFinite(r?.valor)?r.valor:""});
-      p.append(svg("title",{},`${nombre}: ${formato(r?.valor)}`));s.append(p);
+      p.append(svg("title",{},`${nombre}: ${genero?detalleGenero(window.valoresGeneroSVIH(r,genero),formato):formato(r?.valor)}`));s.append(p);
     });
     if(!mini){
       const etiquetas=svg('g',{class:'valores-provinciales','pointer-events':'none'});
@@ -461,21 +475,26 @@ window.crearMapaSVIH = (() => {
         const clave=normalizar(f.id),pos=rotulos[clave];if(!pos)return;
         const r=filas.find(r=>normalizar(r.Provincia_atencion)===clave),[x,y]=project(pos);
         if(clave==='ciudad de buenos aires'){const [cx,cy]=project([-58.45,-34.6]);etiquetas.append(svg('path',{d:`M${cx} ${cy}L${x} ${y}`,fill:'none',stroke:'#203751','stroke-width':.12,class:'linea-caba'}));}
+        if(genero){
+          etiquetas.append(rotuloGenero(x,y,window.valoresGeneroSVIH(r,genero),formato,.8));
+          return;
+        }
         const texto=svg('text',{x,y,'text-anchor':'middle','dominant-baseline':'middle',class:'valor-provincia','data-jurisdiccion':f.id,fill:'#132c47',stroke:'#fff','stroke-width':.22,'paint-order':'stroke','stroke-linejoin':'round','font-family':'Arial','font-size':.94,'font-weight':700},formato(r?.valor));
         texto.append(svg('title',{},`${f.id}: ${formato(r?.valor)}`));etiquetas.append(texto);
       });s.append(etiquetas);
     }caja.append(s);if(!mini)navegarComparativo(caja,s);
-    if(!mini){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);
+    if(!mini){
+      if(!genero){const valor=document.createElement("div");valor.className="valor-pais-mapa";const label=document.createElement("small");label.textContent="PAÍS";const strong=document.createElement("strong");strong.textContent=formato(nacional);valor.append(label,strong);caja.append(valor);}
       const superposicion=document.createElement("div");superposicion.className="controles-inferiores-mapa";
-      const leyenda=document.createElement("div");leyenda.className="escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);leyenda.append(a,grad,b);superposicion.append(leyenda);
+      const leyenda=document.createElement("div");leyenda.className=genero?"leyenda-genero-mapa":"escala-mapa";const a=document.createElement("span"),b=document.createElement("span"),grad=document.createElement("i");a.textContent=formato(min);b.textContent=formato(max);if(genero)leyenda.textContent=leyendaGenero();else leyenda.append(a,grad,b);superposicion.append(leyenda);
       if(tituloExportacion)controlExportacion(superposicion,tituloExportacion,()=>({mapa:mapaComparativoExportado(s),
-        leyenda:[`Total país: ${formato(nacional)} · Gris claro: sin datos`,
+        leyenda:[genero?leyendaGenero():`Total país: ${formato(nacional)} · Gris claro: sin datos`,
           "Límites internos: comunas, partidos y departamentos", "Fuente: SVIH / SISA · Cartografía: Natural Earth, IGN y GCBA"],
-        rango:valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
+        rango:!genero&&valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
       caja.append(superposicion);
     }
   };
-  window.crearMapaRegionesSVIH = function(host, filas, {formato, provincial, mostrarProvincial=true, tituloExportacion}) {
+  window.crearMapaRegionesSVIH = function(host, filas, {formato, provincial, mostrarProvincial=true, porGenero=false, tituloExportacion}) {
     const regiones=base.regiones_sanitarias?.features||[];
     host.replaceChildren();
     if(!regiones.length)return;
@@ -485,16 +504,16 @@ window.crearMapaSVIH = (() => {
     const vista={x,y,w:Math.max(...xs)-x+.35,h:Math.max(...ys)-y+.35};
     const caja=document.createElement('div');
     caja.className='mapa-coropletico';
-    const mapa=svg('svg'),datos=new Map(filas.map(r=>[r.codigo,r.valor]));
-    const valores=regiones.map(r=>datos.get(r.properties.region)).filter(Number.isFinite);
+    const mapa=svg('svg'),datos=new Map(filas.map(r=>[r.codigo,r]));
+    const valores=regiones.map(r=>datos.get(r.properties.region)?.valor).filter(Number.isFinite);
     const min=valores.length?Math.min(...valores):null,max=valores.length?Math.max(...valores):null;
     const etiquetas=svg('g',{class:'valores-provinciales','pointer-events':'none'});
     for(const region of regiones){
-      const codigo=region.properties.region,valor=datos.get(codigo);
+      const codigo=region.properties.region,fila=datos.get(codigo),valor=fila?.valor;
       const z=min===max?.5:(valor-min)/(max-min);
-      const fill=Number.isFinite(valor)?`rgb(${Math.round(185-165*z)},${Math.round(221-110*z)},${Math.round(244-45*z)})`:'#f5f5ee';
+      const fill=!porGenero&&Number.isFinite(valor)?`rgb(${Math.round(185-165*z)},${Math.round(221-110*z)},${Math.round(244-45*z)})`:'#f5f5ee';
       const forma=svg('path',{d:path(region.geometry),fill,stroke:'#516474','stroke-width':.035,'data-region':codigo});
-      forma.append(svg('title',{},`Región Sanitaria ${codigo}: ${formato(valor)}`));
+      forma.append(svg('title',{},`Región Sanitaria ${codigo}: ${porGenero?detalleGenero(fila?.generos||[],formato):formato(valor)}`));
       mapa.append(forma);
       const vertices=coordenadas(region.geometry),lon=vertices.map(p=>p[0]),lat=vertices.map(p=>p[1]);
       const oeste=Math.min(...lon),sur=Math.min(...lat),ancho=Math.max(...lon)-oeste,alto=Math.max(...lat)-sur;
@@ -503,7 +522,7 @@ window.crearMapaSVIH = (() => {
       const dist=p=>Math.hypot(p[0]-centro[0],p[1]-centro[1]);
       const interior=candidatos.filter(p=>contienePunto(region.geometry,p)).sort((a,b)=>dist(a)-dist(b))[0]||centro;
       const [cx,cy]=project(interior);
-      etiquetas.append(svg('text',{x:cx,y:cy,class:'valor-region','text-anchor':'middle','dominant-baseline':'middle',
+      etiquetas.append(porGenero?rotuloGenero(cx,cy,fila?.generos||[],formato,.28):svg('text',{x:cx,y:cy,class:'valor-region','text-anchor':'middle','dominant-baseline':'middle',
         fill:'#132c47',stroke:'#fff','stroke-width':.04,'paint-order':'stroke','font-size':.25,'font-weight':700},codigo));
     }
     mapa.append(etiquetas);
@@ -513,11 +532,11 @@ window.crearMapaSVIH = (() => {
     mapa.setAttribute('aria-label','Mapa de las regiones sanitarias de la provincia de Buenos Aires.');
     const controles=document.createElement('div'),leyenda=document.createElement('div');
     controles.className='controles-inferiores-mapa';
-    leyenda.className='escala-mapa';
+    leyenda.className=porGenero?'leyenda-genero-mapa':'escala-mapa';
     const primero=document.createElement('span'),ultimo=document.createElement('span'),gradiente=document.createElement('i');
     primero.textContent=formato(min);
     ultimo.textContent=formato(max);
-    leyenda.append(primero,gradiente,ultimo);
+    if(porGenero)leyenda.textContent=leyendaGenero();else leyenda.append(primero,gradiente,ultimo);
     if(mostrarProvincial){
       const referencia=document.createElement('div'),provincia=document.createElement('span'),total=document.createElement('strong');
       referencia.className='mapa-regional-total';
@@ -529,9 +548,9 @@ window.crearMapaSVIH = (() => {
     controles.append(leyenda);
     controlExportacion(controles,tituloExportacion,()=>({
       mapa:mapa.cloneNode(true),
-      leyenda:[mostrarProvincial?`Total provincia de Buenos Aires: ${formato(provincial)} · Gris claro: sin datos`:'Gris claro: sin datos',
+      leyenda:[porGenero?leyendaGenero():mostrarProvincial?`Total provincia de Buenos Aires: ${formato(provincial)} · Gris claro: sin datos`:'Gris claro: sin datos',
         'Fuente: SVIH / SISA · Límites sanitarios a partir de cartografía IGN'],
-      rango:valores.length?[formato(min),formato(max),min===max]:null
+      rango:!porGenero&&valores.length?[formato(min),formato(max),min===max]:null
     }),[1,3]);
     caja.append(controles);
   };
