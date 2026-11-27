@@ -384,16 +384,19 @@
       ["3 a 6 meses sin retiro",perdidos_90_179],
       ["180 días o más sin retiro",perdidos_180_mas]
     ];
-    tarjetasTotal(indicadores,categorias.slice(0,2));
-    const gruposPerdida=el("div","evolucion-grupos-perdida");
-    gruposPerdida.setAttribute("role","group");
-    gruposPerdida.setAttribute("aria-label","Recuentos que se suman para la pérdida de seguimiento");
-    tarjetasTotal(gruposPerdida,categorias.slice(2));
-    const suma=el("span","evolucion-signo-suma","+");
-    suma.setAttribute("aria-hidden","true");
-    gruposPerdida.insertBefore(suma,gruposPerdida.children[1]);
-    indicadores.append(gruposPerdida);
-    const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");indicadores.children[1].append(porcentaje);
+    const agregarGrupo=(clase,etiqueta,recuentos)=>{
+      const grupo=el("div","evolucion-recuentos "+clase),suma=el("span","evolucion-signo-suma","+");
+      grupo.setAttribute("role","group");
+      grupo.setAttribute("aria-label",etiqueta);
+      suma.setAttribute("aria-hidden","true");
+      tarjetasTotal(grupo,recuentos);
+      grupo.insertBefore(suma,grupo.children[1]);
+      indicadores.append(grupo);
+      return grupo;
+    };
+    const grupoTarv=agregarGrupo("evolucion-grupos-tarv","Recuentos de personas en TARV",categorias.slice(0,2));
+    agregarGrupo("evolucion-grupos-perdida","Recuentos que se suman para la pérdida de seguimiento",categorias.slice(2));
+    const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");grupoTarv.lastElementChild.append(porcentaje);
     const perdida=window.porcentajePerdidaSeguimientoSVIH(general());
     const resultado=el("div","evolucion-perdida"),flecha=el("span","evolucion-perdida-flecha","→");
     flecha.setAttribute("aria-hidden","true");
@@ -417,7 +420,7 @@
     }
   }
   function laboratorio(host){
-    const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable","laboratorio-viral"),actual=general();
+    const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable (<40)","laboratorio-viral"),actual=general();
     resumen.append(el("strong","viral-valor",f(actual.Prop_indetectables,1)+"%"),el("div","viral-ic",`IC 95   ${f(actual.Prop_indetect_IC95_inf,1)}%  ${f(actual.Prop_indetect_IC95_sup,1)}%`));
     const cobertura=el("div","viral-cobertura"),valorCobertura=el("strong",null,f(actual.Prop_con_info_cv,1)+"%");valorCobertura.style.color=window.colorInformacionCargaViralSVIH(actual.Prop_con_info_cv);cobertura.append(el("span",null,"Información sobre carga viral"),valorCobertura);resumen.append(cobertura);
     const cd=panel(g,"Distribución de CD4 en personas en TARV","laboratorio-cd4"),info=el("div","cd4-cobertura");

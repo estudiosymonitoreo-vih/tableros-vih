@@ -46,6 +46,12 @@
     cont.className = "tarjeta" + (["Casos_2024", "Enf_avanz_2023_2024", "N_TARV", "N_instituciones_disp_TARV"].includes(campo) ? " destacado" : "");
     cont.dataset.campo = campo;
     const label = document.createElement("div"); label.className = "etiqueta"; const textoLabel=document.createElement("span");textoLabel.textContent=titulo;label.append(textoLabel);
+    if (campo === "Prop_indetectables") {
+      const umbral = document.createElement("small");
+      umbral.className = "umbral-indetectable";
+      umbral.textContent = " (<40)";
+      textoLabel.append(umbral);
+    }
     const valor = document.createElement("div"); valor.className = "valor"; valor.textContent = formato(fila[campo], campo==="Sifilis_2024"&&Number.isInteger(fila[campo])?0:dec, escala, porcentaje);
     if(!Number.isFinite(fila[campo])&&estado&&fila[estado]){valor.textContent=fila[estado];valor.classList.add('valor-estado');}
     cont.append(label, valor);
