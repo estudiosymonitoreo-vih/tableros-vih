@@ -526,6 +526,25 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 .evolucion-resumen{display:block}
 .evolucion-resumen-titulo{margin:0 0 4px;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.25px}
 .umbral-indetectable{font-size:.78em}
+.control-indicador{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px}
+.control-indicador>.selector-indicador{flex:1}
+.selector-indicador{position:relative;min-width:0}
+.selector-indicador[open]{z-index:11}
+.selector-indicador>summary{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.selector-indicador>summary::after{content:"▾";float:right;margin-left:6px}
+.opciones-indicador{
+  position:absolute;top:100%;left:0;right:0;min-width:0;
+  padding:6px;background:#263252;border:1px solid #829dbb;border-radius:3px;
+}
+.opciones-indicador>.buscar-indicador{width:100%;box-sizing:border-box;margin:0 0 4px}
+.resultados-indicador{max-height:240px;overflow:auto}
+.resultados-indicador>button{
+  display:block;width:100%;padding:7px 8px;text-align:left;
+  color:inherit;background:none;border:0;font:inherit;cursor:pointer;
+}
+.resultados-indicador>button[aria-pressed="true"]{background:#40577a}
+.resultados-indicador>button:hover,.resultados-indicador>button:focus-visible{background:#49617f}
+.opciones-indicador>p{margin:6px;font-size:13px}
 .evolucion-indicadores{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.64fr);gap:14px}
 .evolucion-recuentos{
   display:grid;

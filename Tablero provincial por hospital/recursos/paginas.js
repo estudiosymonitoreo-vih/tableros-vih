@@ -193,7 +193,67 @@
   }
   function tortaCohorte(host,rows){const orden=['En TARV','Perdidos 180 días o más','Posiblemente migró de subsistema de salud','Perdidos 90 a 179 días','Fallecido'];const cohorte=rows.filter(r=>r.source==='En_TARV').slice().sort((a,b)=>orden.indexOf(a.target)-orden.indexOf(b.target));dona(host,cohorte,'target','value',null,true);}
   // Motor visual compartido; las vistas territoriales tienen filtros y contratos propios.
-  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion};
+  function selectorIndicador(ids,etiquetas,seleccionado,alElegir){
+    const selector=el("details","selector-indicador");
+    const resumen=el("summary",null,etiquetas[seleccionado]);
+    const opciones=el("div","opciones-indicador");
+    const buscar=el("input","buscar-indicador");
+    const resultados=el("div","resultados-indicador");
+    const sinResultados=el("p",null,"No se encontraron indicadores.");
+    resumen.setAttribute("aria-label",`Indicador: ${etiquetas[seleccionado]}`);
+    buscar.type="search";
+    buscar.placeholder="Buscar indicador…";
+    buscar.setAttribute("aria-label","Buscar indicador");
+    sinResultados.setAttribute("role","status");
+    opciones.append(buscar,resultados,sinResultados);
+    selector.append(resumen,opciones);
+
+    const normalizar=texto=>texto.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().trim();
+    const permitirBusqueda=()=>{
+      const consulta=normalizar(buscar.value);
+      resultados.replaceChildren();
+      for(const id of ids){
+        if(!normalizar(etiquetas[id]).includes(consulta))continue;
+        const opcion=el("button",null,etiquetas[id]);
+        opcion.type="button";
+        opcion.setAttribute("aria-pressed",String(id===seleccionado));
+        opcion.onclick=()=>{
+          seleccionado=id;
+          resumen.textContent=etiquetas[id];
+          resumen.setAttribute("aria-label",`Indicador: ${etiquetas[id]}`);
+          selector.open=false;
+          resumen.focus();
+          alElegir(id);
+        };
+        resultados.append(opcion);
+      }
+      sinResultados.hidden=!!resultados.firstElementChild;
+    };
+    buscar.addEventListener("input",permitirBusqueda);
+    buscar.addEventListener("keydown",e=>{
+      if(e.key!=="Enter"&&e.key!=="ArrowDown")return;
+      e.preventDefault();
+      if(e.key==="Enter"&&resultados.children.length===1)resultados.firstElementChild.click();
+      else resultados.firstElementChild?.focus();
+    });
+    selector.addEventListener("toggle",()=>{
+      if(!selector.open)return;
+      buscar.value="";
+      permitirBusqueda();
+      buscar.focus();
+    });
+    selector.addEventListener("keydown",e=>{
+      if(e.key!=="Escape")return;
+      e.preventDefault();
+      selector.open=false;
+      resumen.focus();
+    });
+    selector.addEventListener("focusout",e=>{
+      if(e.relatedTarget&&!selector.contains(e.relatedTarget))selector.open=false;
+    });
+    return selector;
+  }
+  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion,selectorIndicador};
   if(d.ambito&&d.ambito!=="nacional"){window.addEventListener("resize",dimensionar);return;}
   const home=el("div","pagina pagina-principal");home.id="vista-general";
   document.querySelectorAll("main>section").forEach(s=>home.append(s));document.querySelector("main").insertBefore(home,document.querySelector("footer"));
@@ -384,8 +444,19 @@
       ["3 a 6 meses sin retiro",perdidos_90_179],
       ["180 días o más sin retiro",perdidos_180_mas]
     ];
-    tarjetasTotal(indicadores,categorias);
-    const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");indicadores.children[1].append(porcentaje);
+    const agregarGrupo=(clase,etiqueta,recuentos)=>{
+      const grupo=el("div","evolucion-recuentos "+clase),suma=el("span","evolucion-signo-suma","+");
+      grupo.setAttribute("role","group");
+      grupo.setAttribute("aria-label",etiqueta);
+      suma.setAttribute("aria-hidden","true");
+      tarjetasTotal(grupo,recuentos);
+      grupo.insertBefore(suma,grupo.children[1]);
+      indicadores.append(grupo);
+      return grupo;
+    };
+    const grupoTarv=agregarGrupo("evolucion-grupos-tarv","Recuentos de personas en TARV",categorias.slice(0,2));
+    agregarGrupo("evolucion-grupos-perdida","Recuentos que se suman para la pérdida de seguimiento",categorias.slice(2));
+    const porcentaje=el("small","porcentaje-caducados",f(filas("tratamiento")[0]?.Porc_caducados,1)+"% de las personas en TARV");grupoTarv.lastElementChild.append(porcentaje);
     const perdida=window.porcentajePerdidaSeguimientoSVIH(general());
     const resultado=el("div","evolucion-perdida"),flecha=el("span","evolucion-perdida-flecha","→");
     flecha.setAttribute("aria-hidden","true");
@@ -409,7 +480,7 @@
     }
   }
   function laboratorio(host){
-    const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable","laboratorio-viral"),actual=general();
+    const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable (<50)","laboratorio-viral"),actual=general();
     resumen.append(el("strong","viral-valor",f(actual.Prop_indetectables,1)+"%"),el("div","viral-ic",`IC 95   ${f(actual.Prop_indetect_IC95_inf,1)}%  ${f(actual.Prop_indetect_IC95_sup,1)}%`));
     const cobertura=el("div","viral-cobertura"),valorCobertura=el("strong",null,f(actual.Prop_con_info_cv,1)+"%");valorCobertura.style.color=window.colorInformacionCargaViralSVIH(actual.Prop_con_info_cv);cobertura.append(el("span",null,"Información sobre carga viral"),valorCobertura);resumen.append(cobertura);
     const cd=panel(g,"Distribución de CD4 en personas en TARV","laboratorio-cd4"),info=el("div","cd4-cobertura");
@@ -449,7 +520,7 @@
     const todasLabel=el('label'),todas=el('input');todas.type='checkbox';todas.checked=histJurisdicciones.length===jurisdicciones.length;todasLabel.append(todas,document.createTextNode('Todos'));opcionesJurisd.append(todasLabel);
     jurisdicciones.forEach(v=>{const l=el('label'),c=el('input');c.type='checkbox';c.value=v;c.checked=histJurisdicciones.includes(v);c.dataset.jurisdiccion=v;l.append(c,document.createTextNode(etiquetaJurisdiccion(v)));opcionesJurisd.append(l);c.onchange=()=>{histJurisdicciones=[...opcionesJurisd.querySelectorAll('[data-jurisdiccion]:checked')].map(x=>x.value);todas.checked=histJurisdicciones.length===jurisdicciones.length;todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;resumenSeleccion();dibujar()};});
     todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;todas.onchange=()=>{histJurisdicciones=todas.checked?jurisdicciones.slice():[];opcionesJurisd.querySelectorAll('[data-jurisdiccion]').forEach(c=>c.checked=todas.checked);resumenSeleccion();dibujar()};
-    const lab=el("label",null,"Indicador "),sel=el("select");inds.forEach(v=>{const o=el("option",null,etiquetas[v]);o.value=v;sel.append(o)});sel.value=histIndicador;lab.append(sel);controles.append(lab);
+    controles.append(selectorIndicador(inds,etiquetas,histIndicador,id=>{histIndicador=id;dibujar()}));
     const periodLabel=el("div","selector-periodos"),multi=el("details"),summary=el("summary"),opciones=el("div","opciones-periodos");multi.append(summary,opciones);periodLabel.append(multi);controles.append(periodLabel);
     const actualizarResumen=()=>{summary.textContent=histPeriodos.length===1?"Período: "+new Date(histPeriodos[0]+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})+" ▾":`Período (${histPeriodos.length}) ▾`;};actualizarResumen();
     periodos.forEach(v=>{const l=el("label"),c=el("input");c.type="checkbox";c.value=v;c.checked=histPeriodos.includes(v);l.append(c,document.createTextNode(new Date(v+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})));opciones.append(l);c.onchange=()=>{histPeriodos=[...opciones.querySelectorAll("input:checked")].map(i=>i.value);actualizarResumen();dibujar()};});
@@ -497,7 +568,7 @@
       if(!periodosVisibles.length)estadisticas.append(el('p','sin-datos','Sin períodos seleccionados.'));
     };
     ordenBoton.onclick=()=>{histOrden=histOrden==='valor'?'alfabetico':'valor';dibujar()};
-    sel.onchange=()=>{histIndicador=sel.value;dibujar()};dibujar();
+    dibujar();
   }
 
   function comparativo(host){

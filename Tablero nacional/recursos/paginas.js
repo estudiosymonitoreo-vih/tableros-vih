@@ -193,7 +193,67 @@
   }
   function tortaCohorte(host,rows){const orden=['En TARV','Perdidos 180 días o más','Posiblemente migró de subsistema de salud','Perdidos 90 a 179 días','Fallecido'];const cohorte=rows.filter(r=>r.source==='En_TARV').slice().sort((a,b)=>orden.indexOf(a.target)-orden.indexOf(b.target));dona(host,cohorte,'target','value',null,true);}
   // Motor visual compartido; las vistas territoriales tienen filtros y contratos propios.
-  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion};
+  function selectorIndicador(ids,etiquetas,seleccionado,alElegir){
+    const selector=el("details","selector-indicador");
+    const resumen=el("summary",null,etiquetas[seleccionado]);
+    const opciones=el("div","opciones-indicador");
+    const buscar=el("input","buscar-indicador");
+    const resultados=el("div","resultados-indicador");
+    const sinResultados=el("p",null,"No se encontraron indicadores.");
+    resumen.setAttribute("aria-label",`Indicador: ${etiquetas[seleccionado]}`);
+    buscar.type="search";
+    buscar.placeholder="Buscar indicador…";
+    buscar.setAttribute("aria-label","Buscar indicador");
+    sinResultados.setAttribute("role","status");
+    opciones.append(buscar,resultados,sinResultados);
+    selector.append(resumen,opciones);
+
+    const normalizar=texto=>texto.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().trim();
+    const permitirBusqueda=()=>{
+      const consulta=normalizar(buscar.value);
+      resultados.replaceChildren();
+      for(const id of ids){
+        if(!normalizar(etiquetas[id]).includes(consulta))continue;
+        const opcion=el("button",null,etiquetas[id]);
+        opcion.type="button";
+        opcion.setAttribute("aria-pressed",String(id===seleccionado));
+        opcion.onclick=()=>{
+          seleccionado=id;
+          resumen.textContent=etiquetas[id];
+          resumen.setAttribute("aria-label",`Indicador: ${etiquetas[id]}`);
+          selector.open=false;
+          resumen.focus();
+          alElegir(id);
+        };
+        resultados.append(opcion);
+      }
+      sinResultados.hidden=!!resultados.firstElementChild;
+    };
+    buscar.addEventListener("input",permitirBusqueda);
+    buscar.addEventListener("keydown",e=>{
+      if(e.key!=="Enter"&&e.key!=="ArrowDown")return;
+      e.preventDefault();
+      if(e.key==="Enter"&&resultados.children.length===1)resultados.firstElementChild.click();
+      else resultados.firstElementChild?.focus();
+    });
+    selector.addEventListener("toggle",()=>{
+      if(!selector.open)return;
+      buscar.value="";
+      permitirBusqueda();
+      buscar.focus();
+    });
+    selector.addEventListener("keydown",e=>{
+      if(e.key!=="Escape")return;
+      e.preventDefault();
+      selector.open=false;
+      resumen.focus();
+    });
+    selector.addEventListener("focusout",e=>{
+      if(e.relatedTarget&&!selector.contains(e.relatedTarget))selector.open=false;
+    });
+    return selector;
+  }
+  window.SVIH_UI={el,sv,panel,tabla:tablaEditorial,barras,medidor,flujo,tortaCohorte,serieMixta,mapa,nota,leyenda,f,dimensionar,compararJurisdicciones,etiquetaJurisdiccion,selectorIndicador};
   if(d.ambito&&d.ambito!=="nacional"){window.addEventListener("resize",dimensionar);return;}
   const home=el("div","pagina pagina-principal");home.id="vista-general";
   document.querySelectorAll("main>section").forEach(s=>home.append(s));document.querySelector("main").insertBefore(home,document.querySelector("footer"));
@@ -460,7 +520,7 @@
     const todasLabel=el('label'),todas=el('input');todas.type='checkbox';todas.checked=histJurisdicciones.length===jurisdicciones.length;todasLabel.append(todas,document.createTextNode('Todos'));opcionesJurisd.append(todasLabel);
     jurisdicciones.forEach(v=>{const l=el('label'),c=el('input');c.type='checkbox';c.value=v;c.checked=histJurisdicciones.includes(v);c.dataset.jurisdiccion=v;l.append(c,document.createTextNode(etiquetaJurisdiccion(v)));opcionesJurisd.append(l);c.onchange=()=>{histJurisdicciones=[...opcionesJurisd.querySelectorAll('[data-jurisdiccion]:checked')].map(x=>x.value);todas.checked=histJurisdicciones.length===jurisdicciones.length;todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;resumenSeleccion();dibujar()};});
     todas.indeterminate=histJurisdicciones.length>0&&!todas.checked;todas.onchange=()=>{histJurisdicciones=todas.checked?jurisdicciones.slice():[];opcionesJurisd.querySelectorAll('[data-jurisdiccion]').forEach(c=>c.checked=todas.checked);resumenSeleccion();dibujar()};
-    const lab=el("label",null,"Indicador "),sel=el("select");inds.forEach(v=>{const o=el("option",null,etiquetas[v]);o.value=v;sel.append(o)});sel.value=histIndicador;lab.append(sel);controles.append(lab);
+    controles.append(selectorIndicador(inds,etiquetas,histIndicador,id=>{histIndicador=id;dibujar()}));
     const periodLabel=el("div","selector-periodos"),multi=el("details"),summary=el("summary"),opciones=el("div","opciones-periodos");multi.append(summary,opciones);periodLabel.append(multi);controles.append(periodLabel);
     const actualizarResumen=()=>{summary.textContent=histPeriodos.length===1?"Período: "+new Date(histPeriodos[0]+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})+" ▾":`Período (${histPeriodos.length}) ▾`;};actualizarResumen();
     periodos.forEach(v=>{const l=el("label"),c=el("input");c.type="checkbox";c.value=v;c.checked=histPeriodos.includes(v);l.append(c,document.createTextNode(new Date(v+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})));opciones.append(l);c.onchange=()=>{histPeriodos=[...opciones.querySelectorAll("input:checked")].map(i=>i.value);actualizarResumen();dibujar()};});
@@ -508,7 +568,7 @@
       if(!periodosVisibles.length)estadisticas.append(el('p','sin-datos','Sin períodos seleccionados.'));
     };
     ordenBoton.onclick=()=>{histOrden=histOrden==='valor'?'alfabetico':'valor';dibujar()};
-    sel.onchange=()=>{histIndicador=sel.value;dibujar()};dibujar();
+    dibujar();
   }
 
   function comparativo(host){
