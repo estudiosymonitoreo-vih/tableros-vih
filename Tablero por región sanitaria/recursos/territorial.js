@@ -122,7 +122,8 @@
       orden.textContent=ordenMapaRegional==='valor'?'↓ Valor':'I–XII Región';
       orden.setAttribute('aria-label','Ordenar regiones por '+(ordenMapaRegional==='valor'?'número de región':'valor'));
       if(mapaDibujado!==id){
-        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
+        const mostrarProvincial=id!=='Porc_en_TARV'&&id!=='Porc_prep';
+        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valorProvincial,mostrarProvincial,tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
         window.mostrarDefinicionIndicadorSVIH(definicion,id,definiciones);
         mapaDibujado=id;
       }

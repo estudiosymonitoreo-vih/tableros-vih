@@ -475,7 +475,7 @@ window.crearMapaSVIH = (() => {
       caja.append(superposicion);
     }
   };
-  window.crearMapaRegionesSVIH = function(host, filas, {formato, provincial, tituloExportacion}) {
+  window.crearMapaRegionesSVIH = function(host, filas, {formato, provincial, mostrarProvincial=true, tituloExportacion}) {
     const regiones=base.regiones_sanitarias?.features||[];
     host.replaceChildren();
     if(!regiones.length)return;
@@ -518,15 +518,18 @@ window.crearMapaSVIH = (() => {
     primero.textContent=formato(min);
     ultimo.textContent=formato(max);
     leyenda.append(primero,gradiente,ultimo);
-    const referencia=document.createElement('div'),provincia=document.createElement('span'),total=document.createElement('strong');
-    referencia.className='mapa-regional-total';
-    provincia.textContent='Provincia de Buenos Aires';
-    total.textContent=formato(provincial);
-    referencia.append(provincia,total);
-    controles.append(referencia,leyenda);
+    if(mostrarProvincial){
+      const referencia=document.createElement('div'),provincia=document.createElement('span'),total=document.createElement('strong');
+      referencia.className='mapa-regional-total';
+      provincia.textContent='Provincia de Buenos Aires';
+      total.textContent=formato(provincial);
+      referencia.append(provincia,total);
+      controles.append(referencia);
+    }
+    controles.append(leyenda);
     controlExportacion(controles,tituloExportacion,()=>({
       mapa:mapa.cloneNode(true),
-      leyenda:[`Total provincia de Buenos Aires: ${formato(provincial)} · Gris claro: sin datos`,
+      leyenda:[mostrarProvincial?`Total provincia de Buenos Aires: ${formato(provincial)} · Gris claro: sin datos`:'Gris claro: sin datos',
         'Fuente: SVIH / SISA · Límites sanitarios a partir de cartografía IGN'],
       rango:valores.length?[formato(min),formato(max),min===max]:null
     }),[1,3]);
