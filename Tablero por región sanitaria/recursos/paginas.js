@@ -554,7 +554,10 @@
         grafico.dataset.tituloExportacion=etiquetas[histIndicador]+" por jurisdicción y período";
         grafico.dataset.ambitoExportacion="";
       }
-      const hayBarras=!!graf.querySelector('.barra-dato'),periodosVisibles=uniq(histPeriodos).sort().reverse();
+      const cantidadBarras=graf.querySelectorAll('.barra-dato').length;
+      estadisticas.hidden=cantidadBarras===1;
+      if(estadisticas.hidden)return;
+      const hayBarras=cantidadBarras>0,periodosVisibles=uniq(histPeriodos).sort().reverse();
       estadisticas.classList.toggle('varios-periodos',periodosVisibles.length>1);
       for(const periodo of periodosVisibles){
         const grupo=el('section','resumen-periodo');grupo.dataset.periodo=periodo;grupo.append(el('h3',null,new Date(periodo+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'})));estadisticas.append(grupo);

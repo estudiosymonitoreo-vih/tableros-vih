@@ -45,7 +45,7 @@ const titulosDefinicionesSVIH = {
   N_TARV_criterio_OMS: "N° personas en TARV criterio OMS",
   N_prep: "N° de personas en PreP",
   PreP: "N° de personas en PreP",
-  Porc_prep: "% de eprsonas en PreP por provincia de entrega",
+  Porc_prep: ["% del total provincial de personas en PrEP", "% de eprsonas en PreP por provincia de entrega"],
   N_instituciones_disp_TARV: "N° instituciones que distribuyen TARV",
   Porc_en_TARV: "% de personas en TARV por provincia de atención",
   Prop_residentes: "% de personas en TARV por provincia de residencia",
@@ -83,9 +83,9 @@ const textosDefinicionesSVIH = {
 };
 
 window.mostrarDefinicionIndicadorSVIH = (host, id, catalogo = []) => {
-  const titulo = titulosDefinicionesSVIH[id];
+  const titulos = [].concat(titulosDefinicionesSVIH[id] ?? []);
   const nombre = texto => String(texto ?? "").trim().replace(/\.$/, "");
-  const fila = titulo && catalogo.find(r => nombre(r.INDICADOR) === nombre(titulo));
+  const fila = catalogo.find(r => titulos.some(titulo => nombre(r.INDICADOR) === nombre(titulo)));
   let [definicion, observaciones] = textosDefinicionesSVIH[id] || [fila?.["DESCRIPCIÓN"], fila?.OBSERVACIONES];
   if (!definicion && /^Prop_TARV_[123]_/.test(id)) {
     const duracion = {1:"un mes", 2:"dos meses", 3:"tres meses o más"}[id.split("_")[2]];
