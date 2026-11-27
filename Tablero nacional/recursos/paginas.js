@@ -364,7 +364,7 @@
       descargar.type='button';acciones.append(descargar);
       descargar.onclick=()=>{
         const vinculo=el('a');
-        vinculo.href=URL.createObjectURL(libroTablaSVIH(orden,cols));
+        vinculo.href=URL.createObjectURL(libroTablaSVIH(orden,cols,titulo));
         vinculo.download=titulo.replace(/[\\/:*?"<>|]/g,'-')+'.xlsx';
         vinculo.click();
         setTimeout(()=>URL.revokeObjectURL(vinculo.href),1000);
@@ -372,7 +372,7 @@
     }
   }
 
-  function libroTablaSVIH(datos,cols) {
+  function libroTablaSVIH(datos,cols,titulo) {
     const escalar=x=>String(x??'').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const xml='<?xml version="1.0" encoding="UTF-8"?>';
@@ -382,14 +382,15 @@
     const tipo='application/vnd.openxmlformats-officedocument.spreadsheetml';
     const fecha=new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date());
     const cadenas=new Map();
-    const texto=v=>{
+    const texto=(v,estilo=0)=>{
       const valor=String(v??'');
       if(!cadenas.has(valor))cadenas.set(valor,cadenas.size);
-      return `<c t="s"><v>${cadenas.get(valor)}</v></c>`;
+      return `<c t="s"${estilo?' s="'+estilo+'"':''}><v>${cadenas.get(valor)}</v></c>`;
     };
     const filas=[
-      ['Fuente de datos','SVIH - SISA'].map(texto),
-      ['Fecha de exportación',fecha].map(texto),
+      [texto(titulo,2)],
+      ['Fuente de datos','SVIH - SISA'].map(v=>texto(v)),
+      ['Fecha de exportación',fecha].map(v=>texto(v)),
       [],
       cols.map(([,nombre])=>texto(nombre)),
       ...datos.map(r=>cols.map(([k,,,pct])=>numeric(r[k])
@@ -403,7 +404,7 @@
       'xl/workbook.xml':xml+`<workbook xmlns="${ss}" xmlns:r="${rel}"><sheets><sheet name="Datos" sheetId="1" r:id="rId1"/></sheets></workbook>`,
       'xl/_rels/workbook.xml.rels':xml+`<Relationships xmlns="${pkg}"><Relationship Id="rId1" Type="${rel}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${rel}/styles" Target="styles.xml"/><Relationship Id="rId3" Type="${rel}/sharedStrings" Target="sharedStrings.xml"/></Relationships>`,
       'xl/sharedStrings.xml':xml+`<sst xmlns="${ss}">${[...cadenas.keys()].map(v=>`<si><t xml:space="preserve">${escalar(v)}</t></si>`).join('')}</sst>`,
-      'xl/styles.xml':xml+`<styleSheet xmlns="${ss}"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0%"/></numFmts><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
+      'xl/styles.xml':xml+`<styleSheet xmlns="${ss}"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0%"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
       'xl/worksheets/sheet1.xml':xml+`<worksheet xmlns="${ss}"><cols><col min="1" max="1" width="55" customWidth="1"/><col min="2" max="${Math.max(2,cols.length)}" width="18" customWidth="1"/></cols><sheetData>${contenido}</sheetData></worksheet>`
     });
   }
