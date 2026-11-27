@@ -521,6 +521,12 @@ main[data-vista="definiciones"] .version-tablero .version-aa{display:inline}
 @media(min-width:700px){
   .definicion-indicador{font-size:13px}
   .comparativo-grid{top:-44px;grid-template-rows:minmax(0,1fr) auto;row-gap:8px}
+  /* Transferir al selector el 35% del ancho original del gráfico. */
+  .mapa-regional-grid{
+    --selector-original:285px;
+    --ancho-entre-selector-y-grafico:346px;
+    grid-template-columns:calc(var(--selector-original) + (100% - var(--selector-original) - var(--ancho-entre-selector-y-grafico)) * .35) minmax(0,1fr);
+  }
   .definicion-indicador-al-pie{position:absolute;top:426px;left:0;right:0;margin:0}
   .pagina>.historico-grafico,.territorial .tc-grafico,.territorial[data-vista=regiones] .tc-grafico{height:355px}
   .resumen-historico,.territorial .tc-resumen{bottom:60px}

@@ -8,6 +8,17 @@
   const filas=(id,soloScope=false)=>(t[id]||[]).filter(r=>r.Provincia_atencion===scope()&&(soloScope||r.Institucion===inst()));
   const actual=()=>filas('general')[0]||{},total=()=>filas('general',true).find(r=>esTotal(r.Institucion))||{};
   const campos={...window.SVIH_ETIQUETAS_INDICADORES,'Variación_TARV':'Variación interanual','Porc_prep':'% de personas en PrEP por provincia donde retira'};
+  const totalesRegionales=()=>general.filter(r=>esTotal(r.Institucion));
+  const indicadoresComparables=filas=>Object.keys(campos).filter(k=>
+    k==='Prop_perdida_seguimiento'||filas.some(r=>numeric(r[k])));
+  const valorComparable=(fila,id)=>id==='Prop_perdida_seguimiento'
+    ?window.porcentajePerdidaSeguimientoSVIH(fila):fila[id];
+  const definicionesRegionales=[
+    {INDICADOR:'% de eprsonas en PreP por provincia de entrega',
+     'DESCRIPCIÓN':'Personas en PrEP de la fila como porcentaje del total de personas en PrEP del mismo territorio de retiro.',
+     OBSERVACIONES:'En una fila total con personas en PrEP, el valor es 100%. El denominador de cada región es su propio total.'},
+    ...t.definiciones
+  ];
   const paginas=[['general','Principales indicadores'],['tratamiento','Tratamiento'],['laboratorio','Laboratorio'],['prevencion','PrEP y PeP'],['comparador','Comparación'],...(regional?[['regiones','Por región sanitaria'],['mapa','Mapa']]:[]),['definiciones','Definiciones']];
   const iconos={general:['#2765ca','M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z'],tratamiento:['#078d90','M4 12 12 4a5.66 5.66 0 0 1 8 8l-8 8a5.66 5.66 0 0 1-8-8ZM8 8l8 8'],laboratorio:['#b44b97','M9 2h6M10 2v8L3 21h18l-7-11V2M7 15h10'],prevencion:['#198869','M12 2 3 6v6c0 6 9 10 9 10s9-4 9-10V6ZM7 12l3 3 7-7'],comparador:['#b77b0e','M2 3v18h20M6 17V9h3v8ZM12 17V5h3v12ZM18 17v-6h3v6Z'],regiones:['#3976ac','M2 5l7-3 6 3 7-3v17l-7 3-6-3-7 3ZM9 2v17M15 5v17'],definiciones:['#7163aa','M2 3h7l3 3 3-3h7v17h-7l-3 2-3-2H2ZM12 6v16M5 8h4M5 12h4M15 8h4M15 12h4']};
   iconos.mapa=['#3976ac','M3 5l6-3 6 3 6-3v17l-6 3-6-3-6 3ZM9 2v17M15 5v17'];
@@ -44,18 +55,18 @@
     mapa(panel(g,'Localización de instituciones que dispensaron PeP','tp-mapa-pep'),a,
       'Instituciones que dispensaron PeP en los últimos 12 meses','PeP','Institucion','Cantidad');
   }
-  function comparador(host,porRegion=false){const controles=el('div','controles-comparador'),lab=el('label'),details=el('details'),summary=el('summary'),opts=el('div','opciones-periodos'),etiqueta=el('div','control-indicador', 'Indicador: ');details.append(summary,opts);lab.append(details);controles.append(lab,etiqueta);host.append(controles);const candidatos=porRegion?general.filter(r=>esTotal(r.Institucion)):filas('general',true),clave=porRegion?'Provincia_atencion':'Institucion',valores=uniq(candidatos.map(r=>r[clave])).filter(v=>norm(v)!=='desconocido').sort(porRegion?compararTerritorios:(a,b)=>Number(esTotal(b))-Number(esTotal(a))||ordenar(a,b));let elegidos=porRegion?seleccionRegiones:seleccionComparador;if(!elegidos||!elegidos.every(v=>valores.includes(v)))elegidos=porRegion?[valores.find(esPBA)||valores[0]]:[valores.find(esTotal)||valores[0]];
-    const indicators=Object.keys(campos).filter(k=>k==='Prop_perdida_seguimiento'||candidatos.some(r=>numeric(r[k])));if(!indicators.includes(indicador))indicador=indicators.includes('N_TARV')?'N_TARV':indicators[0];etiqueta.append(selectorIndicador(indicators,campos,indicador,id=>{indicador=id;dibujar()}));const graph=panel(host,porRegion?'Comparación entre regiones sanitarias':'Comparación por institución','tc-grafico historico-grafico'),stats=el('div','tc-resumen');host.append(stats);
+  function comparador(host,porRegion=false){const controles=el('div','controles-comparador'),lab=el('label'),details=el('details'),summary=el('summary'),opts=el('div','opciones-periodos'),etiqueta=el('div','control-indicador', 'Indicador: ');details.append(summary,opts);lab.append(details);controles.append(lab,etiqueta);host.append(controles);const candidatos=porRegion?totalesRegionales():filas('general',true),clave=porRegion?'Provincia_atencion':'Institucion',valores=uniq(candidatos.map(r=>r[clave])).filter(v=>norm(v)!=='desconocido').sort(porRegion?compararTerritorios:(a,b)=>Number(esTotal(b))-Number(esTotal(a))||ordenar(a,b));let elegidos=porRegion?seleccionRegiones:seleccionComparador;if(!elegidos||!elegidos.every(v=>valores.includes(v)))elegidos=porRegion?[valores.find(esPBA)||valores[0]]:[valores.find(esTotal)||valores[0]];
+    const indicators=indicadoresComparables(candidatos);if(!indicators.includes(indicador))indicador=indicators.includes('N_TARV')?'N_TARV':indicators[0];etiqueta.append(selectorIndicador(indicators,campos,indicador,id=>{indicador=id;dibujar()}));const graph=panel(host,porRegion?'Comparación entre regiones sanitarias':'Comparación por institución','tc-grafico historico-grafico'),stats=el('div','tc-resumen');host.append(stats);
     const tipoOrden=porRegion?'regiones':'instituciones',ordenHost=el('div','orden-historico'),ordenBoton=el('button','boton-orden-historico');ordenBoton.type='button';ordenHost.append(el('small',null,'Ordenar barras'),ordenBoton);controles.append(ordenHost);
     const definicion=el('section','definicion-indicador definicion-indicador-al-pie');
     definicion.setAttribute('aria-label','Definición del indicador seleccionado');
     host.append(definicion);
     ordenBoton.onclick=()=>{ordenComparadores[tipoOrden]=ordenComparadores[tipoOrden]==='valor'?'alfabetico':'valor';dibujar()};
-    function dibujar(){summary.textContent=(porRegion?'Regiones':'Instituciones')+` (${elegidos.length}) ▾`;graph.replaceChildren();const pct=String(campos[indicador]).startsWith('%'),rows=candidatos.filter(r=>elegidos.includes(r[clave]));
-      window.mostrarDefinicionIndicadorSVIH(definicion,indicador,t.definiciones);
+    function dibujar(){summary.textContent=(porRegion?'Regiones':'Instituciones')+` (${elegidos.length}) ▾`;graph.replaceChildren();const pct=String(campos[indicador]).startsWith('%')||(porRegion&&indicador==='Variación_TARV'),rows=candidatos.filter(r=>elegidos.includes(r[clave]));
+      window.mostrarDefinicionIndicadorSVIH(definicion,indicador,porRegion?definicionesRegionales:t.definiciones);
       // Ordenar solo las filas visibles conserva totales, filtros y resúmenes.
       if(indicador==='Prop_perdida_seguimiento'){
-        for(let i=0;i<rows.length;i++)rows[i]={...rows[i],Prop_perdida_seguimiento:window.porcentajePerdidaSeguimientoSVIH(rows[i])};
+        for(let i=0;i<rows.length;i++)rows[i]={...rows[i],Prop_perdida_seguimiento:valorComparable(rows[i],indicador)};
       }
       rows.sort((a,b)=>{
         if(ordenComparadores[tipoOrden]==='valor'){
@@ -75,16 +86,16 @@
     const todo=el('label'),check=el('input');check.type='checkbox';check.checked=elegidos.length===valores.length;check.indeterminate=!!elegidos.length&&!check.checked;todo.append(check,document.createTextNode('Todos'));opts.append(todo);check.onchange=()=>{elegidos=check.checked?valores.slice():[];opts.querySelectorAll('[data-opcion]').forEach(x=>x.checked=check.checked);guardar();dibujar()};for(const v of valores){const l=el('label'),c=el('input');c.type='checkbox';c.dataset.opcion=v;c.checked=elegidos.includes(v);l.append(c,document.createTextNode(v));opts.append(l);c.onchange=()=>{elegidos=[...opts.querySelectorAll('[data-opcion]:checked')].map(x=>x.dataset.opcion);check.checked=elegidos.length===valores.length;check.indeterminate=!!elegidos.length&&!check.checked;guardar();dibujar()}}function guardar(){if(porRegion)seleccionRegiones=elegidos;else seleccionComparador=elegidos;}dibujar();}
   let indicadorMapaRegional='N_TARV',ordenMapaRegional='valor';
   function mapaRegional(host){
-    const ids=['N_TARV','Porc_en_TARV','N_TARV_criterio_OMS','Variación_TARV','N_instituciones_disp_TARV',
-      'Prop_notificados','Prop_caso_confirmado','revincular','Prop_perdida_seguimiento','Prop_indetectables','N_prep'];
+    const totales=totalesRegionales(),ids=indicadoresComparables(totales);
+    ids.splice(ids.includes('N_TARV')?1:0,0,'Porc_en_TARV');
+    if(!ids.includes(indicadorMapaRegional))indicadorMapaRegional=ids[0];
     const etiquetas={...campos,Porc_en_TARV:'% de personas en TARV por región de atención'};
-    const provincia=general.find(r=>esPBA(r.Provincia_atencion)&&esTotal(r.Institucion));
-    const baseRegiones=general.filter(r=>roman(r.Provincia_atencion)<99&&esTotal(r.Institucion));
+    const provincia=totales.find(r=>esPBA(r.Provincia_atencion));
+    const baseRegiones=totales.filter(r=>roman(r.Provincia_atencion)<99);
     const valor=(r,id)=>{
       if(!r)return null;
-      if(id==='Prop_perdida_seguimiento')return window.porcentajePerdidaSeguimientoSVIH(r);
       if(id==='Porc_en_TARV')return numeric(r.N_TARV)&&provincia?.N_TARV>0?100*r.N_TARV/provincia.N_TARV:null;
-      return r[id];
+      return valorComparable(r,id);
     };
     const pagina=el('div','comparativo-grid mapa-regional-grid'),selector=el('div','selector-comparativo');
     const buscar=el('input','buscar-indicador'),lista=el('div','lista-indicadores');
@@ -102,7 +113,7 @@
     const definiciones=[{
       INDICADOR:'% de personas en TARV por provincia de atención',
       'DESCRIPCIÓN':'Personas en TARV atendidas en la región como porcentaje del total provincial al corte.'
-    },...t.definiciones];
+    },...definicionesRegionales];
     let mapaDibujado=null;
     function dibujar(){
       const id=indicadorMapaRegional,etiqueta=etiquetas[id];
