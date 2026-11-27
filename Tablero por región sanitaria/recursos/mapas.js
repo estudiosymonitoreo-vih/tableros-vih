@@ -403,9 +403,9 @@ window.crearMapaSVIH = (() => {
 
   const zoomMaximo = 1024;
   let contadorMapas = 0;
-  function navegarComparativo(caja, mapa) {
+  function navegarComparativo(caja, mapa, inicial={x:-79,y:21,w:36,h:48}) {
     const actualizarLimites=crearDetalleCartografico(mapa,mapa.querySelector('.valores-provinciales'));
-    const inicial={x:-79,y:21,w:36,h:48};let vista={...inicial},zoom=1;
+    let vista={...inicial},zoom=1;
     mapa.setAttribute('tabindex','0');mapa.setAttribute('role','application');
     mapa.setAttribute('aria-label','Mapa provincial. Usar botones, rueda, flechas o arrastrar para navegar.');
     const controles=document.createElement('div');controles.className='mapa-controles';
@@ -458,6 +458,58 @@ window.crearMapaSVIH = (() => {
         rango:valores.length?[formato(min),formato(max),min===max]:null}),[1,3]);
       caja.append(superposicion);
     }
+  };
+  window.crearMapaRegionesSVIH = function(host, filas, {formato, provincial, tituloExportacion}) {
+    const regiones=base.regiones_sanitarias?.features||[];
+    host.replaceChildren();
+    if(!regiones.length)return;
+    const puntos=regiones.flatMap(r=>coordenadas(r.geometry).map(project));
+    const xs=puntos.map(p=>p[0]),ys=puntos.map(p=>p[1]);
+    const x=Math.min(...xs)-.35,y=Math.min(...ys)-.35;
+    const vista={x,y,w:Math.max(...xs)-x+.35,h:Math.max(...ys)-y+.35};
+    const caja=document.createElement('div');
+    caja.className='mapa-coropletico';
+    const mapa=svg('svg'),datos=new Map(filas.map(r=>[r.codigo,r.valor]));
+    const valores=regiones.map(r=>datos.get(r.properties.region)).filter(Number.isFinite);
+    const min=valores.length?Math.min(...valores):null,max=valores.length?Math.max(...valores):null;
+    const etiquetas=svg('g',{class:'valores-provinciales','pointer-events':'none'});
+    for(const region of regiones){
+      const codigo=region.properties.region,valor=datos.get(codigo);
+      const z=min===max?.5:(valor-min)/(max-min);
+      const fill=Number.isFinite(valor)?`rgb(${Math.round(185-165*z)},${Math.round(221-110*z)},${Math.round(244-45*z)})`:'#f5f5ee';
+      const forma=svg('path',{d:path(region.geometry),fill,stroke:'#516474','stroke-width':.035,'data-region':codigo});
+      forma.append(svg('title',{},`Región Sanitaria ${codigo}: ${formato(valor)}`));
+      mapa.append(forma);
+      const vertices=coordenadas(region.geometry),lon=vertices.map(p=>p[0]),lat=vertices.map(p=>p[1]);
+      const oeste=Math.min(...lon),sur=Math.min(...lat),ancho=Math.max(...lon)-oeste,alto=Math.max(...lat)-sur;
+      const centro=[oeste+ancho/2,sur+alto/2],candidatos=[centro];
+      for(let i=1;i<6;i++)for(let j=1;j<6;j++)candidatos.push([oeste+ancho*i/6,sur+alto*j/6]);
+      const dist=p=>Math.hypot(p[0]-centro[0],p[1]-centro[1]);
+      const interior=candidatos.filter(p=>contienePunto(region.geometry,p)).sort((a,b)=>dist(a)-dist(b))[0]||centro;
+      const [cx,cy]=project(interior);
+      etiquetas.append(svg('text',{x:cx,y:cy,'text-anchor':'middle','dominant-baseline':'middle',
+        fill:'#132c47',stroke:'#fff','stroke-width':.04,'paint-order':'stroke','font-size':.25,'font-weight':700},codigo));
+    }
+    mapa.append(etiquetas);
+    caja.append(mapa);
+    host.append(caja);
+    navegarComparativo(caja,mapa,vista);
+    mapa.setAttribute('aria-label','Mapa de las regiones sanitarias de la provincia de Buenos Aires.');
+    const controles=document.createElement('div'),leyenda=document.createElement('div');
+    controles.className='controles-inferiores-mapa';
+    leyenda.className='escala-mapa';
+    const primero=document.createElement('span'),ultimo=document.createElement('span'),gradiente=document.createElement('i');
+    primero.textContent=formato(min);
+    ultimo.textContent=formato(max);
+    leyenda.append(primero,gradiente,ultimo);
+    controles.append(leyenda);
+    controlExportacion(controles,tituloExportacion,()=>({
+      mapa:mapa.cloneNode(true),
+      leyenda:[`Total provincia de Buenos Aires: ${formato(provincial)} · Gris claro: sin datos`,
+        'Fuente: SVIH / SISA · Límites sanitarios a partir de cartografía IGN'],
+      rango:valores.length?[formato(min),formato(max),min===max]:null
+    }),[1,3]);
+    caja.append(controles);
   };
   return function crearMapa(host, datos, {nombre = "nombre_institucion", cantidad = "cantidad", seleccion = "País", encuadrarPuntos = false, tituloExportacion, tratamiento} = {}) {
     host.replaceChildren();

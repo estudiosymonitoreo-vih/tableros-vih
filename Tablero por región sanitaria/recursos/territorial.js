@@ -8,8 +8,9 @@
   const filas=(id,soloScope=false)=>(t[id]||[]).filter(r=>r.Provincia_atencion===scope()&&(soloScope||r.Institucion===inst()));
   const actual=()=>filas('general')[0]||{},total=()=>filas('general',true).find(r=>esTotal(r.Institucion))||{};
   const campos={...window.SVIH_ETIQUETAS_INDICADORES,'Variación_TARV':'Variación interanual','Porc_prep':'% de personas en PrEP por provincia donde retira'};
-  const paginas=[['general','Principales indicadores'],['tratamiento','Tratamiento'],['laboratorio','Laboratorio'],['prevencion','PrEP y PeP'],['comparador','Comparación'],...(regional?[['regiones','Por región sanitaria']]:[]),['definiciones','Definiciones']];
+  const paginas=[['general','Principales indicadores'],['tratamiento','Tratamiento'],['laboratorio','Laboratorio'],['prevencion','PrEP y PeP'],['comparador','Comparación'],...(regional?[['regiones','Por región sanitaria'],['mapa','Mapa']]:[]),['definiciones','Definiciones']];
   const iconos={general:['#2765ca','M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z'],tratamiento:['#078d90','M4 12 12 4a5.66 5.66 0 0 1 8 8l-8 8a5.66 5.66 0 0 1-8-8ZM8 8l8 8'],laboratorio:['#b44b97','M9 2h6M10 2v8L3 21h18l-7-11V2M7 15h10'],prevencion:['#198869','M12 2 3 6v6c0 6 9 10 9 10s9-4 9-10V6ZM7 12l3 3 7-7'],comparador:['#b77b0e','M2 3v18h20M6 17V9h3v8ZM12 17V5h3v12ZM18 17v-6h3v6Z'],regiones:['#3976ac','M2 5l7-3 6 3 7-3v17l-7 3-6-3-7 3ZM9 2v17M15 5v17'],definiciones:['#7163aa','M2 3h7l3 3 3-3h7v17h-7l-3 2-3-2H2ZM12 6v16M5 8h4M5 12h4M15 8h4M15 12h4']};
+  iconos.mapa=['#3976ac','M3 5l6-3 6 3 6-3v17l-6 3-6-3-6 3ZM9 2v17M15 5v17'];
   const nav=document.querySelector('nav');for(const[id,nombre]of paginas){const a=el('a'),[color,d]=iconos[id],icono=sv('svg',{viewBox:'0 0 24 24',class:'nav-icon',fill:'none',stroke:color,'stroke-width':1.8,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'});icono.style.background=color+'18';icono.append(sv('path',{d}));a.href='#'+id;a.dataset.pagina=id;a.append(icono,el('span',null,nombre));nav.append(a)}
   const ordenar=(a,b)=>a.localeCompare(b,'es',{numeric:true}),roman=v=>{const z=norm(v).match(/(?:sanitaria|region)\s+([ivx]+)$/);if(!z)return 99;const x=z[1].split('').map(c=>({i:1,v:5,x:10})[c]);return x.reduce((s,v,i)=>s+(v<(x[i+1]||0)?-v:v),0)};
   const compararTerritorios=(a,b)=>regional&&roman(a)<99&&roman(b)<99?roman(a)-roman(b):u.compararJurisdicciones(a,b);
@@ -20,7 +21,7 @@
   cargarInstituciones();let activa='general',indicador='N_TARV',seleccionComparador=null,seleccionRegiones=null;
   const ordenComparadores={instituciones:'valor',regiones:'valor'};
   const tarjeta=(host,titulo,valor,pct=false,cl='')=>{const p=panel(host,titulo,'territorial-tarjeta '+cl);p.append(el('div','numero-indicador',f(valor,pct?1:0)+(pct&&numeric(valor)?'%':'')));return p};
-  function supresion(host,umbralChico=false){const r=actual(),cobertura=el('b',null,f(r.Prop_con_info_cv,1)+(numeric(r.Prop_con_info_cv)?'%':''));cobertura.style.color=window.colorInformacionCargaViralSVIH(r.Prop_con_info_cv);const p=panel(host,'Carga viral indetectable','territorial-supresion');p.parentElement.querySelector('.rotulo').append(el('span',umbralChico?'umbral-indetectable':null,' (<50)'));const line=el('div','supresion-linea');line.append(el('strong',null,f(r.Prop_indetectables,1)+(numeric(r.Prop_indetectables)?'%':'')),el('small',null,'Disponibilidad de información'),cobertura);p.append(line,el('p','ic-viral',`IC 95%: ${f(r.Prop_indetect_IC95_inf,1)}% — ${f(r.Prop_indetect_IC95_sup,1)}%`));return p;}
+  function supresion(host,umbralChico=false){const r=actual(),cobertura=el('b',null,f(r.Prop_con_info_cv,1)+(numeric(r.Prop_con_info_cv)?'%':''));cobertura.style.color=window.colorInformacionCargaViralSVIH(r.Prop_con_info_cv);const p=panel(host,'Carga viral indetectable','territorial-supresion');const rotulo=p.parentElement.querySelector('.rotulo'),texto=el('span',null,'Carga viral indetectable');texto.append(el('span',umbralChico?'umbral-indetectable':null,'\u00a0(<50)'));rotulo.replaceChildren(texto);const line=el('div','supresion-linea');line.append(el('strong',null,f(r.Prop_indetectables,1)+(numeric(r.Prop_indetectables)?'%':'')),el('small',null,'Disponibilidad de información'),cobertura);p.append(line,el('p','ic-viral',`IC 95%: ${f(r.Prop_indetect_IC95_inf,1)}% — ${f(r.Prop_indetect_IC95_sup,1)}%`));return p;}
   function institucionesMapa(id,soloScope=false){const a=t[id]||[],exactas=a.filter(r=>r.Provincia_atencion===scope());let rows=exactas;if(!rows.length&&scope()==='País')rows=a.filter(r=>r.Provincia_atencion!=='País');if(!rows.length&&regional&&esPBA(scope()))rows=a.filter(r=>!esPBA(r.Provincia_atencion)&&r.Provincia_atencion!=='País');return rows.filter(r=>soloScope||esTotal(inst())||norm(r.nombre_institucion||r.Institucion)===norm(inst()));}
   function mapa(host,rows,indicador,tratamiento,nombre='nombre_institucion',cantidad='cantidad'){
     const hospital=activa==='general'&&!esTotal(inst())?inst():null;
@@ -64,7 +65,7 @@
         return ordenar(a[clave],b[clave]);
       });
       ordenBoton.textContent=ordenComparadores[tipoOrden]==='valor'?'↓ Valor':porRegion?'A–Z Región':'A–Z Institución';ordenBoton.setAttribute('aria-pressed',String(ordenComparadores[tipoOrden]==='valor'));ordenBoton.title='Alternar orden alfabético y valor de mayor a menor. Empates por nombre; faltantes al final.';
-      barras(graph,rows,clave,indicador,null,{formato:v=>f(v,pct?1:0)+(pct?'%':'')});
+      barras(graph,rows,clave,indicador,null,{etiquetasHorizontales:regional,formato:v=>f(v,pct?1:0)+(pct?'%':'')});
       const grafico=graph.querySelector('.grafico-svg');
       if(grafico){
         grafico.dataset.tituloExportacion=campos[indicador]+(porRegion?' por región sanitaria':' por institución');
@@ -72,6 +73,76 @@
       }
       stats.replaceChildren();const visibles=rows.filter(r=>numeric(r[indicador])).map(r=>r[indicador]).sort((a,b)=>a-b),n=visibles.length,resumen={Mediana:n?(n%2?visibles[(n-1)/2]:visibles[n/2-1]/2+visibles[n/2]/2):null,'Máximo':n?visibles[n-1]:null,'Mínimo':n?visibles[0]:null};for(const[nombre,v]of Object.entries(resumen)){const x=el('div');x.append(el('span',null,nombre),el('strong',null,f(v,pct||!Number.isInteger(v)?1:0)+(pct&&numeric(v)?'%':'')));if(n&&nombre!=='Mediana')x.append(el('small',null,uniq(rows.filter(r=>r[indicador]===v).map(r=>r[clave])).sort(ordenar).join(' · ')));stats.append(x)}}
     const todo=el('label'),check=el('input');check.type='checkbox';check.checked=elegidos.length===valores.length;check.indeterminate=!!elegidos.length&&!check.checked;todo.append(check,document.createTextNode('Todos'));opts.append(todo);check.onchange=()=>{elegidos=check.checked?valores.slice():[];opts.querySelectorAll('[data-opcion]').forEach(x=>x.checked=check.checked);guardar();dibujar()};for(const v of valores){const l=el('label'),c=el('input');c.type='checkbox';c.dataset.opcion=v;c.checked=elegidos.includes(v);l.append(c,document.createTextNode(v));opts.append(l);c.onchange=()=>{elegidos=[...opts.querySelectorAll('[data-opcion]:checked')].map(x=>x.dataset.opcion);check.checked=elegidos.length===valores.length;check.indeterminate=!!elegidos.length&&!check.checked;guardar();dibujar()}}function guardar(){if(porRegion)seleccionRegiones=elegidos;else seleccionComparador=elegidos;}dibujar();}
+  let indicadorMapaRegional='N_TARV',ordenMapaRegional='valor';
+  function mapaRegional(host){
+    const ids=['N_TARV','Porc_en_TARV','N_TARV_criterio_OMS','Variación_TARV','N_instituciones_disp_TARV',
+      'Prop_notificados','Prop_caso_confirmado','revincular','Prop_perdida_seguimiento','Prop_indetectables','N_prep'];
+    const etiquetas={...campos,Porc_en_TARV:'% de personas en TARV por región de atención'};
+    const provincia=general.find(r=>esPBA(r.Provincia_atencion)&&esTotal(r.Institucion));
+    const baseRegiones=general.filter(r=>roman(r.Provincia_atencion)<99&&esTotal(r.Institucion));
+    const valor=(r,id)=>{
+      if(!r)return null;
+      if(id==='Prop_perdida_seguimiento')return window.porcentajePerdidaSeguimientoSVIH(r);
+      if(id==='Porc_en_TARV')return numeric(r.N_TARV)&&provincia?.N_TARV>0?100*r.N_TARV/provincia.N_TARV:null;
+      return r[id];
+    };
+    const pagina=el('div','comparativo-grid mapa-regional-grid'),selector=el('div','selector-comparativo');
+    const buscar=el('input','buscar-indicador'),lista=el('div','lista-indicadores');
+    buscar.type='search';buscar.placeholder='Buscar indicador…';buscar.setAttribute('aria-label','Buscar indicador');
+    selector.append(el('div','encabezado-selector','Indicador (1)'),buscar,lista);
+    const vista=el('div','comparativo-vista'),cabecera=el('div','cabecera-comparativo');
+    const titulo=el('h3','titulo-comparativo'),orden=el('button','boton-orden-historico');
+    orden.type='button';cabecera.append(titulo,orden);
+    const cuerpo=el('div','comparativo-cuerpo'),mapaHost=el('div','comparativo-mapa');
+    const ranking=el('div','comparativo-barras'),referencia=el('div','mapa-regional-total');
+    cuerpo.append(mapaHost,ranking);vista.append(cabecera,referencia,cuerpo);
+    const definicion=el('section','definicion-indicador definicion-indicador-en-recuadro');
+    definicion.setAttribute('aria-label','Definición del indicador seleccionado');definicion.tabIndex=0;
+    pagina.append(selector,vista,definicion);host.append(pagina);
+    const definiciones=[{
+      INDICADOR:'% de personas en TARV por provincia de atención',
+      'DESCRIPCIÓN':'Personas en TARV atendidas en la región como porcentaje del total provincial al corte.'
+    },...t.definiciones];
+    let mapaDibujado=null;
+    function dibujar(){
+      const id=indicadorMapaRegional,etiqueta=etiquetas[id];
+      const pct=etiqueta.startsWith('%')||id==='Variación_TARV';
+      const formato=v=>numeric(v)?f(v,pct?1:0)+(pct?'%':''):'—';
+      const filas=baseRegiones.map(r=>({
+        codigo:norm(r.Provincia_atencion).split(' ').at(-1).toUpperCase(),
+        region:r.Provincia_atencion,valor:valor(r,id)
+      }));
+      titulo.textContent=etiqueta;
+      referencia.textContent='Total provincia de Buenos Aires · '+formato(valor(provincia,id));
+      orden.textContent=ordenMapaRegional==='valor'?'↓ Valor':'I–XII Región';
+      orden.setAttribute('aria-label','Ordenar regiones por '+(ordenMapaRegional==='valor'?'número de región':'valor'));
+      if(mapaDibujado!==id){
+        window.crearMapaRegionesSVIH(mapaHost,filas,{formato,provincial:valor(provincia,id),tituloExportacion:etiqueta+' · Regiones sanitarias de Buenos Aires · '+datos.fecha});
+        window.mostrarDefinicionIndicadorSVIH(definicion,id,definiciones);
+        mapaDibujado=id;
+      }
+      filas.sort((a,b)=>{
+        if(ordenMapaRegional==='valor'){
+          if(numeric(a.valor)!==numeric(b.valor))return numeric(a.valor)?-1:1;
+          if(numeric(a.valor)&&a.valor!==b.valor)return b.valor-a.valor;
+        }
+        return roman(a.region)-roman(b.region);
+      });
+      ranking.replaceChildren();
+      barras(ranking,filas,'region','valor',null,{horizontal:true,formato});
+      const grafico=ranking.querySelector('.grafico-svg');
+      if(grafico){grafico.dataset.tituloExportacion=etiqueta;grafico.dataset.ambitoExportacion='Regiones sanitarias de Buenos Aires';}
+    }
+    orden.onclick=()=>{ordenMapaRegional=ordenMapaRegional==='valor'?'region':'valor';dibujar()};
+    for(const id of ids){
+      const fila=el('label'),radio=el('input');
+      radio.type='radio';radio.name='indicador-mapa-regional';radio.value=id;radio.checked=id===indicadorMapaRegional;
+      fila.append(radio,el('span',null,etiquetas[id]));lista.append(fila);
+      radio.onchange=()=>{indicadorMapaRegional=id;dibujar()};
+    }
+    buscar.oninput=()=>{for(const fila of lista.children)fila.hidden=!norm(fila.textContent).includes(norm(buscar.value))};
+    dibujar();
+  }
   function ajustarTitulos(){document.querySelectorAll('.territorial-tarjeta .rotulo').forEach(x=>{let n=12;x.style.fontSize=n+'px';while(x.scrollHeight>x.clientHeight+1&&n>9){n-=.25;x.style.fontSize=n+'px'}})}
   // Editorial 3.0: reservar la misma cabecera/navegación en hospital y región.
   function distribuirEspacio(){
@@ -81,6 +152,6 @@
   }
   function mostrar(){
     if(!regional)$('acceso-regiones-sanitarias').hidden=!esPBA(scope());
-    document.querySelector('main').dataset.vista=activa;document.querySelector('main').dataset.ambito=datos.ambito;const vista=$('vista-territorial');vista.replaceChildren();$('filtro-institucion').hidden=['prevencion','comparador','regiones','definiciones'].includes(activa);document.querySelector('.filtros-territoriales').hidden=['regiones','definiciones'].includes(activa);$('titulo-vista').textContent=({general:'Personas en TARV',tratamiento:'Características del TARV',laboratorio:'Carga viral y CD4',prevencion:'Personas en PrEP',comparador:'Comparador de indicadores por institución',regiones:'Comparador de indicadores por región sanitaria',definiciones:'Definición de indicadores'})[activa];nav.querySelectorAll('a').forEach(a=>{a.classList.toggle('activo',a.dataset.pagina===activa);if(a.dataset.pagina===activa)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});distribuirEspacio();if(activa==='general')resumenGeneral(vista);if(activa==='tratamiento')tratamiento(vista);if(activa==='laboratorio')laboratorio(vista);if(activa==='prevencion')prevencion(vista);if(activa==='comparador'||activa==='regiones')comparador(vista,activa==='regiones');if(activa==='definiciones'){const host=el('div','tabla-definiciones');vista.append(host);tabla(host,t.definiciones,[['INDICADOR','INDICADOR'],['DESCRIPCIÓN','DESCRIPCIÓN'],['OBSERVACIONES','OBSERVACIONES']]);nota(vista,'SVIH: Sistema de gestión de insumos de VIH. TARV: Tratamiento antirretroviral. SNVS: Sistema Nacional de Vigilancia de la Salud.');}ajustarTitulos();}
+    document.querySelector('main').dataset.vista=activa;document.querySelector('main').dataset.ambito=datos.ambito;const vista=$('vista-territorial');vista.replaceChildren();$('filtro-institucion').hidden=['prevencion','comparador','regiones','mapa','definiciones'].includes(activa);document.querySelector('.filtros-territoriales').hidden=['regiones','mapa','definiciones'].includes(activa);$('titulo-vista').textContent=({general:'Personas en TARV',tratamiento:'Características del TARV',laboratorio:'Carga viral y CD4',prevencion:'Personas en PrEP',comparador:'Comparador de indicadores por institución',regiones:'Comparador de indicadores por región sanitaria',mapa:'Mapa de regiones sanitarias',definiciones:'Definición de indicadores'})[activa];nav.querySelectorAll('a').forEach(a=>{a.classList.toggle('activo',a.dataset.pagina===activa);if(a.dataset.pagina===activa)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});distribuirEspacio();if(activa==='general')resumenGeneral(vista);if(activa==='tratamiento')tratamiento(vista);if(activa==='laboratorio')laboratorio(vista);if(activa==='prevencion')prevencion(vista);if(activa==='comparador'||activa==='regiones')comparador(vista,activa==='regiones');if(activa==='mapa')mapaRegional(vista);if(activa==='definiciones'){const host=el('div','tabla-definiciones');vista.append(host);tabla(host,t.definiciones,[['INDICADOR','INDICADOR'],['DESCRIPCIÓN','DESCRIPCIÓN'],['OBSERVACIONES','OBSERVACIONES']]);nota(vista,'SVIH: Sistema de gestión de insumos de VIH. TARV: Tratamiento antirretroviral. SNVS: Sistema Nacional de Vigilancia de la Salud.');}ajustarTitulos();}
   $('provincia').onchange=()=>{cargarInstituciones();seleccionComparador=null;mostrar()};$('institucion').onchange=mostrar;function ruta(){activa=paginas.some(([id])=>id===location.hash.slice(1))?location.hash.slice(1):'general';mostrar()}window.addEventListener('hashchange',ruta);window.addEventListener('resize',mostrar);ruta();
 })();

@@ -64,7 +64,7 @@
     }
     entrada.oninput=()=>{estado.q=entrada.value.toLocaleLowerCase();vista.scrollTop=0;pintar()};pintar();
   }
-  function barras(host,datos,x,y,serie=null,{horizontal=false,pct=false,linea=false,log=false,conBarras=false,formato=null}={}) {
+  function barras(host,datos,x,y,serie=null,{horizontal=false,pct=false,linea=false,log=false,conBarras=false,formato=null,etiquetasHorizontales=false}={}) {
     const a=datos.filter(r=>numeric(r[y])&&r[x]!==null&&r[x]!==undefined);
     if(!a.length)return vacio(host);
     const xs=uniq(a.map(r=>String(r[x]))),ss=serie?uniq(a.map(r=>String(r[serie]))):["Valor"];
@@ -73,6 +73,7 @@
     const territorial=!!host.closest('.territorial'),historico=!!host.closest('.historico-grafico'),cs=historico?["#f6a04d","#4285f4","#ae7ce5"]:colores;
     const anualTarv=!!host.closest('.evolucion-anual'),anualPrep=!!host.closest('.es-prep .profilaxis-anual'),anualPep=!!host.closest('.es-pep .profilaxis-anual'),reserva=anualTarv?94:anualPrep?56:anualPep?20:serie?32:12;
     const perfilMediana=!!host.closest('.perfil-mediana'),comparadorTerritorial=!!host.closest('.tc-grafico');
+    const etiquetasCompactas=etiquetasHorizontales||comparadorTerritorial;
     const comparadorHospital=comparadorTerritorial&&!!host.closest('[data-ambito="provincial"]');
     // Recuperar altura de trazado bajo los títulos de Evolución TARV, sin mover sus paneles.
     const evolucionCompacta=anualTarv||!!host.closest('.evolucion-mensual');
@@ -103,12 +104,10 @@
     xs.forEach((label,i)=>{
       if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;
       const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8&&!comparadorTerritorial?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={class:'etiqueta-categoria',x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};
-      if(!horizontal&&!comparadorTerritorial&&xs.length>12){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=historico?10:9;}
+      if(!horizontal&&!etiquetasCompactas&&xs.length>12){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=historico?10:9;}
       const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,'');
-      // Los nombres hospitalarios largos se distinguen por principio y final;
-      // rotarlos y reservar ancho evita que se pisen aun con ocho categorías.
       const limite=comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
-      if(comparadorTerritorial&&!horizontal){
+      if(etiquetasCompactas&&!horizontal){
         node.setAttribute('y',y+6);
         const ancho=iw/xs.length, fuente=ancho<80?9:11;
         const caracteres=Math.max(4,Math.floor((ancho-6)/(fuente*.72)));
@@ -127,7 +126,7 @@
         node.setAttribute('font-size',fuente);
         lineas.slice(0,3).forEach((parte,i)=>node.append(sv('tspan',{x,dy:i?fuente+1:0},parte)));
       }
-      if(!horizontal&&!comparadorTerritorial&&xs.length<=8&&text.includes(' ')){node.textContent='';const words=text.split(' '),parts=words.length>2?[words.slice(0,2).join(' '),words.slice(2).join(' ')]:words;parts.forEach((v,j)=>node.append(sv('tspan',{x,dy:j?11:0},v)));}
+      if(!horizontal&&!etiquetasCompactas&&xs.length<=8&&text.includes(' ')){node.textContent='';const words=text.split(' '),parts=words.length>2?[words.slice(0,2).join(' '),words.slice(2).join(' ')]:words;parts.forEach((v,j)=>node.append(sv('tspan',{x,dy:j?11:0},v)));}
       node.append(sv('title',{},label));s.append(node);
     });
     ss.forEach((name,j)=>{
