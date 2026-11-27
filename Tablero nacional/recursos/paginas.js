@@ -420,7 +420,7 @@
     }
   }
   function laboratorio(host){
-    const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable (<40)","laboratorio-viral"),actual=general();
+    const g=el("div","diseno-laboratorio");host.append(g);const resumen=panel(g,"% de personas en TARV con carga viral indetectable (<50)","laboratorio-viral"),actual=general();
     resumen.append(el("strong","viral-valor",f(actual.Prop_indetectables,1)+"%"),el("div","viral-ic",`IC 95   ${f(actual.Prop_indetect_IC95_inf,1)}%  ${f(actual.Prop_indetect_IC95_sup,1)}%`));
     const cobertura=el("div","viral-cobertura"),valorCobertura=el("strong",null,f(actual.Prop_con_info_cv,1)+"%");valorCobertura.style.color=window.colorInformacionCargaViralSVIH(actual.Prop_con_info_cv);cobertura.append(el("span",null,"Información sobre carga viral"),valorCobertura);resumen.append(cobertura);
     const cd=panel(g,"Distribución de CD4 en personas en TARV","laboratorio-cd4"),info=el("div","cd4-cobertura");

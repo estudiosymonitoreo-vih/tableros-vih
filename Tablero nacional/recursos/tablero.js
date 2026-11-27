@@ -49,7 +49,7 @@
     if (campo === "Prop_indetectables") {
       const umbral = document.createElement("small");
       umbral.className = "umbral-indetectable";
-      umbral.textContent = " (<40)";
+      umbral.textContent = " (<50)";
       textoLabel.append(umbral);
     }
     const valor = document.createElement("div"); valor.className = "valor"; valor.textContent = formato(fila[campo], campo==="Sifilis_2024"&&Number.isInteger(fila[campo])?0:dec, escala, porcentaje);
