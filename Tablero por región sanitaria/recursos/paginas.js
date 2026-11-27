@@ -88,7 +88,7 @@
     }
     // Cada barra histórica conserva su valor: reservar ancho mínimo evita que
     // múltiples períodos terminen con fuentes ilegibles; móvil permite desplazar.
-    const W=Math.max(200,host.clientWidth,anchoLimite,historico&&!comparadorHospital?xs.length*ss.length*(comparadorTerritorial?34:12)+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva)-(historico?14:0),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:comparadorHospital?28:comparadorTerritorial?56:historico?28:evolucionCompacta?4:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):comparadorHospital?54:comparadorTerritorial?160:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
+    const W=Math.max(200,host.clientWidth,anchoLimite,historico&&!comparadorHospital?xs.length*ss.length*(comparadorTerritorial?34:12)+78:0),H=Math.max(120,host.clientHeight-(perfilMediana?0:reserva)-(historico?14:0),host.closest(".perfil-residencia")?xs.length*26+60:0),left=horizontal?(anualTarv||anualPrep?45:Math.min(170,W*.38)):52,right=horizontal?58:26,top=host.closest(".comparativo-barras")?4:comparadorHospital?28:comparadorTerritorial?56:historico?28:evolucionCompacta?4:22,bottom=horizontal?(host.closest(".comparativo-barras")?14:26):comparadorTerritorial?54:historico?(xs.length<=8?42:110):anualPep?30:perfilMediana?42:territorial?38:56,iw=W-left-right,ih=H-top-bottom;
     const bruto=Math.max(0,...a.map(r=>r[y])),pot=10**Math.floor(Math.log10(bruto/4||1)),salto=[1,2,2.5,5,10].find(z=>z*pot>=bruto/4)*pot;
     const max=pct?100:Math.ceil(bruto/(salto||1))*(salto||1),min=Math.min(0,...a.map(r=>r[y]));
     const minDato=Math.min(...a.map(r=>r[y])),estricta=log&&minDato>0&&bruto/minDato>=10,simetrica=log&&minDato<=0;
@@ -103,12 +103,13 @@
     xs.forEach((label,i)=>{
       if(!horizontal&&!historico&&xs.length>12&&i%Math.ceil(xs.length/18)!==0&&i!==xs.length-1)return;
       const pos=(i+.5)*(horizontal?ih:iw)/xs.length,x=horizontal?left-7:left+pos,y=horizontal?top+pos+4:historico?H-bottom+(xs.length<=8&&!comparadorTerritorial?16:10):anualPep?H-12:perfilMediana?H-13:territorial?H-bottom+18:H-36,attrs={class:'etiqueta-categoria',x,y,"text-anchor":horizontal?"end":"middle",fill:"white","font-size":11};
-      if(!horizontal&&!comparadorHospital&&(comparadorTerritorial||xs.length>12)){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=comparadorTerritorial?9:historico?10:9;}
+      if(!horizontal&&!comparadorTerritorial&&xs.length>12){attrs.transform=`rotate(${historico?-90:-55} ${x} ${y})`;attrs["text-anchor"]="end";attrs["font-size"]=historico?10:9;}
       const text=/^\d{4}-\d{2}-\d{2}$/.test(label)?label.slice(0,7):label.replace(/^Provincia de /i,'');
       // Los nombres hospitalarios largos se distinguen por principio y final;
       // rotarlos y reservar ancho evita que se pisen aun con ocho categorías.
       const limite=comparadorTerritorial?27:historico?20:24,visible=text.length>limite?(comparadorTerritorial?text.slice(0,9)+'…'+text.slice(-17):text.slice(0,limite-1)+'…'):text,node=sv('text',attrs,visible);
-      if(comparadorHospital){
+      if(comparadorTerritorial&&!horizontal){
+        node.setAttribute('y',y+6);
         const ancho=iw/xs.length, fuente=ancho<80?9:11;
         const caracteres=Math.max(4,Math.floor((ancho-6)/(fuente*.72)));
         const lineas=[];
